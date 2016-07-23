@@ -18,6 +18,29 @@ trait LogicalTrees { self: ConvertersToolkit =>
   import treeInfo._
   import build._
 
+  implicit class RichFoundationHelperName(name: g.Name) {
+    def isAnonymous = {
+      val isTermPlaceholder = name.isTermName && name.startsWith(nme.FRESH_TERM_NAME_PREFIX)
+      val isTypePlaceholder = name.isTypeName && name.startsWith("_$")
+      val isAnonymousSelf = name.isTermName && (name.startsWith(nme.FRESH_TERM_NAME_PREFIX) || name == nme.this_)
+      val isAnonymousTypeParameter = name == tpnme.WILDCARD
+      isTermPlaceholder || isTypePlaceholder || isAnonymousSelf || isAnonymousTypeParameter
+    }
+    def looksLikeInfix = {
+      val hasSymbolicName = !name.decoded.forall(c => Character.isLetter(c) || Character.isDigit(c) || c == '_')
+      val idiomaticallyUsedAsInfix = name == nme.eq || name == nme.ne
+      hasSymbolicName || idiomaticallyUsedAsInfix
+    }
+    def displayName = {
+      // NOTE: "<empty>", the internal name for empty package, isn't a valid Scala identifier, so we hack around
+      if (name == rootMirror.EmptyPackage.name) "_empty_"
+      else if (name == rootMirror.EmptyPackageClass.name) "_empty_"
+      // TODO: why did we need this in the past?
+      // else if (name.isAnonymous) "_"
+      else name.decodedName.toString
+    }
+  }
+
   trait LogicalTrees { l: self.l.type =>
     // ============ NAMES ============
 
@@ -39,14 +62,14 @@ trait LogicalTrees { self: ConvertersToolkit =>
 
     implicit class RichNameTree(tree: Tree) {
       def displayName: String = tree match {
-//        case tree: ModuleDef if tree.name == nme.PACKAGE => abort(tree)
-//        case tree: NameTree => tree.name.displayName
-//        case This(name) => name.displayName // NOTE: This(tpnme.EMPTY) is also accounted for
-//        case Super(_, name) => name.displayName
+        case tree: ModuleDef if tree.name == nme.PACKAGE => unreachable(debug(tree, showRaw(tree))) // todo was abort(tree)
+        case tree: NameTree => tree.name.displayName
+        case This(name) => name.displayName // NOTE: This(tpnme.EMPTY) is also accounted for
+        case Super(_, name) => name.displayName
         case tree: l.IndeterminateName => tree.value
-//        case tree: l.TermName => tree.value
-//        case tree: l.TypeName => tree.value
-//        case tree: l.CtorName => tree.value
+        case tree: l.TermName => tree.value
+        case tree: l.TypeName => tree.value
+        case tree: l.CtorName => tree.value
         case _ => unreachable(debug(tree, showRaw(tree)))
       }
     }
