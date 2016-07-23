@@ -1,6 +1,7 @@
 package org.scalamacros.paradise
 package typechecker
 
+import org.scalamacros.paradise.converters.ToMtree
 import org.scalamacros.paradise.reflect.Enrichments
 
 trait AnalyzerPlugins extends Compilers
@@ -8,6 +9,7 @@ trait AnalyzerPlugins extends Compilers
                         with Expanders
                         with Errors
                         with Enrichments
+                        with ToMtree
 {
   import global._
   import scala.reflect.internal.Flags._

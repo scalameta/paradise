@@ -83,23 +83,8 @@ trait Expanders {
 
       def expand(): Option[Tree] = {
         try {
-          val input = original.pos.source
-          val metaInput = {
-            if (input.file.file != null) MetaInput.File(input.file.file)
-            else MetaInput.String(new String(input.content)) // NOTE: can happen in REPL or in custom Global
-          }
-          val metaSource = metaInput.parse[MetaSource].get
           def toMeta(tree: Tree): MetaTree = {
-            var minTree: MetaTree = null
-            def captures(metaPos: MetaPosition, pos: Position) = metaPos.start.offset <= pos.point && pos.point <= metaPos.end.offset
-            def updatesMin(metaPos: MetaPosition, minPos: MetaPosition) = metaPos.end.offset - metaPos.start.offset < minPos.end.offset - minPos.start.offset
-            metaSource.traverse {
-              case metaTree: MetaTree if metaTree != metaSource && metaTree.is[scala.meta.Defn] && captures(metaTree.pos, tree.pos) && (minTree == null || updatesMin(metaTree.pos, minTree.pos)) =>
-                minTree = metaTree
-            }
-            if(minTree == null)
-              sys.error(s"fatal error: couldn't find ${tree.pos.toString} in ${metaSource.show[MetaPositions]}")
-            minTree
+            tree.toMtree
           }
 
           val treeInfo.Applied(Select(New(_), nme.CONSTRUCTOR), targs, vargss) = annotationTree
