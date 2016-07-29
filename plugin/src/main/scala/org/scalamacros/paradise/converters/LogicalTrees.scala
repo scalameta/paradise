@@ -18,6 +18,72 @@ trait LogicalTrees { self: ConvertersToolkit =>
   import treeInfo._
   import build._
 
+  // NOTE: The idea behind LogicalTrees is to provide a layer that undoes
+  // anti-syntactic ensugarings and encodings of scalac (i.e. ones that make scala.reflect trees
+  // lose resemblance to the original syntax of the program that they are modeling).
+  //
+  // The motivation for existence of this layer is the desire to make
+  // the scala.reflect > scala.meta converter as modular as possible.
+  // It turns out that it's really easy to turn the converter into spaghetti,
+  // so we need to be vigilant towards this danger. The approach that I like the most for now
+  // is to split the converter into: 1) LogicalTrees, 2) ToMtree.
+  // The former is this file, the latter is a trivial pattern match of the form:
+  // `case l.Something(a, b, c) => m.Something(convert(a), convert(b), convert(c))`.
+  //
+  // Now there can be multiple ways of exposing the extractors for ToMtree,
+  // but here I'm opting for one that has the lowest overhead:
+  // no intermediate data structures are created unless absolutely necessary,
+  // so the only thing that we have to do is to write Something.unapply methods and that's it
+  // (later on, we might optimize them to use name-based pattern matching ala Dmitry's backend interface).
+  //
+  // Guidelines for creating extractors:
+  //
+  // 1) Most m.Something nodes will need one or, much more rarely, more l.Something extractors that
+  //    should mirror the fields that m.Something accepts. For instance, the l.ClassDef extractor
+  //    returns not the 4 fields that are present in g.ClassDef (mods, name, tparams, impl),
+  //    but rather the 5 fields that are present in m.Defn.Class (mods, name, tparams, ctor, template).
+  //
+  // 2) Intermediate data structures should only be created when the correspoding scala.reflect concept
+  //    can't be modelled as a tree (and therefore can't be processed in a modular fashion, because
+  //    it can't have attachments, which at the very least means that it can't have parent links).
+  //    E.g. we don't have `case class PrimaryCtorDef(...)`, because all the necessary information
+  //    can be figured out from the corresponding g.DefDef (possibly requiring additional attachments).
+  //    But we do have `case class Modifiers(...)`, because g.Modifiers isn't a tree, so we can't really
+  //    adorn it with additional metadata that will help the converter.
+  //
+  // 3) Since we generally don't create intermediate data structures, the unapply methods in extractors
+  //    should have comments that explain the fields that they are extracting.
+  //
+  // 4) Extractors and supporting intermediate data structures should be created in the same order
+  //    that the corresponding AST nodes in scala/meta/Trees.scala are in.
+  //
+  // 5) Quite often, there comes a situation when it is impossible to write an extractor
+  //    that makes a decision solely on the basis of the tree being inspected. For instance,
+  //    just by looking at a g.DefDef, it is impossible to figure out whether it's a primary or a secondary ctor.
+  //    A useful pattern to handle these situations is to use ROLES (see the very end of the file)
+  //    to classify trees when extracting their parents and then save this information as attachments.
+  //
+  // 6) It is disallowed to use attachments (or the metadata mechanism based on attachments)
+  //    in extractor bodies. If there is a necessity to pass custom data between extractors,
+  //    one should use ROLES (see #5 above).
+  //
+  // Source code that one might find helpful in implementing extractors:
+  //
+  // 1) Ensugar.scala (the resugaring module of the previous implementation of scalahost).
+  //    Contains several dozen clearly modularized recipes for resugarings.
+  //    Want to know what synthetic members are generated for lazy abstract vals?
+  //    What about default parameters on class constructors? It's all there.
+  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/foundation/src/main/scala/org/scalameta/reflection/Ensugar.scala
+  //
+  // 2) ToMtree.scala (the converter module of the previous implementation of scalahost).
+  //    Transforms scala.reflect's encodings of Scala syntax into scala.meta.
+  //    Contains knowledge how to collapse multipart val/var definitions and other related stuff.
+  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/interface/src/main/scala/scala/meta/internal/hosts/scalac/converters/ToMtree.scala
+  //
+  // 3) ReificationSupport.scala (the quasiquote support module of scala/scala)
+  //    Contains various SyntacticXXX extractors that do things similar to our l.XXX extractors.
+  //    https://github.com/scala/scala/blob/1fbce4612c21a4d0c553ea489b4765494828c09f/src/reflect/scala/reflect/internal/ReificationSupport.scala
+
   implicit class RichFoundationHelperName(name: g.Name) {
     def isAnonymous = {
       val isTermPlaceholder = name.isTermName && name.startsWith(nme.FRESH_TERM_NAME_PREFIX)

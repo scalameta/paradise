@@ -8,6 +8,20 @@ import scala.compat.Platform.EOL
 import scala.meta.prettyprinters._
 import scala.{meta => m}
 
+// This module exposes a method that can wrap scala.reflect trees
+// into equivalent scala.meta trees.
+//
+// Unlike in the previous implementation, we don't care
+// about preserving syntactic details of the original code:
+// we just produce scala.meta trees for everything that we see
+// (desugared forms or non-desugared forms alike),
+// so that the result of the conversion captures all the semantics of the original code.
+//
+// In order to obtain a scala.meta tree that combines syntactic and semantic precision,
+// you will need to use a dedicated module called `mergeTrees`
+// that is capable of merging syntactically precise trees (obtained from parsing)
+// and semantically precise trees (obtain from converting).
+
 trait ToMtree extends Enrichments
               with ConvertersToolkit { self =>
   protected implicit class XtensionGtreeToMtree(gtree: g.Tree) {
