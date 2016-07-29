@@ -143,13 +143,13 @@ trait ToMtree extends Enrichments
 
               case l.PatExtract(lref, ltargs, largs) =>
                 val mref = lref.toMtree[m.Term.Ref]
-                val mtargs = ltargs.toMtrees[m.Pat.Type] // todo replaced
-              val margs = largs.toMtrees[m.Pat.Arg]
+                val mtargs = ltargs.toMtrees[m.Pat.Type] // dveim replaced
+                val margs = largs.toMtrees[m.Pat.Arg]
                 m.Pat.Extract(mref, mtargs, margs)
 
               case l.PatTyped(llhs, lrhs) =>
                 val mlrhs = llhs.toMtree[m.Pat]
-                val mrhs = lrhs.toMtree[m.Pat.Type] // todo replaced
+                val mrhs = lrhs.toMtree[m.Pat.Type] // dveim replaced
                 m.Pat.Typed(mlrhs, mrhs)
 
               // ============ LITERALS ============
@@ -196,8 +196,8 @@ trait ToMtree extends Enrichments
                 val mmods = lmods.toMtrees[m.Mod]
                 val mname = lname.toMtree[m.Type.Name]
                 val mtparams = ltparams.toMtrees[m.Type.Param]
-                val mctor = lctor.toMtree[m.Ctor.Primary] // todo was ??? for some reason
-              val mimpl = limpl.toMtree[m.Template]
+                val mctor = lctor.toMtree[m.Ctor.Primary] // dveim was ??? for some reason
+                val mimpl = limpl.toMtree[m.Template]
                 m.Defn.Trait(mmods, mname, mtparams, mctor, mimpl)
 
               case l.ObjectDef(lmods, lname, limpl) =>
@@ -237,8 +237,8 @@ trait ToMtree extends Enrichments
 
               case l.Parent(ltpt, lctor, largss) =>
                 val mtpt = ltpt.toMtree[m.Type]
-                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name]) // todo why .require[m.Term] ???
-              val margss = largss.toMtreess[m.Term.Arg]
+                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name]) // dveim why was .require[m.Term] ?
+                val margss = largss.toMtreess[m.Term.Arg]
                 margss.foldLeft(mctor)((mcurr, margs) => {
                   m.Term.Apply(mcurr, margs)
                 })

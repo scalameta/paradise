@@ -62,7 +62,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
 
     implicit class RichNameTree(tree: Tree) {
       def displayName: String = tree match {
-        case tree: ModuleDef if tree.name == nme.PACKAGE => unreachable(debug(tree, showRaw(tree))) // todo was abort(tree)
+        case tree: ModuleDef if tree.name == nme.PACKAGE => unreachable(debug(tree, showRaw(tree))) // dveim was abort(tree)
         case tree: NameTree => tree.name.displayName
         case This(name) => name.displayName // NOTE: This(tpnme.EMPTY) is also accounted for
         case Super(_, name) => name.displayName
@@ -525,7 +525,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
         val lparents = parents.zipWithIndex.map { case (parent, i) =>
           val applied = dissectApplied(parent)
           val syntacticArgss = applied.argss
-          val argss = if (syntacticArgss.isEmpty) List(List()) // todo don't forget semanticArgss later
+          val argss = if (syntacticArgss.isEmpty) List(List()) // todo dveim don't forget semanticArgss later
                       else syntacticArgss
           val lparent = argss.foldLeft(parent)((curr, args) => g.Apply(curr, args))
           lparent.set(new SupercallRole)
