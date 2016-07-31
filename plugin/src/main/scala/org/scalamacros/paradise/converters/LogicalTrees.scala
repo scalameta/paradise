@@ -232,6 +232,23 @@ trait LogicalTrees { self: ConvertersToolkit =>
       }
     }
 
+    object TermNew {
+      def unapply(tree: g.Tree): Option[g.Template] = tree match {
+        case tree: g.New =>
+          ???
+
+        case g.Apply(g.Select(g.New(ident), nme.CONSTRUCTOR), args) =>
+
+          val parents = List(g.Apply(ident, args))
+          val valDef = noSelfType
+          val body = List(g.DefDef(g.Modifiers(), nme.CONSTRUCTOR, List(), List(List()), g.TypeTree(), g.Block(List(pendingSuperCall), g.Literal(g.Constant(())))))
+
+          Some(g.Template(parents, valDef, body))
+
+        case _ => None
+      }
+    }
+
     trait TermParamName extends Name
 
     object TermParamDef {
@@ -939,11 +956,11 @@ trait LogicalTrees { self: ConvertersToolkit =>
     def mark[U <: g.ValDef](tree: U) = tree.set(ParamLoc)
   }
 
-  @role private class SelfRole(lowner: l.Name) extends Role[g.ValDef]
+  @role private class SelfRole(lowner: g.Tree) extends Role[g.ValDef]
   object SelfRole {
     def get(tree: g.ValDef): Option[SelfRole] = {
       if (!tree.is(SelfLoc)) return None
-      val lowner = tree.metadata("logicalOwner").asInstanceOf[l.Name]
+      val lowner = tree.metadata("logicalOwner").asInstanceOf[g.Tree]
       Some(SelfRole(lowner))
     }
     def set[U <: g.ValDef](tree: U, c: SelfRole): U = {
@@ -1034,10 +1051,11 @@ trait LogicalTrees { self: ConvertersToolkit =>
 
   // ============ ROLES (TEMPLATE) ============
 
-  @role private class TemplateRole(lowner: l.Name) extends Role[g.Template]
+  @role private class TemplateRole(lowner: g.Tree) extends Role[g.Template]
   object TemplateRole {
     def get(tree: g.Template): Option[TemplateRole] = {
-      val lowner = tree.metadata("logicalOwner").asInstanceOf[l.Name]
+      if (!tree.hasMetadata("logicalOwner")) return Some(TemplateRole(g.EmptyTree))
+      val lowner = tree.metadata("logicalOwner").asInstanceOf[g.Tree]
       Some(TemplateRole(lowner))
     }
     def set[U <: g.Template](tree: U, c: TemplateRole): U = {

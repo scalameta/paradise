@@ -59,7 +59,7 @@ trait ToMtree extends Enrichments
                 val mname = lname.toMtree[m.Term.Name]
                 m.Term.Select(mpre, mname)
 
-              case l.TermApply(lfun, largs) =>
+              case l.TermApply(lfun, largs) if !termSelectContainsConstructor(lfun) =>
                 val mfun = lfun.toMtree[m.Term]
                 val margs = largs.toMtrees[m.Term]
                 m.Term.Apply(mfun, margs)
@@ -98,6 +98,10 @@ trait ToMtree extends Enrichments
                 val mcond = lcond.toMtree[m.Term]
                 val mbody = lbody.toMtree[m.Term]
                 m.Term.While(mcond, mbody)
+
+              case l.TermNew(ltempl) =>
+                val mtempl = ltempl.toMtree[m.Template]
+                m.Term.New(mtempl)
 
               case l.TermParamDef(lmods, lname, ltpt, ldefault) =>
                 val mmods = lmods.toMtrees[m.Mod]
@@ -264,6 +268,9 @@ trait ToMtree extends Enrichments
 
               // ============ MODIFIERS ============
 
+              case l.Annotation(lannot) =>
+                m.Mod.Annot(lannot.toMtree[m.Term])
+
               // ============ ODDS & ENDS ============
 
               case l.CaseDef(lpat, lguard, lbody) =>
@@ -298,7 +305,7 @@ trait ToMtree extends Enrichments
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion) = (gtree0, g.EmptyTree)
-          val convertedTree = converter(gtree, gexpansion) //
+          val convertedTree = converter(gtree, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree = maybeTypecheckedMtree
           if (classTag[T].runtimeClass.isAssignableFrom(maybeIndexedMtree.getClass)) {
@@ -325,15 +332,15 @@ trait ToMtree extends Enrichments
         }
       }
 
+      def termSelectContainsConstructor(lfun: g.Tree): Boolean = lfun match {
+        case g.Select(_, g.nme.CONSTRUCTOR) => true
+        case _ => false
+      }
+
       def fail(diagnostics: String, ex: Option[Throwable] = None): Nothing = {
         val s_backtrace = backtrace.map(gtree => {
-          def briefPrettyprint(gtree: g.Tree): String = {
-            var result = gtree.toString.replace("\n", " ")
-            if (result.length > 60) result = result.take(60) + "..."
-            result
-          }
           val prefix = gtree.productPrefix
-          val details = briefPrettyprint(gtree)
+          val details = gtree.toString()
           s"($prefix) $details"
         }).mkString(EOL)
         throw new ConvertException(backtrace.head, s"$diagnostics$EOL$s_backtrace", ex)
