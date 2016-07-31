@@ -15,8 +15,8 @@ trait Expanders {
   import scala.reflect.internal.Mode._
   import scala.reflect.runtime.ReflectionUtils
   import analyzer.{Namer => NscNamer}
+  import scala.{meta => m}
   import scala.meta.{Input => MetaInput, Position => MetaPosition}
-  import scala.meta.{Tree => MetaTree, Source => MetaSource, Transformer => MetaTransformer}
   import scala.meta.internal.prettyprinters.{Positions => MetaPositions}
 
   def mkExpander(namer0: NscNamer) = new { val namer: NscNamer = namer0 } with Namer with Expander
@@ -83,16 +83,12 @@ trait Expanders {
 
       def expand(): Option[Tree] = {
         try {
-          def toMeta(tree: Tree): MetaTree = {
-            tree.toMtree
-          }
-
           val treeInfo.Applied(Select(New(_), nme.CONSTRUCTOR), targs, vargss) = annotationTree
-          val metaTargs = targs.map(toMeta)
-          val metaVargss = vargss.map(_.map(toMeta))
+          val metaTargs = targs.map(_.toMtree[m.Type])
+          val metaVargss = vargss.map(_.map(_.toMtree[m.Term]))
           val metaExpandees = {
             expandees.map { expandee =>
-              toMeta(expandee).transform {
+              expandee.toMtree[m.Stat].transform {
                 // TODO: detect and remove just annotteeTree
                 case defn: scala.meta.Decl.Val => defn.copy(mods = filterMods(defn.mods))
                 case defn: scala.meta.Decl.Var => defn.copy(mods = filterMods(defn.mods))
@@ -134,13 +130,13 @@ trait Expanders {
           val metaExpansion = {
             // NOTE: this method is here for correct stacktrace unwrapping
             def macroExpandWithRuntime() = {
-              try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[MetaTree]
+              try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[m.Tree]
               catch {
                 case ex: Throwable =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
                   realex match {
                     case ex: ControlThrowable => throw ex
-                    case _ => MacroGeneratedException(annotationTree, realex)
+                    case e => MacroGeneratedException(annotationTree, realex)
                   }
               }
             }

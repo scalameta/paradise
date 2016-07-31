@@ -576,7 +576,12 @@ trait LogicalTrees { self: ConvertersToolkit =>
     // ============ TEMPLATES ============
 
     object Template {
-      def unapply(tree: g.Template): Some[(List[g.Tree], List[g.Tree], g.ValDef, List[g.Tree])] = {
+      def unapply(tree0: g.Template): Some[(List[g.Tree], List[g.Tree], g.ValDef, List[g.Tree])] = {
+        def containsSyntheticAnyRef(tree: g.Tree): Boolean = tree match {
+          case g.Select(scala: g.Ident, g.TypeName("AnyRef")) if scala.symbol == definitions.ScalaPackage => true
+          case _ => false
+        }
+        val tree = g.Template(tree0.parents.filterNot(containsSyntheticAnyRef), tree0.self, tree0.body)
         def indexOfFirstCtor(trees: List[g.Tree]) = trees.indexWhere { case LowlevelCtor(_, _, _) => true; case _ => false }
         object LowlevelCtor {
           def unapply(tree: g.Tree): Option[(List[List[g.ValDef]], List[g.Tree], List[List[g.Tree]])] = tree match {
