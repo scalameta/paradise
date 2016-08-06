@@ -614,7 +614,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
           val syntacticArgss = applied.argss
           val argss = if (syntacticArgss.isEmpty) List(List()) // todo dveim don't forget semanticArgss later
                       else syntacticArgss
-          val lparent = argss.foldLeft(parent)((curr, args) => g.Apply(curr, args))
+          val lparent = argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args))
           lparent.set(new SupercallRole)
         }
         val lstats = templateStats(stats)

@@ -281,8 +281,8 @@ trait ToMtree extends Enrichments
                 val mimportees = lselectors.map {
                   case l.ImportSelector(g.termNames.WILDCARD, g.termNames.NO_NAME) => m.Importee.Wildcard()
                   case l.ImportSelector(name, g.termNames.NO_NAME) => m.Importee.Name(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name, rename) => m.Importee.Rename(name.toMtree[m.Name.Indeterminate], rename.toMtree[m.Name.Indeterminate])
                   case l.ImportSelector(name, g.termNames.WILDCARD) => m.Importee.Unimport(name.toMtree[m.Name.Indeterminate])
+                  case l.ImportSelector(name, rename) => m.Importee.Rename(name.toMtree[m.Name.Indeterminate], rename.toMtree[m.Name.Indeterminate])
                 }
 
                 m.Import(List(m.Importer(mname, mimportees)))
