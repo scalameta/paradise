@@ -99,8 +99,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
     def displayName = {
       // NOTE: "<empty>", the internal name for empty package, isn't a valid Scala identifier, so we hack around
-      if (name == rootMirror.EmptyPackage.name) "_empty_"
-      else if (name == rootMirror.EmptyPackageClass.name) "_empty_"
+      if (name == null || name == rootMirror.EmptyPackage.name || name == rootMirror.EmptyPackageClass.name) "_empty_"
       // TODO: why did we need this in the past?
       // else if (name.isAnonymous) "_"
       else name.decodedName.toString
@@ -111,6 +110,8 @@ trait LogicalTrees { self: ConvertersToolkit =>
     // ============ NAMES ============
 
     trait Name extends Tree
+
+    trait QualifierName extends Name
 
     case class AnonymousName() extends Name with TermParamName with TypeParamName with QualifierName
     object AnonymousName {
@@ -123,8 +124,6 @@ trait LogicalTrees { self: ConvertersToolkit =>
         l.IndeterminateName(value)
       }
     }
-
-    trait QualifierName extends Name
 
     implicit class RichNameTree(tree: Tree) {
       def displayName: String = tree match {
@@ -783,6 +782,20 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
 
     // ============ ODDS & ENDS ============
+
+    case class ImportSelector(name: l.QualifierName, rename: l.QualifierName)
+
+    object Import {
+      def unapply(tree: g.Import): Option[(g.Tree, List[l.ImportSelector])] = {
+        val g.Import(expr, selectors) = tree
+        val lname = expr
+        val lselectors = selectors.map {
+          case g.ImportSelector(name, _, rename, _) =>
+            l.ImportSelector(l.IndeterminateName(name.displayName), l.IndeterminateName(rename.displayName))
+        }
+        Some(lname, lselectors)
+      }
+    }
 
     object CaseDef {
       def unapply(tree: g.CaseDef): Option[(g.Tree, Option[g.Tree], g.Tree)] = {
