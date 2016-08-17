@@ -1,7 +1,7 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package converters
 
-import org.scalamacros.paradise.reflect.{Metadata, Enrichments}
+import org.scalameta.paradise.reflect.{Metadata, Enrichments}
 
 import scala.reflect.internal.Trees
 

@@ -1,4 +1,4 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package typechecker
 
 import org.scalameta.invariants._
@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.tools.nsc.typechecker.ParadiseAnalyzer
 import scala.tools.nsc.interpreter.{ReplGlobal => NscReplGlobal}
 import scala.tools.nsc.interactive.{Global => NscInteractiveGlobal, InteractiveAnalyzer => NscInteractiveAnalyzer}
-import org.scalamacros.paradise.{Plugin => ParadisePlugin}
+import org.scalameta.paradise.{Plugin => ParadisePlugin}
 
 trait HijackAnalyzer {
   self: ParadisePlugin =>

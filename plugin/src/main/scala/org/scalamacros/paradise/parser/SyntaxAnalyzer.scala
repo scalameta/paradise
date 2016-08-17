@@ -1,4 +1,4 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package parser
 
 import scala.language.reflectiveCalls

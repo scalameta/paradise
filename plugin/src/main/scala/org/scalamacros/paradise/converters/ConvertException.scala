@@ -1,4 +1,4 @@
-package org.scalamacros.paradise.converters
+package org.scalameta.paradise.converters
 
 import org.scalameta.data._
 

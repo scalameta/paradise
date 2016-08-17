@@ -81,6 +81,7 @@ object build extends Build {
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
     libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
+    // NOTE: here we depend on the old paradise to build the new one. this is intended.
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     test in assembly := {},
     logLevel in assembly := Level.Error,

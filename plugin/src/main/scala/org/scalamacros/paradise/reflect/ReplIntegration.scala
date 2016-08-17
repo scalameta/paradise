@@ -1,4 +1,4 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package reflect
 
 import scala.tools.nsc.interpreter._

@@ -1,7 +1,7 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package converters
 
-import org.scalamacros.paradise.reflect._
+import org.scalameta.paradise.reflect._
 import scala.collection.immutable.Seq
 import scala.reflect.{classTag, ClassTag}
 import scala.compat.Platform.EOL

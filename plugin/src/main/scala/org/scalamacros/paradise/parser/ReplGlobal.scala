@@ -1,8 +1,8 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package parser
 
 import scala.tools.nsc.interpreter.{ReplGlobal => NscReplGlobal, _}
-import org.scalamacros.paradise.parser.{SyntaxAnalyzer => ParadiseSyntaxAnalyzer}
+import org.scalameta.paradise.parser.{SyntaxAnalyzer => ParadiseSyntaxAnalyzer}
 
 trait ReplGlobal extends NscReplGlobal { self =>
   // TODO: classloader happy meal!!

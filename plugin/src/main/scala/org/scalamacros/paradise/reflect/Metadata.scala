@@ -1,7 +1,7 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package reflect
 
-import org.scalamacros.paradise.converters.ConvertersToolkit
+import org.scalameta.paradise.converters.ConvertersToolkit
 
 trait Metadata {
   self: ConvertersToolkit =>
