@@ -235,7 +235,9 @@ trait ToMtree extends Enrichments
 
               case l.PrimaryCtorDef(lmods, lname, lparamss) =>
                 val mmods = lmods.toMtrees[m.Mod]
-                val mname = lname.toMtree[m.Ctor.Name]
+                // TODO: fixme https://github.com/xeno-by/scalameta/blob/7b9632ff889268a1c8c7c71432998e553146eab0/scalameta/parsers/src/main/scala/scala/meta/internal/parsers/ScalametaParser.scala#L3096
+                // val mname = lname.toMtree[m.Ctor.Name]
+                val mname = m.Ctor.Name("this")
                 val mparamss = lparamss.toMtreess[m.Term.Param]
                 m.Ctor.Primary(mmods, mname, mparamss)
 
