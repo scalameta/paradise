@@ -71,7 +71,6 @@ trait Expanders {
       extractAndValidateExpansions(original, annotationTree, () => onlyIfExpansionAllowed(expand()))
     }
 
-    // TODO: a full-fledged reflect <-> meta converter is necessary for robust operation here
     def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
       def filterMods(mods: Seq[scala.meta.Mod]) =
         mods.filter {
