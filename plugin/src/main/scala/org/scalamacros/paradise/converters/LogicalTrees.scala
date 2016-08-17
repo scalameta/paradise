@@ -890,6 +890,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
         stat match {
           case g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _) if !seenPrimaryCtor => seenPrimaryCtor = true // skip this
           case g.DefDef(_, nme.MIXIN_CONSTRUCTOR, _, _, _, _) => // and this
+          case g.ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => // and this
           case _ => lresult += stat
         }
       }
