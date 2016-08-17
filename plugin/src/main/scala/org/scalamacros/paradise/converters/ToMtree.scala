@@ -268,11 +268,11 @@ trait ToMtree extends Enrichments
 
               // ============ MODIFIERS ============
 
-              case l.Annotation(mapply) =>
-                // scala.reflect uses Term.New here, but we need only it's parent
-                val m.Term.New(m.Template(Nil, Seq(parent), m.Term.Param(Nil, m.Name.Anonymous(), None, None), Some(Nil))) =
-                  mapply.toMtree[m.Term.New]
-                m.Mod.Annot(parent)
+              case l.Annotation(lapply) =>
+                // scala.reflect uses Term.New here, but we need only its parent
+                val m.Term.New(m.Template(Nil, Seq(mparent), m.Term.Param(Nil, m.Name.Anonymous(), None, None), Some(Nil))) =
+                  lapply.toMtree[m.Term.New]
+                m.Mod.Annot(mparent)
 
               case l.Private(lwithin) =>
                 val mwithin = lwithin.toMtree[m.Name.Qualifier]
