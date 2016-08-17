@@ -274,6 +274,47 @@ trait ToMtree extends Enrichments
                   mapply.toMtree[m.Term.New]
                 m.Mod.Annot(parent)
 
+              case l.Private(lwithin) =>
+                val mwithin = lwithin.toMtree[m.Name.Qualifier]
+                m.Mod.Private(mwithin)
+
+              case l.Protected(lwithin) =>
+                val mwithin = lwithin.toMtree[m.Name.Qualifier]
+                m.Mod.Protected(mwithin)
+
+              case l.Implicit() =>
+                m.Mod.Implicit()
+
+              case l.Final() =>
+                m.Mod.Final()
+
+              case l.Sealed() =>
+                m.Mod.Sealed()
+
+              case l.Override() =>
+                m.Mod.Override()
+
+              case l.Case() =>
+                m.Mod.Case()
+
+              case l.Abstract() =>
+                m.Mod.Abstract()
+
+              case l.Covariant() =>
+                m.Mod.Covariant()
+
+              case l.Contravariant() =>
+                m.Mod.Contravariant()
+
+              case l.Lazy() =>
+                m.Mod.Lazy()
+
+              case l.ValParam() =>
+                m.Mod.ValParam()
+
+              case l.VarParam() =>
+                m.Mod.VarParam()
+
               // ============ ODDS & ENDS ============
 
               case l.Import(lident, lselectors) =>
