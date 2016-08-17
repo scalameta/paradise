@@ -11,7 +11,7 @@ object build extends Build {
     scalaVersion := ScalaVersions.head,
     crossVersion := CrossVersion.full,
     version := "3.0.0-SNAPSHOT",
-    organization := "org.scalamacros",
+    organization := "org.scalameta",
     description := "Empowers production Scala compiler with latest macro developments",
     resolvers += Resolver.sonatypeRepo("snapshots"),
     resolvers += Resolver.sonatypeRepo("releases"),
@@ -81,6 +81,8 @@ object build extends Build {
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
     libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
+    // NOTE: here we depend on the old paradise to build the new one. this is intended.
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     test in assembly := {},
     logLevel in assembly := Level.Error,
     jarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",

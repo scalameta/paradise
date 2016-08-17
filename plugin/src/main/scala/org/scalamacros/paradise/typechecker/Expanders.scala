@@ -1,4 +1,4 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package typechecker
 
 trait Expanders {
@@ -15,8 +15,8 @@ trait Expanders {
   import scala.reflect.internal.Mode._
   import scala.reflect.runtime.ReflectionUtils
   import analyzer.{Namer => NscNamer}
+  import scala.{meta => m}
   import scala.meta.{Input => MetaInput, Position => MetaPosition}
-  import scala.meta.{Tree => MetaTree, Source => MetaSource, Transformer => MetaTransformer}
   import scala.meta.internal.prettyprinters.{Positions => MetaPositions}
 
   def mkExpander(namer0: NscNamer) = new { val namer: NscNamer = namer0 } with Namer with Expander
@@ -71,7 +71,6 @@ trait Expanders {
       extractAndValidateExpansions(original, annotationTree, () => onlyIfExpansionAllowed(expand()))
     }
 
-    // TODO: a full-fledged reflect <-> meta converter is necessary for robust operation here
     def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
       def filterMods(mods: Seq[scala.meta.Mod]) =
         mods.filter {
@@ -83,31 +82,12 @@ trait Expanders {
 
       def expand(): Option[Tree] = {
         try {
-          val input = original.pos.source
-          val metaInput = {
-            if (input.file.file != null) MetaInput.File(input.file.file)
-            else MetaInput.String(new String(input.content)) // NOTE: can happen in REPL or in custom Global
-          }
-          val metaSource = metaInput.parse[MetaSource].get
-          def toMeta(tree: Tree): MetaTree = {
-            var minTree: MetaTree = null
-            def captures(metaPos: MetaPosition, pos: Position) = metaPos.start.offset <= pos.point && pos.point <= metaPos.end.offset
-            def updatesMin(metaPos: MetaPosition, minPos: MetaPosition) = metaPos.end.offset - metaPos.start.offset < minPos.end.offset - minPos.start.offset
-            metaSource.traverse {
-              case metaTree: MetaTree if metaTree != metaSource && metaTree.is[scala.meta.Defn] && captures(metaTree.pos, tree.pos) && (minTree == null || updatesMin(metaTree.pos, minTree.pos)) =>
-                minTree = metaTree
-            }
-            if(minTree == null)
-              sys.error(s"fatal error: couldn't find ${tree.pos.toString} in ${metaSource.show[MetaPositions]}")
-            minTree
-          }
-
           val treeInfo.Applied(Select(New(_), nme.CONSTRUCTOR), targs, vargss) = annotationTree
-          val metaTargs = targs.map(toMeta)
-          val metaVargss = vargss.map(_.map(toMeta))
+          val metaTargs = targs.map(_.toMtree[m.Type])
+          val metaVargss = vargss.map(_.map(_.toMtree[m.Term]))
           val metaExpandees = {
             expandees.map { expandee =>
-              toMeta(expandee).transform {
+              expandee.toMtree[m.Stat].transform {
                 // TODO: detect and remove just annotteeTree
                 case defn: scala.meta.Decl.Val => defn.copy(mods = filterMods(defn.mods))
                 case defn: scala.meta.Decl.Var => defn.copy(mods = filterMods(defn.mods))
@@ -147,9 +127,8 @@ trait Expanders {
           val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == "apply$impl").get
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
-            // NOTE: this method is here for correct stacktrace unwrapping
-            def macroExpandWithRuntime() = {
-              try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[MetaTree]
+            macroExpandWithRuntime({
+              try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[m.Tree]
               catch {
                 case ex: Throwable =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
@@ -158,8 +137,7 @@ trait Expanders {
                     case _ => MacroGeneratedException(annotationTree, realex)
                   }
               }
-            }
-            macroExpandWithRuntime()
+            })
           }
 
           val stringExpansion = metaExpansion.toString
@@ -172,6 +150,10 @@ trait Expanders {
       }
       extractAndValidateExpansions(original, annotationTree, () => expand())
     }
+
+    // NOTE: this method is here for correct stacktrace unwrapping
+    // the name, the position in the file and the visibility are all critical
+    private def macroExpandWithRuntime[T](body: => T): T = body
 
     private def extractAndValidateExpansions(original: Tree, annotation: Tree, computeExpansion: () => Option[Tree]): Option[List[Tree]] = {
       val sym = original.symbol

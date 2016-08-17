@@ -1,10 +1,10 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 package parser
 
 import scala.tools.nsc.{Global => NscGlobal, Phase, SubComponent, Settings => NscSettings}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
 import scala.collection.mutable
-import org.scalamacros.paradise.parser.{SyntaxAnalyzer => ParadiseSyntaxAnalyzer, ReplGlobal => ParadiseReplGlobal}
+import org.scalameta.paradise.parser.{SyntaxAnalyzer => ParadiseSyntaxAnalyzer, ReplGlobal => ParadiseReplGlobal}
 import scala.tools.nsc.interpreter.{ReplGlobal => NscReplGlobal, _}
 import scala.reflect.internal.util.BatchSourceFile
 

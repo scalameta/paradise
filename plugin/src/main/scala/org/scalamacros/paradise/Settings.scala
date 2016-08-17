@@ -1,4 +1,4 @@
-package org.scalamacros.paradise
+package org.scalameta.paradise
 
 object Settings {
   class Setting[T](get: () => T, set: T => Unit) {
