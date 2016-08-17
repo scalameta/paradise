@@ -9,7 +9,5 @@ trait ConvertersToolkit extends Enrichments
                         with LogicalTrees
                         with Metadata {
   lazy val g: global.type = global
-  object l extends LogicalTrees {
-
-  }
+  object l extends LogicalTrees
 }

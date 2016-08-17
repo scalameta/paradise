@@ -233,9 +233,6 @@ trait LogicalTrees { self: ConvertersToolkit =>
 
     object TermNew {
       def unapply(tree: g.Tree): Option[g.Template] = tree match {
-        case tree: g.New =>
-          ???
-
         case g.Apply(g.Select(g.New(ident), nme.CONSTRUCTOR), args) =>
 
           val parents = List(g.Apply(ident, args))
