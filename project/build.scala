@@ -11,7 +11,7 @@ object build extends Build {
     scalaVersion := ScalaVersions.head,
     crossVersion := CrossVersion.full,
     version := "3.0.0-SNAPSHOT",
-    organization := "org.scalamacros_fake",
+    organization := "org.scalameta",
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     description := "Empowers production Scala compiler with latest macro developments",
     resolvers += Resolver.sonatypeRepo("snapshots"),
