@@ -127,19 +127,17 @@ trait Expanders {
           val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == "apply$impl").get
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
-            // NOTE: this method is here for correct stacktrace unwrapping
-            def macroExpandWithRuntime() = {
+            macroExpandWithRuntime({
               try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[m.Tree]
               catch {
                 case ex: Throwable =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
                   realex match {
                     case ex: ControlThrowable => throw ex
-                    case e => MacroGeneratedException(annotationTree, realex)
+                    case _ => MacroGeneratedException(annotationTree, realex)
                   }
               }
-            }
-            macroExpandWithRuntime()
+            })
           }
 
           val stringExpansion = metaExpansion.toString
@@ -152,6 +150,10 @@ trait Expanders {
       }
       extractAndValidateExpansions(original, annotationTree, () => expand())
     }
+
+    // NOTE: this method is here for correct stacktrace unwrapping
+    // the name, the position in the file and the visibility are all critical
+    private def macroExpandWithRuntime[T](body: => T): T = body
 
     private def extractAndValidateExpansions(original: Tree, annotation: Tree, computeExpansion: () => Option[Tree]): Option[List[Tree]] = {
       val sym = original.symbol
