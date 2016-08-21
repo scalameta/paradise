@@ -214,7 +214,9 @@ trait ToMtree extends Enrichments
                 val mmods = lmods.toMtrees[m.Mod]
                 val mname = lname.toMtree[m.Type.Name]
                 val mtparams = ltparams.toMtrees[m.Type.Param]
-                val mctor = lctor.toMtree[m.Ctor.Primary] // dveim was ??? for some reason
+                val mctor =
+                  if (lctor == g.EmptyTree) m.Ctor.Primary(Nil, m.Ctor.Name("this"), Nil)
+                  else lctor.toMtree[m.Ctor.Primary]
                 val mimpl = limpl.toMtree[m.Template]
                 m.Defn.Trait(mmods, mname, mtparams, mctor, mimpl)
 
