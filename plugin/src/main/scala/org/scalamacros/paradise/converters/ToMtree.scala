@@ -177,6 +177,14 @@ trait ToMtree extends Enrichments
 
               // ============ DECLS ============
 
+              case l.AbstractDefDef(lmods, lname, ltparams, lparamss, ltpt) =>
+                val mmods = lmods.toMtrees[m.Mod]
+                val mname = lname.toMtree[m.Term.Name]
+                val mtparams = ltparams.toMtrees[m.Type.Param]
+                val mparamss = lparamss.toMtreess[m.Term.Param]
+                val mtpt = ltpt.toMtree[m.Type]
+                m.Decl.Def(mmods, mname, mtparams, mparamss, mtpt)
+
               // ============ DEFNS ============
 
               case l.ValDef(lmods, lpats, ltpt, lrhs) =>

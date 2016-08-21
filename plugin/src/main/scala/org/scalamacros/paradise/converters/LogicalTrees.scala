@@ -402,8 +402,13 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
 
     object AbstractDefDef {
-      def unapply(tree: g.DefDef): Option[(List[l.Modifier], l.TermName, List[g.TypeDef], List[List[g.ValDef]], g.Tree, g.Tree)] = {
-        ???
+      def unapply(tree: g.DefDef): Option[(List[l.Modifier], l.TermName, List[g.TypeDef], List[List[g.ValDef]], g.Tree)] = {
+        if (!tree.is(AbstractMethodRole)) return None
+        val g.DefDef(_, _, tparams, paramss, tpt, rhs) = tree
+        require(tpt.nonEmpty && rhs.isEmpty)
+        val ltparams = applyBounds(tparams, paramss)
+        val lparamss = removeBounds(paramss)
+        Some((l.Modifiers(tree), l.TermName(tree), ltparams, lparamss, tpt))
       }
     }
 
@@ -600,10 +605,15 @@ trait LogicalTrees { self: ConvertersToolkit =>
         }
         val (rawEdefs, rest) = stats.span(isEarlyDef)
         val (gvdefs, etdefs) = rawEdefs.partition(isEarlyValDef)
-        val (fieldDefs, ctor @ LowlevelCtor(_, lvdefs, superArgss) :: body) = rest.splitAt(indexOfFirstCtor(rest))
-        val evdefs = gvdefs.zip(lvdefs).map {
-          case (gvdef @ g.ValDef(_, _, tpt, _), g.ValDef(_, _, _, rhs)) =>
-            copyValDef(gvdef)(tpt = tpt, rhs = rhs)
+        val (evdefs, userDefinedStats) = rest.splitAt(indexOfFirstCtor(rest)) match {
+          // TODO: superArgss are non-empty only in semantic mode
+          case (fieldDefs, ctor @ LowlevelCtor(_, lvdefs, superArgss) :: body) =>
+            (gvdefs.zip(lvdefs).map {
+              case (gvdef @ g.ValDef(_, _, tpt, _), g.ValDef(_, _, _, rhs)) =>
+                copyValDef(gvdef)(tpt = tpt, rhs = rhs)
+            }, body)
+
+          case _ => (Nil, Nil)
         }
         val edefs = evdefs ::: etdefs
         val lparents = parents.zipWithIndex.map { case (parent, i) =>
@@ -614,7 +624,7 @@ trait LogicalTrees { self: ConvertersToolkit =>
           val lparent = argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args))
           lparent.set(new SupercallRole)
         }
-        val lstats = templateStats(stats)
+        val lstats = templateStats(userDefinedStats)
         Some((edefs, lparents, lself, lstats))
       }
     }
