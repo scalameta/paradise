@@ -162,7 +162,7 @@ object build extends Build {
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
     libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
-    libraryDependencies += "org.scalatest" % "scalatest_2.11.0-M3" % "1.9.1b" % "test",
+    libraryDependencies += "org.scalatest" % "scalatest_2.11" % "3.0.0" % "test",
     libraryDependencies += "org.scalacheck" % "scalacheck_2.11" % "1.10.2-SNAPSHOT" % "test",
     scalacOptions += "-Ywarn-unused-import",
     scalacOptions += "-Xfatal-warnings",
