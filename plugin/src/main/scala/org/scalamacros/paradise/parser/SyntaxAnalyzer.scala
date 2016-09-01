@@ -32,6 +32,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
     private val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
     private val MetaStatClass = rootMirror.getClassIfDefined("scala.meta.Stat")
     private val MetaTypeClass = rootMirror.getClassIfDefined("scala.meta.Type")
+    private val MetaPrefixParameter = TermName("prefix")
 
     private val INLINEkw = TermName("inline")
     private def isInline = in.token == IDENTIFIER && in.name == INLINEkw && skippingModifiers(in.token == DEF)
@@ -114,7 +115,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
     //   @inline def apply(defns: Any) = ???
     // }
     // object main$impl {
-    //   def apply$impl(defns: scala.meta.Tree): scala.meta.Tree = {
+    //   def apply$impl(prefix: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
     //     q"[[ body ]]"
     //   }
     // }
@@ -126,6 +127,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
               def isInline(tpt: Tree) = MetaInlineClass != NoSymbol && tpt.tpe != null && tpt.tpe.typeSymbol == MetaInlineClass
               val inlines = mods.annotations.collect{ case ann @ Apply(Select(New(tpt), nme.CONSTRUCTOR), Nil) if isInline(tpt) => ann }
               if (inlines.nonEmpty) {
+                def mkImplPrefix: ValDef = {
+                  atPos(stat.pos.focus)(ValDef(Modifiers(Flags.PARAM), MetaPrefixParameter, Ident(MetaStatClass), EmptyTree))
+                }
                 def mkImplVtparam(tdef: TypeDef): ValDef = {
                   atPos(tdef.pos.focus)(ValDef(Modifiers(Flags.PARAM), tdef.name.toTermName, Ident(MetaTypeClass), EmptyTree))
                 }
@@ -141,6 +145,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
                       // TODO: In the future, it would make sense to perform this transformation during typechecking.
                       // However that strategy is going to be much more complicated, so it doesn't fit this prototype.
                       case Apply(Ident(TermName("meta")), List(arg)) => super.transform(arg)
+                      case This(tpnme.EMPTY) => Ident(MetaPrefixParameter)
                       case tree => super.transform(tree)
                     }
                   }
@@ -148,8 +153,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
                 })
                 val signatureMethod = atPos(stat.pos.focus)(DefDef(mods, name, tparams, vparamss, tpt, Ident(Predef_???)))
                 val implMethod = atPos(stat.pos.focus)({
+                  val implVprefixss = List(List(mkImplPrefix))
                   val implVtparamss = if (tparams.nonEmpty) List(tparams.map(mkImplVtparam)) else Nil
-                  val implVparamss = implVtparamss ++ mmap(vparamss)(mkImplVparam)
+                  val implVparamss = implVprefixss ++ implVtparamss ++ mmap(vparamss)(mkImplVparam)
                   val implTpt = mkImplTpt(tpt)
                   val implBody = mkImplBody(rhs)
                   DefDef(NoMods, TermName(name + "$impl"), Nil, implVparamss, implTpt, implBody)

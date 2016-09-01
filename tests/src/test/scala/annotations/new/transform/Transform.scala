@@ -39,7 +39,7 @@ class Transform extends ToolSuite {
       |      main$impl.super.<init>();
       |      ()
       |    };
-      |    def apply$impl(defns: scala.meta.Stat): scala.meta.Stat = {
+      |    def apply$impl(prefix: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
       |      val obj: meta.Defn.Object = (defns: scala.meta.Stat @unchecked) match {
       |        case {
       |  final class $anon extends scala.AnyRef {

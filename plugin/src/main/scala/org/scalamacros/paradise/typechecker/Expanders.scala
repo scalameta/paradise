@@ -82,9 +82,7 @@ trait Expanders {
 
       def expand(): Option[Tree] = {
         try {
-          val treeInfo.Applied(Select(New(_), nme.CONSTRUCTOR), targs, vargss) = annotationTree
-          val metaTargs = targs.map(_.toMtree[m.Type])
-          val metaVargss = vargss.map(_.map(_.toMtree[m.Term]))
+          val metaPrefix = annotationTree.toMtree[m.Term.New]
           val metaExpandees = {
             expandees.map { expandee =>
               expandee.toMtree[m.Stat].transform {
@@ -104,11 +102,17 @@ trait Expanders {
               }
             }
           }
-          val metaArgs = metaTargs ++ metaVargss.flatten ++ List(metaExpandees match {
-            case Nil => abort("Something unexpected happened. Please report the maintainer.")
-            case tree :: Nil => tree
-            case list @ _ :: tail => scala.meta.Term.Block(list.asInstanceOf[Seq[scala.meta.Stat]])
-          })
+          val metaArgs = List(
+            // NOTE: Inline defs implementing macro annotations don't have arguments apart from the annottee.
+            // Type arguments and value arguments of macro annotations are passed in the prefix.
+            // See the discussion at https://github.com/scalameta/paradise/issues/11 for more details.
+            metaPrefix,
+            metaExpandees match {
+              case Nil => abort("Something unexpected happened. Please report to https://github.com/scalameta/paradise/issues.")
+              case tree :: Nil => tree
+              case list @ _ :: tail => m.Term.Block(list.asInstanceOf[Seq[m.Stat]])
+            }
+          )
 
           val classloader = {
             val m_findMacroClassLoader = analyzer.getClass.getMethods().find(_.getName == "findMacroClassLoader").get
