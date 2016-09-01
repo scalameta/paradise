@@ -267,7 +267,7 @@ trait ToMtree extends Enrichments
 
               case l.Parent(ltpt, lctor, largss) =>
                 val mtpt = ltpt.toMtree[m.Type]
-                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name]) // dveim why was .require[m.Term] ?
+                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name])
                 val margss = largss.toMtreess[m.Term.Arg]
                 margss.foldLeft(mctor)((mcurr, margs) => {
                   m.Term.Apply(mcurr, margs)
