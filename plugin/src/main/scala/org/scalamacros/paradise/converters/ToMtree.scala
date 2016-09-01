@@ -112,9 +112,6 @@ trait ToMtree extends Enrichments
 
               // ============ TYPES ============
 
-              //              case l.TypeTree(gtpe) =>
-              //                gtpe.toMtype
-
               case l.TypeName(lvalue) =>
                 m.Type.Name(lvalue)
 
