@@ -232,16 +232,13 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
 
     object TermNew {
-      def unapply(tree: g.Tree): Option[g.Template] = tree match {
-        case g.Apply(g.Select(g.New(ident), nme.CONSTRUCTOR), args) =>
-
-          val parents = List(g.Apply(ident, args))
-          val valDef = noSelfType
-          val body = List(g.DefDef(g.Modifiers(), nme.CONSTRUCTOR, List(), List(List()), g.TypeTree(), g.Block(List(pendingSuperCall), g.Literal(g.Constant(())))))
-
-          Some(g.Template(parents, valDef, body))
-
-        case _ => None
+      def unapply(tree: g.Tree): Option[l.Template] = tree match {
+        case g.Apply(g.Select(g.New(tpt), nme.CONSTRUCTOR), args) =>
+          val lparent = g.Apply(tpt, args).set(new SupercallRole)
+          val lself = g.ValDef(g.Modifiers(), g.nme.WILDCARD, g.TypeTree(), g.EmptyTree).set(SelfRole(g.EmptyTree))
+          Some(l.Template(Nil, List(lparent), lself, None))
+        case _ =>
+          None
       }
     }
 
@@ -470,32 +467,32 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
 
     object ClassDef {
-      def unapply(tree: g.ClassDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree, g.Template)] = {
+      def unapply(tree: g.ClassDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree, l.Template)] = {
         if (!tree.is(ClassRole)) return None
         val g.ClassDef(_, _, tparams, templ @ g.Template(_, _, body)) = tree
         val gprimaryctor = body.collectFirst { case ctor @ g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _) => ctor }.get
         val lprimaryctor = gprimaryctor.set(PrimaryCtorRole(l.TypeName(tree)))
         val ltparams = applyBounds(tparams, lprimaryctor.vparamss)
-        val ltempl = templ.set(TemplateRole(l.TypeName(tree)))
+        val ltempl = l.Template(templ, l.TypeName(tree))
         Some((l.Modifiers(tree), l.TypeName(tree), ltparams, lprimaryctor, ltempl))
       }
     }
 
     object TraitDef {
-      def unapply(tree: g.ClassDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree, g.Template)] = {
+      def unapply(tree: g.ClassDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree, l.Template)] = {
         if (!tree.is(TraitRole)) return None
         val g.ClassDef(_, _, tparams, templ) = tree
         val ltparams = applyBounds(tparams, Nil)
-        val ltempl = templ.set(TemplateRole(l.TypeName(tree)))
+        val ltempl = l.Template(templ, l.TypeName(tree))
         Some((l.Modifiers(tree), l.TypeName(tree), tparams, g.EmptyTree, ltempl))
       }
     }
 
     object ObjectDef {
-      def unapply(tree: g.ModuleDef): Option[(List[l.Modifier], l.TermName, g.Template)] = {
+      def unapply(tree: g.ModuleDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
         if (!tree.is(ObjectRole)) return None
         val g.ModuleDef(_, name, templ) = tree
-        val ltempl = templ.set(TemplateRole(l.TermName(tree)))
+        val ltempl = l.Template(templ, l.TermName(tree))
         Some((l.Modifiers(tree), l.TermName(tree), ltempl))
       }
     }
@@ -511,10 +508,10 @@ trait LogicalTrees { self: ConvertersToolkit =>
     }
 
     object PackageObjectDef {
-      def unapply(tree: g.PackageDef): Option[(List[l.Modifier], l.TermName, g.Template)] = {
+      def unapply(tree: g.PackageDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
         if (!tree.is(PackageObjectPackageRole)) return None
         val PackageObjectPackageRole(g.ModuleDef(_, _, templ)) = tree.get(PackageObjectPackageRole)
-        val ltempl = templ.set(TemplateRole(l.TermName(tree)))
+        val ltempl = l.Template(templ, l.TermName(tree))
         Some((Nil, ???, ltempl))
       }
     }
@@ -576,8 +573,9 @@ trait LogicalTrees { self: ConvertersToolkit =>
 
     // ============ TEMPLATES ============
 
+    case class Template(early: List[g.Tree], parents: List[g.Tree], self: g.ValDef, stats: Option[List[g.Tree]]) extends Tree
     object Template {
-      def unapply(tree0: g.Template): Some[(List[g.Tree], List[g.Tree], g.ValDef, List[g.Tree])] = {
+      def apply(tree0: g.Template, lowner: g.Tree): l.Template = {
         def containsSyntheticAnyRef(tree: g.Tree): Boolean = tree match {
           case g.Select(scala: g.Ident, g.TypeName("AnyRef")) if scala.symbol == definitions.ScalaPackage => true
           case _ => false
@@ -594,7 +592,6 @@ trait LogicalTrees { self: ConvertersToolkit =>
               None
           }
         }
-        val TemplateRole(lowner) = tree.get(TemplateRole)
         val g.Template(parents, self, stats) = tree
         val lself = {
           val result = {
@@ -625,8 +622,8 @@ trait LogicalTrees { self: ConvertersToolkit =>
           val lparent = argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args))
           lparent.set(new SupercallRole)
         }
-        val lstats = templateStats(userDefinedStats)
-        Some((edefs, lparents, lself, lstats))
+        val lstats = Some(templateStats(userDefinedStats)) // TODO: somehow guess Some vs None
+        l.Template(edefs, lparents, lself, lstats)
       }
     }
 
@@ -1073,20 +1070,6 @@ trait LogicalTrees { self: ConvertersToolkit =>
         Some(PackageObjectPackageRole(mdef))
       case _ =>
         None
-    }
-  }
-
-  // ============ ROLES (TEMPLATE) ============
-
-  @role private class TemplateRole(lowner: g.Tree) extends Role[g.Template]
-  object TemplateRole {
-    def get(tree: g.Template): Option[TemplateRole] = {
-      if (!tree.hasMetadata("logicalOwner")) return Some(TemplateRole(g.EmptyTree))
-      val lowner = tree.metadata("logicalOwner").asInstanceOf[g.Tree]
-      Some(TemplateRole(lowner))
-    }
-    def set[U <: g.Template](tree: U, c: TemplateRole): U = {
-      tree.appendMetadata("logicalOwner" -> c.lowner)
     }
   }
 
