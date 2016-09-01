@@ -1,5 +1,6 @@
 package org.scalameta.paradise
 package typechecker
+import scala.meta.Term
 
 trait Expanders {
   self: AnalyzerPlugins =>
@@ -75,16 +76,19 @@ trait Expanders {
       def expand(): Option[Tree] = {
         try {
           def filterMods(mods: Seq[m.Mod]) = {
+            def matchName(body: Term): Boolean = {
+              body match {
+                case m.Ctor.Ref.Name(name) => annotationSym.nameString == name
+                case m.Ctor.Ref.Select(_, tree) => matchName(tree)
+                case m.Term.Apply(tree, _) => matchName(tree)
+                case _ => abort("Annotation name case not handled")
+              }
+            }
+
             // TODO: Find via scala.tools.nsc
             def firstAnnot = mods.find {
               case m.Mod.Annot(body: m.Term) =>
-                body match {
-                  case m.Ctor.Ref.Name(name) => annotationSym.nameString == name
-                  case m.Ctor.Ref.Select(_, m.Ctor.Ref.Name(name)) => annotationSym.nameString == name
-                  case m.Term.Apply(m.Ctor.Ref.Name(name), Nil) => annotationSym.nameString == name
-                  case m.Term.Apply(m.Ctor.Ref.Select(_, m.Ctor.Ref.Name(name)), Nil) => annotationSym.nameString == name
-                  case _ => abort("Annotation name case not handled")
-                }
+                matchName(body)
               case _ => false
             }
 
