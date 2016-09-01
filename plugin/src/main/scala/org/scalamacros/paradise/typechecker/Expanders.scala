@@ -1,5 +1,6 @@
 package org.scalameta.paradise
 package typechecker
+import scala.meta.Term
 
 trait Expanders {
   self: AnalyzerPlugins =>
@@ -72,23 +73,33 @@ trait Expanders {
     }
 
     def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
-      def filterMods(mods: Seq[scala.meta.Mod]) =
-        mods.filter {
-          case scala.meta.Mod.Annot(body: scala.meta.Term) =>
-            false // TODO: Filter out only the current annotation
-          case _ =>
-            true
-        }
-
       def expand(): Option[Tree] = {
         try {
+          def filterMods(mods: Seq[m.Mod]) = {
+            def matchName(body: Term): Boolean = {
+              body match {
+                case m.Ctor.Ref.Name(name) => annotationSym.nameString == name
+                case m.Ctor.Ref.Select(_, tree) => matchName(tree)
+                case m.Term.Apply(tree, _) => matchName(tree)
+                case _ => abort("Annotation name case not handled")
+              }
+            }
+
+            // TODO: Find via scala.tools.nsc
+            def firstAnnot = mods.find {
+              case m.Mod.Annot(body: m.Term) =>
+                matchName(body)
+              case _ => false
+            }
+
+            mods diff firstAnnot.toSeq
+          }
           val treeInfo.Applied(Select(New(_), nme.CONSTRUCTOR), targs, vargss) = annotationTree
           val metaTargs = targs.map(_.toMtree[m.Type])
           val metaVargss = vargss.map(_.map(_.toMtree[m.Term]))
           val metaExpandees = {
             expandees.map { expandee =>
-              expandee.toMtree[m.Stat].transform {
-                // TODO: detect and remove just annotteeTree
+              expandee.toMtree[m.Stat] match {
                 case defn: scala.meta.Decl.Val => defn.copy(mods = filterMods(defn.mods))
                 case defn: scala.meta.Decl.Var => defn.copy(mods = filterMods(defn.mods))
                 case defn: scala.meta.Decl.Def => defn.copy(mods = filterMods(defn.mods))
