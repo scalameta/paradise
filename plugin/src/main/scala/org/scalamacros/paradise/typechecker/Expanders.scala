@@ -72,9 +72,9 @@ trait Expanders {
     }
 
     def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
-      def filterMods(mods: Seq[scala.meta.Mod]) =
+      def filterMods(mods: Seq[m.Mod]) =
         mods.filter {
-          case scala.meta.Mod.Annot(body: scala.meta.Term) =>
+          case m.Mod.Annot(body: m.Term) =>
             false // TODO: Filter out only the current annotation
           case _ =>
             true
@@ -89,18 +89,18 @@ trait Expanders {
             expandees.map { expandee =>
               expandee.toMtree[m.Stat].transform {
                 // TODO: detect and remove just annotteeTree
-                case defn: scala.meta.Decl.Val => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Decl.Var => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Decl.Def => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Decl.Type => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Val => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Var => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Def => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Macro => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Type => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Class => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Trait => defn.copy(mods = filterMods(defn.mods))
-                case defn: scala.meta.Defn.Object => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Decl.Val => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Decl.Var => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Decl.Def => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Decl.Type => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Val => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Var => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Def => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Macro => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Type => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Class => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Trait => defn.copy(mods = filterMods(defn.mods))
+                case defn: m.Defn.Object => defn.copy(mods = filterMods(defn.mods))
               }
             }
           }
