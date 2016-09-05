@@ -21,21 +21,22 @@ class NewRepl extends ReplSuite {
   //   """.stripMargin.trim)
   // }
 
-  test("new macro annotations compile with scala.meta") {
-    assert(repl("""
-      |import scala.meta._
-      |class main(x: Int) {
-      |  inline def apply(defns: Any) = ???
-      |}
-    """.stripMargin.trim) === """
-      |scala> import scala.meta._
-      |import scala.meta._
-      |
-      |scala> class main(x: Int) {
-      |  inline def apply(defns: Any) = ???
-      |}
-      |defined class main
-    """.stripMargin.trim)
-  }
+  // FIXME: issue #4
+  // test("new macro annotations compile with scala.meta") {
+  //   assert(repl("""
+  //     |import scala.meta._
+  //     |class main(x: Int) extends scala.annotation.StaticAnnotation {
+  //     |  inline def apply(defns: Any): Any = meta(???)
+  //     |}
+  //   """.stripMargin.trim) === """
+  //     |scala> import scala.meta._
+  //     |import scala.meta._
+  //     |
+  //     |scala> class main(x: Int) extends scala.annotation.StaticAnnotation {
+  //     |  inline def apply(defns: Any): Any = meta(???)
+  //     |}
+  //     |defined class main
+  //   """.stripMargin.trim)
+  // }
 }
 

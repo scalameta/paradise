@@ -14,6 +14,7 @@ import org.scalameta.paradise.reflect.Enrichments
 abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
   import global._
   import definitions._
+  import paradiseDefinitions._
 
   val runsAfter = List[String]()
   val runsRightAfter = None
@@ -29,10 +30,6 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
   private class ParadiseUnitParser(unit: global.CompilationUnit, patches: List[BracePatch]) extends UnitParser(unit, Nil) {
     def this(unit: global.CompilationUnit) = this(unit, Nil)
     // override def withPatches(patches: List[BracePatch]): UnitParser = new UnitParser(unit, patches)
-
-    private val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
-    private val MetaStatClass = rootMirror.getClassIfDefined("scala.meta.Stat")
-    private val MetaTypeClass = rootMirror.getClassIfDefined("scala.meta.Type")
 
     private val INLINEkw = TermName("inline")
     private def isInline = in.token == IDENTIFIER && in.name == INLINEkw && skippingModifiers(in.token == DEF)
@@ -108,11 +105,11 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
     // Do we want to have the synthetic $impl tag along in the original object?
     //
     // class main {
-    //   inline def apply(defns: Any) = body
+    //   inline def apply(defns: Any): Any = body
     // }
     // <=======>
     // class main {
-    //   @inline def apply(defns: Any) = ???
+    //   @inline def apply(defns: Any): Any = ???
     // }
     // object <"main".inlineModuleName> {
     //   def <"apply.inlineImplName">(<InlinePrefixParameterName>: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
@@ -140,16 +137,19 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
                   atPos(tpt.pos.focus)(Ident(MetaStatClass))
                 }
                 def mkImplBody(body: Tree): Tree = atPos(body.pos.focus)({
-                  object transformer extends Transformer {
-                    override def transform(tree: Tree): Tree = tree match {
-                      // TODO: In the future, it would make sense to perform this transformation during typechecking.
-                      // However that strategy is going to be much more complicated, so it doesn't fit this prototype.
-                      case Apply(Ident(TermName("meta")), List(arg)) => super.transform(arg)
-                      case This(tpnme.EMPTY) => Ident(InlinePrefixParameterName)
-                      case tree => super.transform(tree)
-                    }
+                  body match {
+                    case Apply(Ident(TermName("meta")), List(arg)) =>
+                      object transformer extends Transformer {
+                        override def transform(tree: Tree): Tree = tree match {
+                          case This(tpnme.EMPTY) => Ident(InlinePrefixParameterName)
+                          case tree => super.transform(tree)
+                        }
+                      }
+                      transformer.transform(arg)
+                    case _ =>
+                      syntaxError(body.pos.start, "implementation restriction: new-style (\"inline\") macros must have bodies consisting of a single meta block")
+                      body
                   }
-                  transformer.transform(body)
                 })
                 val signatureMethod = atPos(stat.pos.focus)(DefDef(mods, name, tparams, vparamss, tpt, Ident(Predef_???)))
                 val implMethod = atPos(stat.pos.focus)({

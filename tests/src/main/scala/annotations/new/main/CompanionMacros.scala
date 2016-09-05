@@ -6,7 +6,7 @@ import scala.meta._
 @compileTimeOnly("@classMacro not expanded")
 class classMacro extends scala.annotation.StaticAnnotation {
 
-  inline def apply(stats: Any): Stat = meta {
+  inline def apply(stats: Any): Any = meta {
     def extractClass(classDefn: Defn.Class): Stat = {
       val q"""
         ..$mods class $tname[..$tparams] ..$ctorMods (...$paramss) extends { ..$earlyStats } with ..$ctorcalls {

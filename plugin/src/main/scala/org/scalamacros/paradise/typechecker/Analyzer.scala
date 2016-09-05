@@ -3,14 +3,22 @@ package scala.tools.nsc.typechecker
 
 import scala.tools.nsc.Global
 import scala.tools.nsc.typechecker.{Analyzer => NscAnalyzer}
+import org.scalameta.paradise.reflect.Enrichments
 
-trait ParadiseAnalyzer extends NscAnalyzer {
+trait ParadiseAnalyzer extends NscAnalyzer with Enrichments {
   val global: Global
   import global._
+  import definitions._
+  import paradiseDefinitions._
 
   override def newTyper(context: Context) = new ParadiseTyper(context)
   class ParadiseTyper(context0: Context) extends Typer(context0) {
-    // TODO: Looks like we don't need to hijack the analyzer for a simple implementation to work.
-    // However, I'll still keep this here, because the hijack is likely to be useful soon.
+    override def typedDefDef(ddef: DefDef): DefDef = {
+      val ddef1 = super.typedDefDef(ddef)
+      if (ddef1.symbol.hasAnnotation(MetaInlineClass) && !ddef1.symbol.owner.isNewMacroAnnotation) {
+        typer.context.error(ddef1.pos, "implementation restriction: inline methods can only be used to define new-style macro annotations")
+      }
+      ddef1
+    }
   }
 }

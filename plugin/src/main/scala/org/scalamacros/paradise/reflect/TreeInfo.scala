@@ -6,6 +6,7 @@ trait TreeInfo {
 
   import global._
   import definitions._
+  import paradiseDefinitions._
   import build.{SyntacticClassDef, SyntacticTraitDef}
 
   implicit class ParadiseTreeInfo(treeInfo: global.treeInfo.type) {
@@ -18,11 +19,22 @@ trait TreeInfo {
       case _                                            => false
     }
 
-    def isMacroAnnotation(tree: ClassDef): Boolean = {
+    def isOldMacroAnnotation(tree: ClassDef): Boolean = {
       val clazz = tree.symbol
       def isAnnotation = clazz isNonBottomSubClass AnnotationClass
       def hasMacroTransformMethod = clazz.info.member(nme.macroTransform) != NoSymbol
       clazz != null && isAnnotation && hasMacroTransformMethod
+    }
+
+    def isNewMacroAnnotation(tree: ClassDef): Boolean = {
+      val clazz = tree.symbol
+      def isAnnotation = clazz isNonBottomSubClass AnnotationClass
+      def hasInlineApplyMethod = {
+        val apply = clazz.info.member(nme.apply)
+        apply.initialize
+        apply.hasAnnotation(MetaInlineClass)
+      }
+      clazz != null && isAnnotation && hasInlineApplyMethod
     }
 
     // TODO: no immediate idea how to write this in a sane way
