@@ -120,7 +120,20 @@ trait Expanders {
             m_findMacroClassLoader.invoke(analyzer).asInstanceOf[ClassLoader]
           }
           val annotationModuleClass = {
-            try Class.forName(annotationSym.fullName + "$impl$", true, classloader)
+            val annotationModule = annotationSym.owner.info.decl(annotationSym.name.inlineModuleName)
+            val annotationModuleClassName = {
+              // TODO: Copy/pasted from Macros.scala. I can't believe there's no better way of doing this.
+              def loop(sym: Symbol): String = sym match {
+                case sym if sym.isTopLevel =>
+                  val suffix = if (sym.isModule || sym.isModuleClass) "$" else ""
+                  sym.fullName + suffix
+                case sym =>
+                  val separator = if (sym.owner.isModuleClass) "" else "$"
+                  loop(sym.owner) + separator + sym.javaSimpleName.toString
+              }
+              loop(annotationModule)
+            }
+            try Class.forName(annotationModuleClassName, true, classloader)
             catch {
               case ex: Throwable =>
               issueNormalTypeError(annotationTree, MacroAnnotationNotExpandedMessage)(namer.context)
@@ -128,7 +141,7 @@ trait Expanders {
             }
           }
           val annotationModule = annotationModuleClass.getField("MODULE$").get(null)
-          val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == "apply$impl").get
+          val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == InlineAnnotationMethodName.inlineImplName.toString).get
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
             macroExpandWithRuntime({

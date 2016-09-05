@@ -15,14 +15,20 @@ trait AnalyzerPlugins extends Compilers
   import scala.reflect.internal.Flags._
   import analyzer._
   import analyzer.{Namer => NscNamer, AnalyzerPlugin => NscAnalyzerPlugin, MacroPlugin => NscMacroPlugin}
+  import definitions._
+  import paradiseDefinitions._
 
   object AnalyzerPlugin extends NscAnalyzerPlugin {
     override def pluginsTypeSig(tpe: Type, typer: Typer, tree: Tree, pt: Type) = {
       tree match {
         case Template(_, _, body) =>
           mkExpander(typer.namer).expandMacroAnnotations(body)
-        case cdef @ ClassDef(_, _, _, _) if { cdef.symbol.setInfo(tpe); treeInfo.isMacroAnnotation(cdef) } =>
-          mkCompiler(typer).typedMacroAnnotation(cdef)
+        case cdef @ ClassDef(_, _, _, _)
+        if { cdef.symbol.setInfo(tpe); treeInfo.isOldMacroAnnotation(cdef) } =>
+          mkCompiler(typer).typedOldMacroAnnotation(cdef)
+        case cdef @ ClassDef(_, _, _, _)
+        if { cdef.symbol.setInfo(tpe); treeInfo.isNewMacroAnnotation(cdef) } =>
+          mkCompiler(typer).typedNewMacroAnnotation(cdef)
         case _ =>
           // do nothing
       }

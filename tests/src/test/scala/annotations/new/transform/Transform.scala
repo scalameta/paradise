@@ -34,12 +34,12 @@ class Transform extends ToolSuite {
       |    };
       |    @scala.meta.internal.inline.inline def apply(defns: Any): Nothing = ???
       |  };
-      |  object main$impl extends scala.AnyRef {
-      |    def <init>(): main$impl.type = {
-      |      main$impl.super.<init>();
+      |  object main$inline extends scala.AnyRef {
+      |    def <init>(): main$inline.type = {
+      |      main$inline.super.<init>();
       |      ()
       |    };
-      |    def apply$impl(prefix: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
+      |    def apply(prefix: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
       |      val obj: meta.Defn.Object = (defns: scala.meta.Stat @unchecked) match {
       |        case {
       |  final class $anon extends scala.AnyRef {

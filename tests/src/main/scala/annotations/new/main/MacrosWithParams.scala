@@ -5,7 +5,7 @@ import scala.meta._
 
 @compileTimeOnly("@mainWithParams not expanded")
 class mainWithParams(greeting: String) extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Any) = meta {
+  inline def apply(defn: Any): Any = meta {
     val q"new $_($greeting)" = this
     val q"object $name { ..$stats }" = defn
     val main = q"""

@@ -7,41 +7,54 @@ trait Errors {
   import global._
   import analyzer._
   import ErrorUtils._
+  import definitions._
+  import paradiseDefinitions._
 
-  class ErrorGen(val typer: Typer) {
-    implicit val contextTyperErrorGen: Context = typer.infer.getContext
+  trait CommonErrorGen {
+    def typer: Typer
+    lazy implicit val contextTyperErrorGen: Context = typer.infer.getContext
 
-    def MacroAnnotationShapeError(clazz: Symbol) = {
-      val sym = clazz.info.member(nme.macroTransform)
-      var actualSignature = sym.toString
-      if (sym.isOverloaded) actualSignature += "(...) = ..."
-      else if (sym.isMethod) {
-        if (sym.typeParams.nonEmpty) {
-          def showTparam(tparam: Symbol) =
-            tparam.typeSignature match {
-              case tpe @ TypeBounds(_, _) => s"${tparam.name}$tpe"
-              case _ => tparam.name
-            }
-          def showTparams(tparams: List[Symbol]) = "[" + (tparams map showTparam mkString ", ") + "]"
-          actualSignature += showTparams(sym.typeParams)
-        }
-        if (sym.paramss.nonEmpty) {
-          def showParam(param: Symbol) = s"${param.name}: ${param.typeSignature}"
-          def showParams(params: List[Symbol]) = {
-            val s_mods = if (params.nonEmpty && params(0).hasFlag(scala.reflect.internal.Flags.IMPLICIT)) "implicit " else ""
-            val s_params = params map showParam mkString ", "
-            "(" + s_mods + s_params + ")"
+    implicit class XtensionSignature(meth: Symbol) {
+      def actualSignature: String = {
+        var result = meth.toString
+        if (meth.isOverloaded) result += "(...) = ..."
+        else if (meth.isMethod) {
+          if (meth.typeParams.nonEmpty) {
+            def showTparam(tparam: Symbol) =
+              tparam.typeSignature match {
+                case tpe @ TypeBounds(_, _) => s"${tparam.name}$tpe"
+                case _ => tparam.name
+              }
+            def showTparams(tparams: List[Symbol]) = "[" + (tparams map showTparam mkString ", ") + "]"
+            result += showTparams(meth.typeParams)
           }
-          def showParamss(paramss: List[List[Symbol]]) = paramss map showParams mkString ""
-          actualSignature += showParamss(sym.paramss)
+          if (meth.paramss.nonEmpty) {
+            def showParam(param: Symbol) = s"${param.name}: ${param.typeSignature}"
+            def showParams(params: List[Symbol]) = {
+              val s_mods = if (params.nonEmpty && params(0).hasFlag(scala.reflect.internal.Flags.IMPLICIT)) "implicit " else ""
+              val s_params = params map showParam mkString ", "
+              "(" + s_mods + s_params + ")"
+            }
+            def showParamss(paramss: List[List[Symbol]]) = paramss map showParams mkString ""
+            result += showParamss(meth.paramss)
+          }
+          result = result + ": " + meth.info.finalResultType.toString
+          if (meth.isTermMacro) result = result.replace("macro method", "def") + " = macro ..."
+          else result = result.replace("method", "def") + " = ..."
         }
-        if (sym.isTermMacro) actualSignature = actualSignature.replace("macro method", "def") + " = macro ..."
-        else actualSignature = actualSignature.replace("method", "def") + " = ..."
+        if (meth.hasAnnotation(MetaInlineClass)) {
+          result = "inline " + result
+          result = result.replace("...", "meta { ... }")
+        }
+        result
       }
+    }
+
+    protected def MacroAnnotationShapeError(clazz: Symbol, expected: String, actual: String) = {
       issueSymbolTypeError(clazz, s"""
         |macro annotation has wrong shape:
-        |  required: def macroTransform(annottees: Any*) = macro ...
-        |  found   : $actualSignature
+        |  required: $expected
+        |  found   : $actual
       """.trim.stripMargin)
     }
 
@@ -75,4 +88,25 @@ trait Errors {
     def MultipleParametersImplicitClassError(tree: Tree) =
       issueNormalTypeError(tree, "implicit classes must accept exactly one primary constructor parameter")
   }
+
+  trait OldErrorGen extends CommonErrorGen {
+    def OldMacroAnnotationShapeError(clazz: Symbol) = {
+      val meth = clazz.info.member(nme.macroTransform)
+      val expected = "def macroTransform(annottees: Any*): Any = macro ..."
+      val actual = meth.actualSignature
+      MacroAnnotationShapeError(clazz, expected, actual)
+    }
+  }
+
+  trait NewErrorGen extends CommonErrorGen {
+    def NewMacroAnnotationShapeError(clazz: Symbol) = {
+      val meth = clazz.info.member(nme.apply)
+      val param = meth.paramss match { case List(List(p)) => p.name.toString; case _ => "defn" }
+      val expected = s"inline def apply($param: Any): Any = meta { ... }"
+      val actual = meth.actualSignature.replace(": Nothing", "")
+      MacroAnnotationShapeError(clazz, expected, actual)
+    }
+  }
+
+  class ErrorGen(val typer: Typer) extends OldErrorGen with NewErrorGen
 }
