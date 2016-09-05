@@ -9,8 +9,9 @@ import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.reflect.internal.Flags // no wildcard import because of ambiguity with Tokens._
 import scala.reflect.internal.util.Collections._
 import scala.collection.mutable.ListBuffer
+import org.scalameta.paradise.reflect.Enrichments
 
-abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
+abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
   import global._
   import definitions._
 
@@ -32,7 +33,6 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
     private val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
     private val MetaStatClass = rootMirror.getClassIfDefined("scala.meta.Stat")
     private val MetaTypeClass = rootMirror.getClassIfDefined("scala.meta.Type")
-    private val MetaPrefixParameter = TermName("prefix")
 
     private val INLINEkw = TermName("inline")
     private def isInline = in.token == IDENTIFIER && in.name == INLINEkw && skippingModifiers(in.token == DEF)
@@ -96,9 +96,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
 
     // NOTE: Here's the sketch of the proposed translation scheme:
     //   * Retain the original signature with the body replaced by ???
-    //     (for the analogue of def macros, we can probably turn it into = macro name$impl`,
+    //     (for the analogue of def macros, we can probably turn it into = macro ...`,
     //     but for macro annotations it doesn't matter anyway, since it's invoked differently).
-    //   * Create a synthetic impl method name$impl that contains a macro context,
+    //   * Create a synthetic impl method that contains a macro context,
     //     replaces type parameters, value parameters as well as the return type with c.Tree.
     //   * Transplant the body to the synthetic method according to the high-friction principle.
     //     Namely: everything is wrapped in an enclosing quasiquote, meta calls are transformed into unquotes.
@@ -114,8 +114,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
     // class main {
     //   @inline def apply(defns: Any) = ???
     // }
-    // object main$impl {
-    //   def apply$impl(prefix: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
+    // object <"main".inlineModuleName> {
+    //   def <"apply.inlineImplName">(<InlinePrefixParameterName>: scala.meta.Stat)(defns: scala.meta.Stat): scala.meta.Stat = {
     //     q"[[ body ]]"
     //   }
     // }
@@ -128,7 +128,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
               val inlines = mods.annotations.collect{ case ann @ Apply(Select(New(tpt), nme.CONSTRUCTOR), Nil) if isInline(tpt) => ann }
               if (inlines.nonEmpty) {
                 def mkImplPrefix: ValDef = {
-                  atPos(stat.pos.focus)(ValDef(Modifiers(Flags.PARAM), MetaPrefixParameter, Ident(MetaStatClass), EmptyTree))
+                  atPos(stat.pos.focus)(ValDef(Modifiers(Flags.PARAM), InlinePrefixParameterName, Ident(MetaStatClass), EmptyTree))
                 }
                 def mkImplVtparam(tdef: TypeDef): ValDef = {
                   atPos(tdef.pos.focus)(ValDef(Modifiers(Flags.PARAM), tdef.name.toTermName, Ident(MetaTypeClass), EmptyTree))
@@ -145,7 +145,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
                       // TODO: In the future, it would make sense to perform this transformation during typechecking.
                       // However that strategy is going to be much more complicated, so it doesn't fit this prototype.
                       case Apply(Ident(TermName("meta")), List(arg)) => super.transform(arg)
-                      case This(tpnme.EMPTY) => Ident(MetaPrefixParameter)
+                      case This(tpnme.EMPTY) => Ident(InlinePrefixParameterName)
                       case tree => super.transform(tree)
                     }
                   }
@@ -158,7 +158,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
                   val implVparamss = implVprefixss ++ implVtparamss ++ mmap(vparamss)(mkImplVparam)
                   val implTpt = mkImplTpt(tpt)
                   val implBody = mkImplBody(rhs)
-                  DefDef(NoMods, TermName(name + "$impl"), Nil, implVparamss, implTpt, implBody)
+                  DefDef(NoMods, name.inlineImplName, Nil, implVparamss, implTpt, implBody)
                 })
                 (signatureMethod, implMethod)
               } else {
@@ -174,7 +174,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer {
               val syntheticCtor = atPos(stat.pos.focus)(DefDef(Modifiers(), termNames.CONSTRUCTOR, List(), List(List()), TypeTree(), Block(List(Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY), termNames.CONSTRUCTOR), List())), Literal(Constant(())))))
               syntheticCtor +: impls1.filter(_.nonEmpty)
             }
-            val implmdef = atPos(stat.pos.focus)(ModuleDef(NoMods, TermName(name + "$impl"), Template(List(Ident(TypeName("AnyRef"))), noSelfType, implmstats)))
+            val implmdef = atPos(stat.pos.focus)(ModuleDef(NoMods, name.inlineModuleName, Template(List(Ident(TypeName("AnyRef"))), noSelfType, implmstats)))
             List(stat1, implmdef)
           } else {
             List(stat)

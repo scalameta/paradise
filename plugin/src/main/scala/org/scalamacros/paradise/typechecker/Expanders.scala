@@ -120,7 +120,7 @@ trait Expanders {
             m_findMacroClassLoader.invoke(analyzer).asInstanceOf[ClassLoader]
           }
           val annotationModuleClass = {
-            try Class.forName(annotationSym.fullName + "$impl$", true, classloader)
+            try Class.forName(annotationSym.fullName.inlineModuleName + "$", true, classloader)
             catch {
               case ex: Throwable =>
               issueNormalTypeError(annotationTree, MacroAnnotationNotExpandedMessage)(namer.context)
@@ -128,7 +128,7 @@ trait Expanders {
             }
           }
           val annotationModule = annotationModuleClass.getField("MODULE$").get(null)
-          val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == "apply$impl").get
+          val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == InlineAnnotationMethodName.inlineImplName.toString).get
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
             macroExpandWithRuntime({

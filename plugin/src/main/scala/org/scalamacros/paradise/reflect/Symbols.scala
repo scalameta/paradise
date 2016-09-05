@@ -18,9 +18,9 @@ trait Symbols {
     def isNewMacroAnnotation = {
       sym.isClass && {
         val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
-        val applyMethod = sym.info.decl(TermName("apply"))
-        val applyImplMethod = sym.owner.info.decl(TermName(sym.name + "$impl")).info.decl(TermName("apply$impl"))
-        applyMethod != NoSymbol && applyMethod.initialize.annotations.exists(_.tpe.typeSymbol == MetaInlineClass) && applyImplMethod.exists
+        val annMethod = sym.info.decl(InlineAnnotationMethodName)
+        val annImplMethod = sym.owner.info.decl(sym.name.inlineModuleName).info.decl(InlineAnnotationMethodName.inlineImplName)
+        annMethod != NoSymbol && annMethod.initialize.annotations.exists(_.tpe.typeSymbol == MetaInlineClass) && annImplMethod.exists
       }
     }
     def isMacroAnnotation = isOldMacroAnnotation || isNewMacroAnnotation
