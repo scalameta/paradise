@@ -81,14 +81,16 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
     // TODO: In the future, it would make sense to perform this transformation during typechecking.
     // However that strategy is going to be much more complicated, so it doesn't fit this prototype.
 
-    override def topStat: PartialFunction[Token, List[Tree]] = {
-      case PACKAGE  =>
-        packageOrPackageObject(in.skipToken()) :: Nil
-      case IMPORT =>
-        in.flushDoc
-        importClause()
-      case _ if isAnnotation || isTemplateIntro || isModifier =>
-        joinComment(translateNestedInlineDefs(topLevelTmplDef))
+    override def topStatSeq(): List[Tree] = {
+      super.topStatSeq().flatMap(translateNestedInlineDefs)
+    }
+
+    override def templateStats(): List[Tree] = {
+      super.templateStats().flatMap(translateNestedInlineDefs)
+    }
+
+    override def blockStatSeq(): List[Tree] = {
+      super.blockStatSeq().flatMap(translateNestedInlineDefs)
     }
 
     // NOTE: Here's the sketch of the proposed translation scheme:
