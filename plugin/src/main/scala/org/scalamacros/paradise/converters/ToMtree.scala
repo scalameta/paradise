@@ -112,9 +112,6 @@ trait ToMtree extends Enrichments
 
               // ============ TYPES ============
 
-              //              case l.TypeTree(gtpe) =>
-              //                gtpe.toMtype
-
               case l.TypeName(lvalue) =>
                 m.Type.Name(lvalue)
 
@@ -262,12 +259,12 @@ trait ToMtree extends Enrichments
                 val mearly = learly.toMtrees[m.Stat]
                 val mparents = lparents.toMtrees[m.Ctor.Call]
                 val mself = lself.toMtree[m.Term.Param]
-                val mstats = lstats.toMtrees[m.Stat]
-                m.Template(mearly, mparents, mself, Some(mstats))
+                val mstats = lstats.map(_.toMtrees[m.Stat])
+                m.Template(mearly, mparents, mself, mstats)
 
               case l.Parent(ltpt, lctor, largss) =>
                 val mtpt = ltpt.toMtree[m.Type]
-                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name]) // dveim why was .require[m.Term] ?
+                val mctor = mtpt.ctorRef(lctor.toMtree[m.Ctor.Name])
                 val margss = largss.toMtreess[m.Term.Arg]
                 margss.foldLeft(mctor)((mcurr, margs) => {
                   m.Term.Apply(mcurr, margs)
@@ -282,7 +279,7 @@ trait ToMtree extends Enrichments
 
               case l.Annotation(lapply) =>
                 // scala.reflect uses Term.New here, but we need only its parent
-                val m.Term.New(m.Template(Nil, Seq(mparent), m.Term.Param(Nil, m.Name.Anonymous(), None, None), Some(Nil))) =
+                val m.Term.New(m.Template(Nil, Seq(mparent), m.Term.Param(Nil, m.Name.Anonymous(), None, None), None)) =
                   lapply.toMtree[m.Term.New]
                 m.Mod.Annot(mparent)
 
