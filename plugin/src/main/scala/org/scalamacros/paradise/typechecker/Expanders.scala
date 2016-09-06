@@ -85,7 +85,7 @@ trait Expanders {
           val metaPrefix = annotationTree.toMtree[m.Term.New]
           val metaExpandees = {
             expandees.map { expandee =>
-              expandee.toMtree[m.Stat].transform {
+              expandee.toMtree[m.Stat] match {
                 // TODO: detect and remove just annotteeTree
                 case defn: m.Decl.Val => defn.copy(mods = filterMods(defn.mods))
                 case defn: m.Decl.Var => defn.copy(mods = filterMods(defn.mods))
