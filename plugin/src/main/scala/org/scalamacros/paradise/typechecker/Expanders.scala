@@ -72,36 +72,10 @@ trait Expanders {
     }
 
     def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
-      def filterMods(mods: Seq[m.Mod]) =
-        mods.filter {
-          case m.Mod.Annot(body: m.Term) =>
-            false // TODO: Filter out only the current annotation
-          case _ =>
-            true
-        }
-
       def expand(): Option[Tree] = {
         try {
           val metaPrefix = annotationTree.toMtree[m.Term.New]
-          val metaExpandees = {
-            expandees.map { expandee =>
-              expandee.toMtree[m.Stat] match {
-                // TODO: detect and remove just annotteeTree
-                case defn: m.Decl.Val => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Decl.Var => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Decl.Def => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Decl.Type => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Val => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Var => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Def => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Macro => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Type => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Class => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Trait => defn.copy(mods = filterMods(defn.mods))
-                case defn: m.Defn.Object => defn.copy(mods = filterMods(defn.mods))
-              }
-            }
-          }
+          val metaExpandees = expandees.map(_.toMtree[m.Stat])
           val metaArgs = List(
             // NOTE: Inline defs implementing macro annotations don't have arguments apart from the annottee.
             // Type arguments and value arguments of macro annotations are passed in the prefix.
