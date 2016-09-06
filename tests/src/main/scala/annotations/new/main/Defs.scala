@@ -38,7 +38,7 @@ class identity extends scala.annotation.StaticAnnotation {
 
 @compileTimeOnly("@populateDef not expanded")
 class helloWorld extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Defn.Def) = meta {
+  inline def apply(defn: Any): Any = meta {
     val q"..$mods def $name[..$tparams](...$paramss): $tpeopt = $expr" = defn
     q"""..$mods def $name[..$tparams](...$paramss): $tpeopt = "hello world""""
   }
@@ -46,14 +46,14 @@ class helloWorld extends scala.annotation.StaticAnnotation {
 
 @compileTimeOnly("@appendA not expanded")
 class appendA extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Defn.Def) = meta {
+  inline def apply(defn: Any): Any = meta {
     Helpers.appendStat(defn, "letters += 'a'")
   }
 }
 
 @compileTimeOnly("@appendB not expanded")
 class appendB extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Defn.Def) = meta {
+  inline def apply(defn: Any): Any = meta {
     Helpers.appendStat(defn, "letters += 'b'")
 
   }
@@ -61,7 +61,7 @@ class appendB extends scala.annotation.StaticAnnotation {
 
 @compileTimeOnly("@appendC not expanded")
 class appendC extends scala.annotation.StaticAnnotation {
-  inline def apply(defn: Defn.Def) = meta {
+  inline def apply(defn: Any): Any = meta {
     Helpers.appendStat(defn, "letters += 'c'")
   }
 }
