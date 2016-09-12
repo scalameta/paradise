@@ -3,7 +3,7 @@
 [![Join the chat at https://gitter.im/scalameta/scalameta](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/scalameta/scalameta?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This is a prototype of new-style ("inline") macros based on scala.meta.
-Results can be reproduced with scala.meta 1.0.0 and macro paradise 3.0.0-M3.
+Results can be reproduced with scala.meta 1.1.0 and macro paradise 3.0.0-M5.
 
 ```
 $ cat Macros.scala
