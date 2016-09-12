@@ -5,7 +5,7 @@ import AssemblyKeys._
 
 object build extends Build {
   lazy val ScalaVersions = Seq("2.11.8")
-  lazy val MetaVersion = "1.1.0-SNAPSHOT"
+  lazy val MetaVersion = "1.1.0"
 
   lazy val sharedSettings = Defaults.defaultSettings ++ Seq(
     scalaVersion := ScalaVersions.head,
