@@ -4,3 +4,6 @@ package mainWithParams
 object Test {
   println("bye-bye world")
 }
+
+@namedParam(some = "text")
+class SomeClass
