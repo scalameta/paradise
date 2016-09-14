@@ -6,4 +6,7 @@ object Test {
 }
 
 @namedParam(some = "text")
-class SomeClass
+class SomeClass1
+
+@argRepeated(foos: _*)
+class SomeClass2

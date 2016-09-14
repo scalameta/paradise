@@ -245,10 +245,10 @@ trait LogicalTrees { self: ConvertersToolkit =>
     sealed trait TermArg
     object TermArg {
       case class Named(name: g.Tree, rhs: g.Tree) extends TermArg
-      case class Repeated(arg: g.Tree) extends TermArg
+      case class Repeated(arg: g.Ident) extends TermArg
       def unapply(tree: g.Tree): Option[l.TermArg] = tree match {
         case g.AssignOrNamedArg(lhs, rhs) => Some(l.TermArg.Named(lhs, rhs))
-          // todo case repeated
+        case g.Typed(ident: g.Ident, g.Ident(g.typeNames.WILDCARD_STAR)) => Some(l.TermArg.Repeated(ident))
         case _ => None
       }
     }
