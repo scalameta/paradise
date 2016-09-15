@@ -103,6 +103,15 @@ trait ToMtree extends Enrichments
                 val mtempl = ltempl.toMtree[m.Template]
                 m.Term.New(mtempl)
 
+              case l.TermArg(l.TermArg.Named(lname, lrhs)) =>
+                val mname = lname.toMtree[m.Term.Name]
+                val mrhs = lrhs.toMtree[m.Term.Arg]
+                m.Term.Arg.Named(mname, mrhs)
+
+              case l.TermArg(l.TermArg.Repeated(lident)) =>
+                val mterm = lident.toMtree[m.Term]
+                m.Term.Arg.Repeated(mterm)
+
               case l.TermParamDef(lmods, lname, ltpt, ldefault) =>
                 val mmods = lmods.toMtrees[m.Mod]
                 val mname = lname.toMtree[m.Term.Param.Name]
