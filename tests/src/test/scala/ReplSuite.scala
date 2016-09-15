@@ -4,7 +4,7 @@ import scala.compat.Platform.EOL
 import scala.tools.nsc.interpreter._
 import scala.tools.nsc.{Settings, MainGenericRunner}
 
-trait ReplSuite extends ToolSuite {
+trait ReplSuite extends ToolSuite with DisableScalaColor {
   private def replViaILoop(code: String): String = {
     val s = new Settings
     s.Xnojline.value = true
