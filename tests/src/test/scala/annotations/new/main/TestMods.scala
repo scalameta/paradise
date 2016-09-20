@@ -26,3 +26,8 @@ case class Test4()
   println(Test4().productPrefix)
   println(Test5.toString)
 }
+
+@identity object NamedArg {
+  case class MyCaseClass(a: Int, b: Int)
+  MyCaseClass(0, 1).copy(2, b = 3)
+}

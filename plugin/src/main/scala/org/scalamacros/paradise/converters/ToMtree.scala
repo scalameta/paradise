@@ -61,7 +61,7 @@ trait ToMtree extends Enrichments
 
               case l.TermApply(lfun, largs) if !termSelectContainsConstructor(lfun) =>
                 val mfun = lfun.toMtree[m.Term]
-                val margs = largs.toMtrees[m.Term]
+                val margs = largs.toMtrees[m.Term.Arg]
                 m.Term.Apply(mfun, margs)
 
               case l.TermApplyType(lfun, ltargs) =>
