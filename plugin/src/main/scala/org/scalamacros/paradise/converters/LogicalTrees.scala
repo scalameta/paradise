@@ -242,6 +242,22 @@ trait LogicalTrees { self: ConvertersToolkit =>
       }
     }
 
+    object TermArg {
+      object Named {
+        def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
+          case g.AssignOrNamedArg(lhs, rhs) => Some((lhs, rhs))
+          case _ => None
+        }
+      }
+
+      object Repeated {
+        def unapply(tree: g.Tree): Option[g.Ident] = tree match {
+          case g.Typed(ident: g.Ident, g.Ident(g.typeNames.WILDCARD_STAR)) => Some(ident)
+          case _ => None
+        }
+      }
+    }
+
     trait TermParamName extends Name
 
     object TermParamDef {
