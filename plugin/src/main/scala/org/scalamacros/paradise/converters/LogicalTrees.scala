@@ -242,14 +242,19 @@ trait LogicalTrees { self: ConvertersToolkit =>
       }
     }
 
-    sealed trait TermArg
     object TermArg {
-      case class Named(name: g.Tree, rhs: g.Tree) extends TermArg
-      case class Repeated(arg: g.Ident) extends TermArg
-      def unapply(tree: g.Tree): Option[l.TermArg] = tree match {
-        case g.AssignOrNamedArg(lhs, rhs) => Some(l.TermArg.Named(lhs, rhs))
-        case g.Typed(ident: g.Ident, g.Ident(g.typeNames.WILDCARD_STAR)) => Some(l.TermArg.Repeated(ident))
-        case _ => None
+      object Named {
+        def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
+          case g.AssignOrNamedArg(lhs, rhs) => Some((lhs, rhs))
+          case _ => None
+        }
+      }
+
+      object Repeated {
+        def unapply(tree: g.Tree): Option[g.Ident] = tree match {
+          case g.Typed(ident: g.Ident, g.Ident(g.typeNames.WILDCARD_STAR)) => Some(ident)
+          case _ => None
+        }
       }
     }
 
