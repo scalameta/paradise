@@ -76,7 +76,7 @@ object build extends Build {
   ) settings (
     assemblySettings : _*
   ) settings (
-    resourceDirectory in Compile <<= baseDirectory(_ / "src" / "main" / "scala" / "org" / "scalamacros" / "paradise" / "embedded"),
+    resourceDirectory in Compile <<= baseDirectory(_ / "src" / "main" / "scala" / "org" / "scalameta" / "paradise" / "embedded"),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-library" % _),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _),
     libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-compiler" % _),
