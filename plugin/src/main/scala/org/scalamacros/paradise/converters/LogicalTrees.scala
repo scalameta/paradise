@@ -365,6 +365,19 @@ trait LogicalTrees { self: ConvertersToolkit =>
       }
     }
 
+    object PatAlternative {
+      def unapply(tree: g.Alternative): Option[(g.Tree, g.Tree)] = {
+        val g.Alternative(head :: tail) = tree
+        val llhs = head
+        val lrhs = tail match {
+          case Nil => return None
+          case head :: Nil => head
+          case trees @ (head :: tail) => g.Alternative(trees)
+        }
+        Some((llhs, lrhs))
+      }
+    }
+
     object PatExtract {
       def unapply(tree: g.Tree): Option[(g.Tree, List[g.Tree], List[g.Tree])] = {
         if (!tree.is(PatLoc)) return None

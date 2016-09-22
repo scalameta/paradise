@@ -165,6 +165,11 @@ trait ToMtree extends Enrichments
                 val mrhs = lrhs.toMtree[m.Pat.Arg]
                 m.Pat.Bind(mlhs, mrhs)
 
+              case l.PatAlternative(tree0, trees) =>
+                val mtree0 = tree0.toMtree[m.Pat]
+                val mtrees = trees.toMtree[m.Pat]
+                m.Pat.Alternative(mtree0, mtrees)
+
               case l.PatExtract(lref, ltargs, largs) =>
                 val mref = lref.toMtree[m.Term.Ref]
                 val mtargs = ltargs.toMtrees[m.Pat.Type] // dveim replaced

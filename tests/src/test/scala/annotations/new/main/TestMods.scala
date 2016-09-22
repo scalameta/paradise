@@ -31,3 +31,10 @@ case class Test4()
   case class MyCaseClass(a: Int, b: Int)
   MyCaseClass(0, 1).copy(2, b = 3)
 }
+
+@identity object PatAlternative {
+  1 match {
+    case 0 | 1 => true
+    case (2 | 3 | 4 | 5) => false
+  }
+}
