@@ -898,14 +898,7 @@ trait LogicalTrees {
     }
 
     private def removeBounds(paramss: List[List[g.ValDef]]): List[List[g.ValDef]] = {
-      if (paramss.isEmpty) return Nil
-      val init :+ last = paramss
-      val hasImplicits = last.exists(_.mods.hasFlag(IMPLICIT))
-      val explicitss = if (hasImplicits) init else init :+ last
-      val implicits = if (hasImplicits) last else Nil
-      val limplicits = implicits.filter(_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
-      val lparamss = if (limplicits.nonEmpty) explicitss :+ limplicits else explicitss
-      lparamss.map(_.map(_.set(TermParamRole)))
+      paramss.map(_.map(_.set(TermParamRole)))
     }
 
     private def toplevelStats(stats: List[g.Tree]): List[g.Tree] = {

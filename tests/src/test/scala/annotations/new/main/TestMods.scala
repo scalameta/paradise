@@ -38,3 +38,7 @@ case class Test4()
     case (2 | 3 | 4 | 5) => false
   }
 }
+
+@identity object ImplicitArg {
+  def add(a: Int, b: Int, c: Int)(implicit z: Int = 0) = a + z
+}
