@@ -2,7 +2,7 @@ import sbtassembly.Plugin._
 import AssemblyKeys._
 
 lazy val ScalaVersions = Seq("2.11.8")
-lazy val MetaVersion   = "1.1.0"
+lazy val MetaVersion   = "2.0.0-SNAPSHOT"
 
 // ==========================================
 // Settings
@@ -13,7 +13,7 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
     Seq(
       scalaVersion := ScalaVersions.head,
       crossVersion := CrossVersion.full,
-      version := "3.0.0-SNAPSHOT",
+      version := "4.0.0-SNAPSHOT",
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
       resolvers += Resolver.sonatypeRepo("releases"),

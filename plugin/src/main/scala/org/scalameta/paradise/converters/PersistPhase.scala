@@ -28,8 +28,7 @@ trait PersistPhase extends ReflectToolkit with Converter {
       if (!_backendCheck) {
         _backendCheck = true
         if (!settings.isBCodeActive) {
-          global.reporter
-            .error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
+          global.reporter.error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
         }
       }
     }
