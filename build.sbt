@@ -2,7 +2,7 @@ import scala.util.Try
 
 lazy val ScalaVersions  = Seq("2.11.8")
 lazy val MetaOrg        = "org.scalameta"
-lazy val MetaVersion    = "1.2.0"
+lazy val MetaVersion    = "2.0.0.515"
 lazy val LibraryVersion = "3.0.0-SNAPSHOT"
 lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
 lazy val PRVersion      = latestPullRequestVersion()
@@ -19,6 +19,8 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       version := PRVersion.getOrElse(LibraryVersion),
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
+      resolvers +=
+          Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
       resolvers += Resolver.sonatypeRepo("releases"),
       publishMavenStyle := !isSnapshot,
       publishArtifact := false,
