@@ -113,7 +113,7 @@ object build extends Build {
     },
     pomIncludeRepository := { x => false },
     pomExtra := (
-      <url>https://github.com/scalamacros/paradise</url>
+      <url>https://github.com/scalameta/paradise</url>
       <inceptionYear>2012</inceptionYear>
       <licenses>
         <license>
@@ -123,12 +123,12 @@ object build extends Build {
         </license>
       </licenses>
       <scm>
-        <url>git://github.com/scalamacros/paradise.git</url>
-        <connection>scm:git:git://github.com/scalamacros/paradise.git</connection>
+        <url>git://github.com/scalameta/paradise.git</url>
+        <connection>scm:git:git://github.com/scalameta/paradise.git</connection>
       </scm>
       <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/scalamacros/paradise/issues</url>
+        <url>https://github.com/scalameta/paradise/issues</url>
       </issueManagement>
       <developers>
         <developer>
