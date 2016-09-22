@@ -4,7 +4,7 @@ package parser
 import scala.tools.nsc.interpreter.{ReplGlobal => NscReplGlobal, _}
 import org.scalameta.paradise.parser.{SyntaxAnalyzer => ParadiseSyntaxAnalyzer}
 
-trait ReplGlobal extends NscReplGlobal { self =>
+trait ReplGlobal extends NscReplGlobal {
   // TODO: classloader happy meal!!
   // can't cast analyzer to ParadiseSyntaxAnalyzer and use newUnitScanner/newUnitParser because of a classloader mismatch :O
   import syntaxAnalyzer.{UnitScanner, UnitParser}

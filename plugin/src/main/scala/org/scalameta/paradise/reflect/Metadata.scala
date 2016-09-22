@@ -1,10 +1,8 @@
 package org.scalameta.paradise
 package reflect
 
-import org.scalameta.paradise.converters.ConvertersToolkit
-
 trait Metadata {
-  self: ConvertersToolkit =>
+  self: ReflectToolkit =>
 
   import global._
   import scala.reflect.ClassTag

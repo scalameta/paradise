@@ -9,9 +9,9 @@ import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.reflect.internal.Flags // no wildcard import because of ambiguity with Tokens._
 import scala.reflect.internal.util.Collections._
 import scala.collection.mutable.ListBuffer
-import org.scalameta.paradise.reflect.Enrichments
+import org.scalameta.paradise.reflect.ReflectToolkit
 
-abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with Enrichments {
+abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
   import global._
   import definitions._
   import paradiseDefinitions._

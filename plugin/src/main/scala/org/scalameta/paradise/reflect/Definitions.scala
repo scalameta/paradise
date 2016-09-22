@@ -5,7 +5,7 @@ import scala.reflect.internal.Flags._
 import scala.reflect.internal.MissingRequirementError
 
 trait Definitions {
-  self: Enrichments =>
+  self: ReflectToolkit =>
 
   import global._
   import rootMirror._

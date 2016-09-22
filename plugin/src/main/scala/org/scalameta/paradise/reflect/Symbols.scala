@@ -2,7 +2,7 @@ package org.scalameta.paradise
 package reflect
 
 trait Symbols {
-  self: Enrichments =>
+  self: ReflectToolkit =>
 
   import global._
   import scala.reflect.internal.Flags._

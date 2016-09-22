@@ -4,7 +4,8 @@ package reflect
 import scala.tools.nsc.interpreter._
 
 trait ReplIntegration {
-  self: Enrichments =>
+  self: ReflectToolkit =>
+
   import global._
 
   private def obtainField(cls: Class[_], name: String) = { val result = cls.getDeclaredField(name); result.setAccessible(true); result }

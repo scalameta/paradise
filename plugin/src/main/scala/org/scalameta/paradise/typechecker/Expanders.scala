@@ -1,7 +1,9 @@
 package org.scalameta.paradise
 package typechecker
 
-trait Expanders {
+import org.scalameta.paradise.converters.Converter
+
+trait Expanders extends Converter {
   self: AnalyzerPlugins =>
 
   import scala.{Seq => _}
