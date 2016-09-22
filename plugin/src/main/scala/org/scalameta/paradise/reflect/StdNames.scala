@@ -2,7 +2,8 @@ package org.scalameta.paradise
 package reflect
 
 trait StdNames {
-  self: Enrichments =>
+  self: ReflectToolkit =>
+
   import global._
 
   implicit class ParadiseNme(nme: global.nme.type) {

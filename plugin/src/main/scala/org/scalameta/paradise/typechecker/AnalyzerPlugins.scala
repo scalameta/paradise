@@ -2,15 +2,13 @@ package org.scalameta.paradise
 package typechecker
 
 import org.scalameta.paradise.converters.ToMtree
-import org.scalameta.paradise.reflect.Enrichments
+import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait AnalyzerPlugins extends Compilers
                         with Namers
                         with Expanders
                         with Errors
-                        with Enrichments
-                        with ToMtree
-{
+                        with ReflectToolkit {
   import global._
   import scala.reflect.internal.Flags._
   import analyzer._

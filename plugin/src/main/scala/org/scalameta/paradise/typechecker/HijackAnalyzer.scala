@@ -8,10 +8,9 @@ import scala.collection.mutable
 import scala.tools.nsc.typechecker.ParadiseAnalyzer
 import scala.tools.nsc.interpreter.{ReplGlobal => NscReplGlobal}
 import scala.tools.nsc.interactive.{Global => NscInteractiveGlobal, InteractiveAnalyzer => NscInteractiveAnalyzer}
-import org.scalameta.paradise.{Plugin => ParadisePlugin}
 
 trait HijackAnalyzer {
-  self: ParadisePlugin =>
+  self: NscPlugin =>
 
   def hijackAnalyzer(): global.analyzer.type = {
     // NOTE: need to hijack the right `analyzer` field - it's different for batch compilers and repl compilers

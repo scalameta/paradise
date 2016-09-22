@@ -3,9 +3,9 @@ package scala.tools.nsc.typechecker
 
 import scala.tools.nsc.Global
 import scala.tools.nsc.typechecker.{Analyzer => NscAnalyzer}
-import org.scalameta.paradise.reflect.Enrichments
+import org.scalameta.paradise.reflect.ReflectToolkit
 
-trait ParadiseAnalyzer extends NscAnalyzer with Enrichments {
+trait ParadiseAnalyzer extends NscAnalyzer with ReflectToolkit {
   val global: Global
   import global._
   import definitions._

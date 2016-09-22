@@ -1,5 +1,5 @@
 package org.scalameta.paradise
-package converters
+package reflect
 
 import scala.tools.nsc.Global
 import scala.reflect.internal.{Flags, HasFlags}
@@ -11,7 +11,8 @@ import org.scalameta.adt._
 import org.scalameta.roles._
 import org.scalameta.debug
 
-trait LogicalTrees { self: ConvertersToolkit =>
+trait LogicalTrees {
+  self: ReflectToolkit =>
 
   import global.{require => _, abort => _, _}
   import definitions._

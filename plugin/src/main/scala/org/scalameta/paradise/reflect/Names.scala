@@ -2,7 +2,7 @@ package org.scalameta.paradise
 package reflect
 
 trait Names {
-  self: Enrichments =>
+  self: ReflectToolkit =>
 
   import global._
 

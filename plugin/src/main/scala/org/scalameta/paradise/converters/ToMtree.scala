@@ -22,8 +22,9 @@ import scala.{meta => m}
 // that is capable of merging syntactically precise trees (obtained from parsing)
 // and semantically precise trees (obtain from converting).
 
-trait ToMtree extends Enrichments
-              with ConvertersToolkit { self =>
+trait ToMtree {
+  self: Converter =>
+
   protected implicit class XtensionGtreeToMtree(gtree: g.Tree) {
     def toMtree[T <: m.Tree : ClassTag]: T = self.toMtree[T](gtree)
   }
