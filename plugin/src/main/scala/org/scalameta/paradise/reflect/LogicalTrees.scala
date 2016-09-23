@@ -903,7 +903,7 @@ trait LogicalTrees {
       val hasImplicits = last.exists(_.mods.hasFlag(IMPLICIT))
       val explicitss = if (hasImplicits) init else init :+ last
       val implicits = if (hasImplicits) last else Nil
-      val limplicits = implicits.filter(_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
+      val limplicits = implicits.filter(!_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
       val lparamss = if (limplicits.nonEmpty) explicitss :+ limplicits else explicitss
       lparamss.map(_.map(_.set(TermParamRole)))
     }
