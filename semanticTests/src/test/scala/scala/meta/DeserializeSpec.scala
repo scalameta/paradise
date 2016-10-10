@@ -19,6 +19,6 @@ class DeserializeSpec extends FunSuite {
         .toAbsolutePath
         .toString
     val mirror = Mirror(Artifact(path))
-//    assert(mirror.domain.sources.nonEmpty) // no semantic tests yet.
+    assert(mirror.domain.sources.nonEmpty)
   }
 }

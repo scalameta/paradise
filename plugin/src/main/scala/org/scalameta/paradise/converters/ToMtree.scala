@@ -27,6 +27,7 @@ import scala.meta.internal.{semantic => sem}
 
 trait ToMtree { self: Converter =>
 
+  override val u = g
   protected implicit class XtensionGtreeToMtree(gtree: g.Tree) {
     def toMtree[T <: m.Tree: ClassTag]: T = self.toMtree[T](gtree)
   }
@@ -52,7 +53,14 @@ trait ToMtree { self: Converter =>
                 m.Term.This(mname)
 
               case l.TermName(lvalue) =>
-                m.Term.Name(lvalue)
+                val term = m.Term.Name(lvalue)
+                val withAttr =
+                  if (gtree.tpe == null || !isGlobal(gtree.tpe.typeSymbol)) term
+                  else {
+                    term.withAttrs(denot(gtree.tpe, gtree.tpe.typeSymbol),
+                                   sem.TypingLike.typingIsTypingLike(Typing.None))
+                  }
+                withAttr
 
               case l.TermIdent(lname) =>
                 lname.toMtree[m.Term.Name]
@@ -344,6 +352,10 @@ trait ToMtree { self: Converter =>
 
               case l.VarParam() =>
                 m.Mod.VarParam()
+
+              case l.TypeTree(typ) =>
+                // TODO(olafur) I have no idea what goes in here.
+                m.Type.Name(typ.prefixString)
 
               // ============ ODDS & ENDS ============
 

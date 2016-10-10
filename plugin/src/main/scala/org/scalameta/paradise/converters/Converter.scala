@@ -9,3 +9,5 @@ import org.scalameta.paradise.reflect.ReflectToolkit
 trait Converter
     extends ReflectToolkit
     with ToMtree
+    with DenotationConverter
+    with InternalTreeXtensions // TODO(olafur) remove once semantic api settles.
