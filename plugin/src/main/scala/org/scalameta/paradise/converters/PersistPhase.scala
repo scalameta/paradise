@@ -4,6 +4,7 @@ package converters
 import scala.meta._
 import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
+
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait PersistPhase extends ReflectToolkit with Converter {

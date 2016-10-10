@@ -224,7 +224,8 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermFunction {
       def unapply(tree: g.Function): Option[(List[g.Tree], g.Tree)] = {
         val g.Function(params, body) = tree
-        val lparams                  = params.map(_.set(TermParamRole))
+
+        val lparams = params.map(_.set(TermParamRole))
         Some((lparams, body))
       }
     }
@@ -281,8 +282,9 @@ trait LogicalTrees { self: ReflectToolkit =>
         : Option[(List[l.Modifier], l.TermName, Option[g.Tree], Option[g.Tree])] = {
         if (!tree.is(TermParamRole)) return None
         val g.ValDef(_, _, tpt, default) = tree
-        val ltpt                         = if (tpt.nonEmpty) Some(tpt) else None
-        val ldefault                     = if (default.nonEmpty) Some(default) else None // TODO: handle defaults after typechecking
+
+        val ltpt     = if (tpt.nonEmpty) Some(tpt) else None
+        val ldefault = if (default.nonEmpty) Some(default) else None // TODO: handle defaults after typechecking
         Some((l.Modifiers(tree), l.TermName(tree), ltpt, ldefault))
       }
     }
@@ -328,8 +330,9 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TypeBounds {
       def unapply(tree: g.TypeBoundsTree): Option[(Option[g.Tree], Option[g.Tree])] = {
         val g.TypeBoundsTree(glo, ghi) = tree
-        val llo                        = if (glo.nonEmpty) Some(glo) else None
-        val lhi                        = if (ghi.nonEmpty) Some(ghi) else None
+
+        val llo = if (glo.nonEmpty) Some(glo) else None
+        val lhi = if (ghi.nonEmpty) Some(ghi) else None
         Some((llo, lhi))
       }
     }
@@ -337,12 +340,14 @@ trait LogicalTrees { self: ReflectToolkit =>
     trait TypeParamName extends Name
 
     object TypeParamDef {
-      def unapply(tree: g.TypeDef): Option[(List[l.Modifier],
-                                            l.TypeName,
-                                            List[g.TypeDef],
-                                            g.TypeBoundsTree,
-                                            List[g.Tree],
-                                            List[g.Tree])] = {
+      def unapply(
+          tree: g.TypeDef
+      ): Option[(List[l.Modifier],
+                 l.TypeName,
+                 List[g.TypeDef],
+                 g.TypeBoundsTree,
+                 List[g.Tree],
+                 List[g.Tree])] = {
         if (!tree.is(TypeParamRole)) return None
         val g.TypeDef(_, name, tparams, rhs) = tree
         val ltparams                         = tparams.map(_.set(TypeParamRole(Nil, Nil)))
@@ -484,8 +489,9 @@ trait LogicalTrees { self: ReflectToolkit =>
     }
 
     object VarDef {
-      def unapply(tree: g.ValDef)
-        : Option[(List[l.Modifier], List[g.Tree], Option[g.Tree], Option[g.Tree])] = {
+      def unapply(
+          tree: g.ValDef
+      ): Option[(List[l.Modifier], List[g.Tree], Option[g.Tree], Option[g.Tree])] = {
         // TODO: fix the duplication wrt ValDef
         if (!tree.is(FieldRole)) return None
         val g.ValDef(_, name, tpt, rhs) = tree
@@ -499,12 +505,14 @@ trait LogicalTrees { self: ReflectToolkit =>
     }
 
     object DefDef {
-      def unapply(tree: g.DefDef): Option[(List[l.Modifier],
-                                           l.TermName,
-                                           List[g.TypeDef],
-                                           List[List[g.ValDef]],
-                                           Option[g.Tree],
-                                           g.Tree)] = {
+      def unapply(
+          tree: g.DefDef
+      ): Option[(List[l.Modifier],
+                 l.TermName,
+                 List[g.TypeDef],
+                 List[List[g.ValDef]],
+                 Option[g.Tree],
+                 g.Tree)] = {
         if (!tree.is(MethodRole)) return None
         val g.DefDef(_, _, tparams, paramss, tpt, rhs) = tree
         val ltparams                                   = applyBounds(tparams, paramss)
@@ -767,21 +775,21 @@ trait LogicalTrees { self: ReflectToolkit =>
                                       cdef: g.ClassDef)
         val cpinfo: Option[ClassParameterInfo] = {
           val syntactically = {
-            // TODO: We don't have tests for this, so for now I'll just comment this logic out.
-            // tree.hierarchy match {
-            //   case
-            //     (param @ g.ValDef(_, _, _, _)) ::
-            //     (ctor @ g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _)) ::
-            //     (cdef @ g.ClassDef(_, _, _, g.Template(_, _, siblings))) :: _ =>
-            //       import g.TermNameOps
-            //       val field = siblings.collectFirst { case field: g.ValDef if field.name == param.name.localName => field }
-            //       val primCtor = siblings.collectFirst { case primCtor: g.DefDef if primCtor.name == nme.CONSTRUCTOR => primCtor }
-            //       val isClassParameter = primCtor.map(primCtor => ctor == primCtor).getOrElse(false)
-            //       if (isClassParameter) Some(ClassParameterInfo(param, field, ctor, cdef))
-            //       else None
-            //   case _ =>
-            //     None
-            // }
+// TODO: We don't have tests for this, so for now I'll just comment this logic out.
+// tree.hierarchy match {
+//   case
+//     (param @ g.ValDef(_, _, _, _)) ::
+//     (ctor @ g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _)) ::
+//     (cdef @ g.ClassDef(_, _, _, g.Template(_, _, siblings))) :: _ =>
+//       import g.TermNameOps
+//       val field = siblings.collectFirst { case field: g.ValDef if field.name == param.name.localName => field }
+//       val primCtor = siblings.collectFirst { case primCtor: g.DefDef if primCtor.name == nme.CONSTRUCTOR => primCtor }
+//       val isClassParameter = primCtor.map(primCtor => ctor == primCtor).getOrElse(false)
+//       if (isClassParameter) Some(ClassParameterInfo(param, field, ctor, cdef))
+//       else None
+//   case _ =>
+//     None
+// }
             None
           }
           val semantically = {
@@ -911,12 +919,14 @@ trait LogicalTrees { self: ReflectToolkit =>
     private def applyBounds(tparams: List[g.TypeDef],
                             paramss: List[List[g.ValDef]]): List[g.TypeDef] = {
       def tparam(targ: Tree): Option[g.TypeDef] =
-        tparams
-          .filter(tparam => {
-            if (tparam.symbol != g.NoSymbol) tparam.symbol == targ.symbol
-            else targ match { case g.Ident(name) => name == tparam.name; case _ => false }
-          })
-          .headOption
+        tparams.find(tparam => {
+          if (tparam.symbol != g.NoSymbol) tparam.symbol == targ.symbol
+          else
+            targ match {
+              case g.Ident(name) => name == tparam.name;
+              case _             => false
+            }
+        })
 
       object ViewBound {
         def unapply(tree: g.ValDef): Option[(g.TypeDef, g.Tree)] = tree match {

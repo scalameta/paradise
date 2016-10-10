@@ -16,8 +16,9 @@ trait HijackSyntaxAnalyzer { self: NscPlugin =>
   // NOTE: Thank you myself from two years ago.
   // https://github.com/scalameta/scalahost/blob/a97d73d7356ede881f9edf335e93db64244ec68d/plugin/src/main/scala/parser/HijackSyntaxAnalyzer.scala
   def hijackSyntaxAnalyzer(): Unit = {
-    val newSyntaxAnalyzer = new { val global: self.global.type = self.global }
-    with ParadiseSyntaxAnalyzer
+    val newSyntaxAnalyzer = new {
+      val global: self.global.type = self.global
+    } with ParadiseSyntaxAnalyzer
     val syntaxAnalyzerField = classOf[NscGlobal].getDeclaredField("syntaxAnalyzer")
     syntaxAnalyzerField.setAccessible(true)
     syntaxAnalyzerField.set(global, newSyntaxAnalyzer)

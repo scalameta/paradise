@@ -3,10 +3,13 @@ package converters
 
 import org.scalameta.paradise.reflect._
 import scala.collection.immutable.Seq
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 import scala.compat.Platform.EOL
+import scala.meta.internal.semantic.Denotation
+import scala.meta.internal.semantic.Typing
 import scala.meta.prettyprinters._
 import scala.{meta => m}
+import scala.meta.internal.{semantic => sem}
 
 // This module exposes a method that can wrap scala.reflect trees
 // into equivalent scala.meta trees.
@@ -410,10 +413,10 @@ trait ToMtree { self: Converter =>
         } catch {
           case ex: ConvertException =>
             throw ex
-          case ex: Exception =>
-            fail(s"unexpected error (scroll down the stacktrace to see the cause):", Some(ex))
-          case ex: NotImplementedError =>
-            fail(s"unexpected error (scroll down the stacktrace to see the cause):", Some(ex))
+//          case ex: Exception =>
+//            fail(s"unexpected error (scroll down the stacktrace to see the cause):", Some(ex))
+//          case ex: NotImplementedError =>
+//            fail(s"unexpected error (scroll down the stacktrace to see the cause):", Some(ex))
         } finally {
           if (!isDuplicate) backtrace = backtrace.tail
         }

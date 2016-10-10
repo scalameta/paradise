@@ -2,7 +2,7 @@ build:
   image: olafurpg/scalafix:0.0.1
   commands:
     - ./bin/scalafmt --version 0.4.5 --test
-    - sbt clean test
+    - ./bin/testAll.sh
 cache:
   mount:
     - $HOME/.scalafmt-bin
