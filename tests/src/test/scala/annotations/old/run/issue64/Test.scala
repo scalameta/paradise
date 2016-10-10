@@ -5,5 +5,6 @@ object Test extends App {
   def Foo = ???
   @ann trait Foo[T]
   def Bar = ???
-  @pkg.identity trait Bar[T]
+  @pkg.identity
+  trait Bar[T]
 }

@@ -47,8 +47,6 @@
 //   val x = "".toString
 //   F.byname(x); F.hof(() => x); (new { val xx = x }.xx)
 // })
-
-
 // class C1 extends C({
 //   def x = "".toString
 //   F.byname(x)
@@ -115,8 +113,6 @@
 //   def foo = 0
 //   class CInner extends C({foo})
 // })
-
-
 // class CEarly(a: Any) extends {
 //   val early = {def x = "".toString
 //     object Nested { def xx = x}

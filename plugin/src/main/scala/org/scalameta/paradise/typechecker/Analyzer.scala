@@ -16,7 +16,9 @@ trait ParadiseAnalyzer extends NscAnalyzer with ReflectToolkit {
     override def typedDefDef(ddef: DefDef): DefDef = {
       val ddef1 = super.typedDefDef(ddef)
       if (ddef1.symbol.hasAnnotation(MetaInlineClass) && !ddef1.symbol.owner.isNewMacroAnnotation) {
-        typer.context.error(ddef1.pos, "implementation restriction: inline methods can only be used to define new-style macro annotations")
+        typer.context.error(
+          ddef1.pos,
+          "implementation restriction: inline methods can only be used to define new-style macro annotations")
       }
       ddef1
     }

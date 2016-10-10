@@ -1,5 +1,4 @@
-package object pkgTest {
-}
+package object pkgTest {}
 
 package pkgTest {
   @deprecated("", "")

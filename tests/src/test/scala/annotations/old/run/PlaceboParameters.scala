@@ -10,7 +10,10 @@ class PlaceboParameterZoo {
 
 class PlaceboParameters extends FunSuite {
   test("combo") {
-    assert(typeOf[PlaceboParameterZoo].decls.sorted.map(_.toString).mkString("\n") === """
+    assert(
+      typeOf[PlaceboParameterZoo].decls.sorted
+        .map(_.toString)
+        .mkString("\n") === """
       |constructor PlaceboParameterZoo
       |class C
       |object С

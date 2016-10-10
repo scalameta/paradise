@@ -6,7 +6,7 @@ object DD {
   val x = new X
 
   @pkg.doubler
-  object D {
+  object D  {
     class X { override def toString = "DX" }
   }
 }

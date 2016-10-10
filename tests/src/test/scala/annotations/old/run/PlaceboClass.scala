@@ -3,11 +3,11 @@ package placebo.klass
 import org.scalatest.FunSuite
 import pkg._
 
-@placebo class CPreToplevelNocomp { override def toString = "CPreToplevelNocomp" }
-object CPreToplevelPrecomp { def apply() = new CPreToplevelPrecomp }
-@placebo class CPreToplevelPrecomp { override def toString = "CPreToplevelPrecomp" }
-@placebo class CPreToplevelPostcomp { override def toString = "CPreToplevelPostcomp" }
-object CPreToplevelPostcomp { def apply() = new CPreToplevelPostcomp }
+@placebo class CPreToplevelNocomp   { override def toString = "CPreToplevelNocomp"     }
+object CPreToplevelPrecomp          { def apply()           = new CPreToplevelPrecomp  }
+@placebo class CPreToplevelPrecomp  { override def toString = "CPreToplevelPrecomp"    }
+@placebo class CPreToplevelPostcomp { override def toString = "CPreToplevelPostcomp"   }
+object CPreToplevelPostcomp         { def apply()           = new CPreToplevelPostcomp }
 
 class PlaceboClass extends FunSuite {
   val objects = scala.collection.mutable.ListBuffer[Any]()
@@ -18,40 +18,40 @@ class PlaceboClass extends FunSuite {
   objects += CPostToplevelPrecomp()
   objects += CPostToplevelPostcomp()
 
-  @placebo class CPreMemberNocomp { override def toString = "CPreMemberNocomp" }
-  object CPreMemberPrecomp { def apply() = new CPreMemberPrecomp }
-  @placebo class CPreMemberPrecomp { override def toString = "CPreMemberPrecomp" }
-  @placebo class CPreMemberPostcomp { override def toString = "CPreMemberPostcomp" }
-  object CPreMemberPostcomp { def apply() = new CPreMemberPostcomp }
+  @placebo class CPreMemberNocomp   { override def toString = "CPreMemberNocomp"     }
+  object CPreMemberPrecomp          { def apply()           = new CPreMemberPrecomp  }
+  @placebo class CPreMemberPrecomp  { override def toString = "CPreMemberPrecomp"    }
+  @placebo class CPreMemberPostcomp { override def toString = "CPreMemberPostcomp"   }
+  object CPreMemberPostcomp         { def apply()           = new CPreMemberPostcomp }
   objects += new CPreMemberNocomp()
   objects += CPreMemberPrecomp()
   objects += CPreMemberPostcomp()
   objects += new CPostMemberNocomp()
   objects += CPostMemberPrecomp()
   objects += CPostMemberPostcomp()
-  @placebo class CPostMemberNocomp { override def toString = "CPostMemberNocomp" }
-  object CPostMemberPrecomp { def apply() = new CPostMemberPrecomp }
-  @placebo class CPostMemberPrecomp { override def toString = "CPostMemberPrecomp" }
-  @placebo class CPostMemberPostcomp { override def toString = "CPostMemberPostcomp" }
-  object CPostMemberPostcomp { def apply() = new CPostMemberPostcomp }
+  @placebo class CPostMemberNocomp   { override def toString = "CPostMemberNocomp"     }
+  object CPostMemberPrecomp          { def apply()           = new CPostMemberPrecomp  }
+  @placebo class CPostMemberPrecomp  { override def toString = "CPostMemberPrecomp"    }
+  @placebo class CPostMemberPostcomp { override def toString = "CPostMemberPostcomp"   }
+  object CPostMemberPostcomp         { def apply()           = new CPostMemberPostcomp }
 
   test("combo") {
-    @placebo class CPreLocalNocomp { override def toString = "CPreLocalNocomp" }
-    object CPreLocalPrecomp { def apply() = new CPreLocalPrecomp }
-    @placebo class CPreLocalPrecomp { override def toString = "CPreLocalPrecomp" }
-    @placebo class CPreLocalPostcomp { override def toString = "CPreLocalPostcomp" }
-    object CPreLocalPostcomp { def apply() = new CPreLocalPostcomp }
+    @placebo class CPreLocalNocomp   { override def toString = "CPreLocalNocomp"     }
+    object CPreLocalPrecomp          { def apply()           = new CPreLocalPrecomp  }
+    @placebo class CPreLocalPrecomp  { override def toString = "CPreLocalPrecomp"    }
+    @placebo class CPreLocalPostcomp { override def toString = "CPreLocalPostcomp"   }
+    object CPreLocalPostcomp         { def apply()           = new CPreLocalPostcomp }
     objects += new CPreLocalNocomp()
     objects += CPreLocalPrecomp()
     objects += CPreLocalPostcomp()
     objects += new CPostLocalNocomp()
     objects += CPostLocalPrecomp()
     objects += CPostLocalPostcomp()
-    @placebo class CPostLocalNocomp { override def toString = "CPostLocalNocomp" }
-    object CPostLocalPrecomp { def apply() = new CPostLocalPrecomp }
-    @placebo class CPostLocalPrecomp { override def toString = "CPostLocalPrecomp" }
-    @placebo class CPostLocalPostcomp { override def toString = "CPostLocalPostcomp" }
-    object CPostLocalPostcomp { def apply() = new CPostLocalPostcomp }
+    @placebo class CPostLocalNocomp   { override def toString = "CPostLocalNocomp"     }
+    object CPostLocalPrecomp          { def apply()           = new CPostLocalPrecomp  }
+    @placebo class CPostLocalPrecomp  { override def toString = "CPostLocalPrecomp"    }
+    @placebo class CPostLocalPostcomp { override def toString = "CPostLocalPostcomp"   }
+    object CPostLocalPostcomp         { def apply()           = new CPostLocalPostcomp }
 
     assert(objects.mkString("\n") === """
       |CPreToplevelNocomp
