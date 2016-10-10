@@ -6,7 +6,7 @@ object introspectCyclistMacro {
   def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
     import Flag._
-    val name = annottees.head.tree.asInstanceOf[MemberDef].name.toString
+    val name   = annottees.head.tree.asInstanceOf[MemberDef].name.toString
     val cclass = c.mirror.staticClass("C")
     cclass.typeSignature
     c.Expr[Any](Block(annottees.map(_.tree).toList, Literal(Constant())))

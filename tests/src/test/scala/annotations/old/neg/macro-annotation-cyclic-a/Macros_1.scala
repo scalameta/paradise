@@ -7,8 +7,8 @@ object xrefCyclistMacro {
     import c.universe._
     import Flag._
     val name = annottees.head.tree.asInstanceOf[MemberDef].name.toString
-    val a = c.mirror.staticClass("A")
-    val b = c.mirror.staticClass("B")
+    val a    = c.mirror.staticClass("A")
+    val b    = c.mirror.staticClass("B")
     if (name == "A") b.typeSignature
     if (name == "B") a.typeSignature
     c.Expr[Any](Block(annottees.map(_.tree).toList, Literal(Constant())))
@@ -23,7 +23,7 @@ object introspectCyclistMacro {
   def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
     import Flag._
-    val name = annottees.head.tree.asInstanceOf[MemberDef].name.toString
+    val name   = annottees.head.tree.asInstanceOf[MemberDef].name.toString
     val cclass = c.mirror.staticClass("C")
     println(cclass.typeSignature)
     c.Expr[Any](Block(annottees.map(_.tree).toList, Literal(Constant())))

@@ -25,7 +25,11 @@ object shoveMacro {
                   List(),
                   List(List(ValDef(Modifiers(PARAM), TermName("x"), victim, EmptyTree))),
                   TypeTree(),
-                  Block(List(Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY), termNames.CONSTRUCTOR), List())), Literal(Constant(())))
+                  Block(List(
+                          Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY),
+                                       termNames.CONSTRUCTOR),
+                                List())),
+                        Literal(Constant(())))
                 ),
                 ValDef(mods, name, tpt, rhs)
               )

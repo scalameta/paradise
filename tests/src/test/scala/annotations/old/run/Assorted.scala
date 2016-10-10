@@ -3,15 +3,16 @@ import scala.reflect.runtime.universe._
 
 class AssortedZoo {
   @doubler def foo(x: Int) = x
-  @doubler val bar = 2
-  @doubler var baz = 3
-  @doubler lazy val bax = 4
+  @doubler val bar         = 2
+  @doubler var baz         = 3
+  @doubler lazy val bax    = 4
   @doubler type T = Int
 }
 
 class Assorted extends FunSuite {
   test("nested") {
-    assert(typeOf[AssortedZoo].decls.sorted.map(_.toString).mkString("\n") === """
+    assert(
+      typeOf[AssortedZoo].decls.sorted.map(_.toString).mkString("\n") === """
       |constructor AssortedZoo
       |method foofoo
       |value barbar
@@ -27,9 +28,9 @@ class Assorted extends FunSuite {
 
   test("local") {
     @doubler def foo(x: Int) = x
-    @doubler val bar = 2
-    @doubler var baz = 3
-    @doubler lazy val bax = 4
+    @doubler val bar         = 2
+    @doubler var baz         = 3
+    @doubler lazy val bax    = 4
     @doubler type T = Int
 
     assert(foofoo(1) === 1)

@@ -15,7 +15,8 @@ class Repl extends ReplSuite {
   }
 
   test("ad-hoc macros expand") {
-    assert(repl("""
+    assert(
+      repl("""
       |import scala.language.experimental.macros
       |import scala.reflect.macros.whitebox.Context
       |import scala.annotation.StaticAnnotation

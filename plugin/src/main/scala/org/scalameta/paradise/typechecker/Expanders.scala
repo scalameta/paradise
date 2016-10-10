@@ -3,8 +3,7 @@ package typechecker
 
 import org.scalameta.paradise.converters.Converter
 
-trait Expanders extends Converter {
-  self: AnalyzerPlugins =>
+trait Expanders extends Converter { self: AnalyzerPlugins =>
 
   import scala.{Seq => _}
   import scala.collection.immutable.Seq
@@ -22,8 +21,7 @@ trait Expanders extends Converter {
   import scala.meta.internal.prettyprinters.{Positions => MetaPositions}
 
   def mkExpander(namer0: NscNamer) = new { val namer: NscNamer = namer0 } with Namer with Expander
-  trait Expander {
-    self: Namer with Expander =>
+  trait Expander { self: Namer with Expander =>
 
     val namer: NscNamer
     import namer._
@@ -31,13 +29,17 @@ trait Expanders extends Converter {
     import expanderErrorGen._
     import namer.typer.TyperErrorGen._
 
-    def expandOldAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
+    def expandOldAnnotationMacro(original: Tree,
+                                 annotationSym: Symbol,
+                                 annotationTree: Tree,
+                                 expandees: List[Tree]): Option[List[Tree]] = {
       def onlyIfExpansionAllowed[T](expand: => Option[T]): Option[T] = {
         if (settings.Ymacroexpand.value == settings.MacroExpand.None) None
         else {
           val oldYmacroexpand = settings.Ymacroexpand.value
-          try { settings.Ymacroexpand.value = settings.MacroExpand.Normal; expand }
-          catch { case ex: Exception => settings.Ymacroexpand.value = oldYmacroexpand; throw ex }
+          try { settings.Ymacroexpand.value = settings.MacroExpand.Normal; expand } catch {
+            case ex: Exception => settings.Ymacroexpand.value = oldYmacroexpand; throw ex
+          }
         }
       }
       def expand(): Option[Tree] = {
@@ -60,23 +62,31 @@ trait Expanders extends Converter {
         }
         val expandee = {
           val annotationMacroSym = annotationSym.info.member(nme.macroTransform)
-          val prefix = Select(annotationTree, nme.macroTransform) setSymbol annotationMacroSym setPos annotationTree.pos
+          val prefix =
+            Select(annotationTree, nme.macroTransform)
+              .setSymbol(annotationMacroSym)
+              .setPos(annotationTree.pos)
           Apply(prefix, expandees) setPos annotationTree.pos
         }
         (new DefMacroExpander(typer, expandee, NOmode, WildcardType) {
           override def onSuccess(expanded: Tree) = expanded
         })(expandee) match {
           case tree if tree.isErroneous => None
-          case tree => Some(tree)
+          case tree                     => Some(tree)
         }
       }
-      extractAndValidateExpansions(original, annotationTree, () => onlyIfExpansionAllowed(expand()))
+      extractAndValidateExpansions(original,
+                                   annotationTree,
+                                   () => onlyIfExpansionAllowed(expand()))
     }
 
-    def expandNewAnnotationMacro(original: Tree, annotationSym: Symbol, annotationTree: Tree, expandees: List[Tree]): Option[List[Tree]] = {
+    def expandNewAnnotationMacro(original: Tree,
+                                 annotationSym: Symbol,
+                                 annotationTree: Tree,
+                                 expandees: List[Tree]): Option[List[Tree]] = {
       def expand(): Option[Tree] = {
         try {
-          val metaPrefix = annotationTree.toMtree[m.Term.New]
+          val metaPrefix    = annotationTree.toMtree[m.Term.New]
           val metaExpandees = expandees.map(_.toMtree[m.Stat])
           val metaArgs = List(
             // NOTE: Inline defs implementing macro annotations don't have arguments apart from the annottee.
@@ -84,19 +94,23 @@ trait Expanders extends Converter {
             // See the discussion at https://github.com/scalameta/paradise/issues/11 for more details.
             metaPrefix,
             metaExpandees match {
-              case Nil => abort("Something unexpected happened. Please report to https://github.com/scalameta/paradise/issues.")
-              case tree :: Nil => tree
+              case Nil =>
+                abort(
+                  "Something unexpected happened. Please report to https://github.com/scalameta/paradise/issues.")
+              case tree :: Nil      => tree
               case list @ _ :: tail => m.Term.Block(list.asInstanceOf[Seq[m.Stat]])
             }
           )
 
           val classloader = {
-            val m_findMacroClassLoader = analyzer.getClass.getMethods().find(_.getName == "findMacroClassLoader").get
+            val m_findMacroClassLoader =
+              analyzer.getClass.getMethods().find(_.getName == "findMacroClassLoader").get
             m_findMacroClassLoader.setAccessible(true)
             m_findMacroClassLoader.invoke(analyzer).asInstanceOf[ClassLoader]
           }
           val annotationModuleClass = {
-            val annotationModule = annotationSym.owner.info.decl(annotationSym.name.inlineModuleName)
+            val annotationModule =
+              annotationSym.owner.info.decl(annotationSym.name.inlineModuleName)
             val annotationModuleClassName = {
               // TODO: Copy/pasted from Macros.scala. I can't believe there's no better way of doing this.
               def loop(sym: Symbol): String = sym match {
@@ -112,29 +126,37 @@ trait Expanders extends Converter {
             try Class.forName(annotationModuleClassName, true, classloader)
             catch {
               case ex: Throwable =>
-              issueNormalTypeError(annotationTree, MacroAnnotationNotExpandedMessage)(namer.context)
-              throw MacroExpansionException
+                issueNormalTypeError(annotationTree, MacroAnnotationNotExpandedMessage)(
+                  namer.context)
+                throw MacroExpansionException
             }
           }
           val annotationModule = annotationModuleClass.getField("MODULE$").get(null)
-          val newStyleMacroMeth = annotationModuleClass.getDeclaredMethods().find(_.getName == InlineAnnotationMethodName.inlineImplName.toString).get
+          val newStyleMacroMeth = annotationModuleClass
+            .getDeclaredMethods()
+            .find(_.getName == InlineAnnotationMethodName.inlineImplName.toString)
+            .get
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
             macroExpandWithRuntime({
-              try newStyleMacroMeth.invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*).asInstanceOf[m.Tree]
-              catch {
+              try {
+                newStyleMacroMeth
+                  .invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*)
+                  .asInstanceOf[m.Tree]
+              } catch {
                 case ex: Throwable =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
                   realex match {
                     case ex: ControlThrowable => throw ex
-                    case _ => MacroGeneratedException(annotationTree, realex)
+                    case _                    => MacroGeneratedException(annotationTree, realex)
                   }
               }
             })
           }
 
           val stringExpansion = metaExpansion.toString
-          val parser = newUnitParser(new CompilationUnit(newSourceFile(stringExpansion, "<macro>")))
+          val parser = newUnitParser(
+            new CompilationUnit(newSourceFile(stringExpansion, "<macro>")))
           Some(gen.mkTreeOrBlock(parser.parseStatsOrPackages()))
         } catch {
           // NOTE: this means an error that has been caught and reported
@@ -148,14 +170,18 @@ trait Expanders extends Converter {
     // the name, the position in the file and the visibility are all critical
     private def macroExpandWithRuntime[T](body: => T): T = body
 
-    private def extractAndValidateExpansions(original: Tree, annotation: Tree, computeExpansion: () => Option[Tree]): Option[List[Tree]] = {
+    private def extractAndValidateExpansions(
+        original: Tree,
+        annotation: Tree,
+        computeExpansion: () => Option[Tree]): Option[List[Tree]] = {
       val sym = original.symbol
-      val companion = if (original.isInstanceOf[ClassDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
-      val wasWeak = isWeak(companion)
+      val companion =
+        if (original.isInstanceOf[ClassDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
+      val wasWeak      = isWeak(companion)
       val wasTransient = companion == NoSymbol || companion.isSynthetic
       def extract(expanded: Tree): List[Tree] = expanded match {
         case Block(stats, Literal(Constant(()))) => stats // ugh
-        case tree => List(tree)
+        case tree                                => List(tree)
       }
       def validate(expanded: List[Tree]): Option[List[Tree]] = {
         if (sym.owner.isPackageClass) {
@@ -163,18 +189,24 @@ trait Expanders extends Converter {
             case ClassDef(_, originalName, _, _) =>
               expanded match {
                 case (expandedClass @ ClassDef(_, className, _, _)) :: Nil
-                if className == originalName && wasWeak =>
+                    if className == originalName && wasWeak =>
                   attachExpansion(sym, List(expandedClass))
                   attachExpansion(companion, Nil)
                   Some(expanded)
-                case (expandedCompanion @ ModuleDef(_, moduleName, _)) :: (expandedClass @ ClassDef(_, className, _, _)) :: Nil
-                if className == originalName && moduleName == originalName.toTermName =>
-                  attachExpansion(sym, if (wasWeak) List(expandedClass, expandedCompanion) else List(expandedClass))
+                case (expandedCompanion @ ModuleDef(_, moduleName, _)) ::
+                      (expandedClass @ ClassDef(_, className, _, _)) :: Nil
+                    if className == originalName && moduleName == originalName.toTermName =>
+                  attachExpansion(
+                    sym,
+                    if (wasWeak) List(expandedClass, expandedCompanion) else List(expandedClass))
                   attachExpansion(companion, List(expandedCompanion))
                   Some(expanded)
-                case (expandedClass @ ClassDef(_, className, _, _)) :: (expandedCompanion @ ModuleDef(_, moduleName, _)) :: Nil
-                if className == originalName && moduleName == originalName.toTermName =>
-                  attachExpansion(sym, if (wasWeak) List(expandedClass, expandedCompanion) else List(expandedClass))
+                case (expandedClass @ ClassDef(_, className, _, _)) ::
+                      (expandedCompanion @ ModuleDef(_, moduleName, _)) :: Nil
+                    if className == originalName && moduleName == originalName.toTermName =>
+                  attachExpansion(
+                    sym,
+                    if (wasWeak) List(expandedClass, expandedCompanion) else List(expandedClass))
                   attachExpansion(companion, List(expandedCompanion))
                   Some(expanded)
                 case _ =>
@@ -184,7 +216,8 @@ trait Expanders extends Converter {
               }
             case ModuleDef(_, originalName, _) =>
               expanded match {
-                case (expandedModule @ ModuleDef(_, expandedName, _)) :: Nil if expandedName == originalName =>
+                case (expandedModule @ ModuleDef(_, expandedName, _)) :: Nil
+                    if expandedName == originalName =>
                   attachExpansion(sym, List(expandedModule))
                   Some(expanded)
                 case _ =>
@@ -197,7 +230,8 @@ trait Expanders extends Converter {
             attachExpansion(sym, expanded)
             attachExpansion(companion, Nil)
           } else {
-            def companionRelated(tree: Tree) = tree.isInstanceOf[ModuleDef] && tree.asInstanceOf[ModuleDef].name == companion.name
+            def companionRelated(tree: Tree) =
+              tree.isInstanceOf[ModuleDef] && tree.asInstanceOf[ModuleDef].name == companion.name
             val (forCompanion, forSym) = expanded.partition(companionRelated)
             attachExpansion(sym, forSym)
             attachExpansion(companion, forCompanion)
@@ -207,7 +241,7 @@ trait Expanders extends Converter {
       }
       for {
         lowlevelExpansion <- computeExpansion()
-        expansion <- Some(extract(lowlevelExpansion))
+        expansion         <- Some(extract(lowlevelExpansion))
         duplicated = expansion.map(duplicateAndKeepPositions)
         validatedExpansion <- validate(duplicated)
       } yield validatedExpansion
@@ -215,34 +249,41 @@ trait Expanders extends Converter {
 
     def expandMacroAnnotations(stats: List[Tree]): List[Tree] = {
       def mightNeedTransform(stat: Tree): Boolean = stat match {
-        case stat: DocDef => mightNeedTransform(stat.definition)
+        case stat: DocDef    => mightNeedTransform(stat.definition)
         case stat: MemberDef => isMaybeExpandee(stat.symbol) || hasAttachedExpansion(stat.symbol)
-        case _ => false
+        case _               => false
       }
-      def rewrapAfterTransform(stat: Tree, transformed: List[Tree]): List[Tree] = (stat, transformed) match {
-        case (stat @ DocDef(comment, _), List(transformed: MemberDef)) => List(treeCopy.DocDef(stat, comment, transformed))
-        case (stat @ DocDef(comment, _), List(transformed: DocDef)) => List(transformed)
-        case (_, Nil | List(_: MemberDef)) => transformed
-        case (_, unexpected) => unexpected // NOTE: who knows how people are already using macro annotations, so it's scary to fail here
-      }
-      if (phase.id > currentRun.typerPhase.id || !stats.exists(mightNeedTransform)) stats
-      else stats.flatMap(stat => {
-        if (mightNeedTransform(stat)) {
-          val sym = stat.symbol
-          assert(sym != NoSymbol, (sym, stat))
-          if (isMaybeExpandee(sym)) {
-            def assert(what: Boolean) = Predef.assert(what, s"${sym.accurateKindString} ${sym.rawname}#${sym.id} with ${sym.rawInfo.kind}")
-            assert(sym.rawInfo.isInstanceOf[Namer#MaybeExpandeeCompleter])
-            sym.rawInfo.completeOnlyExpansions(sym)
-            assert(!sym.rawInfo.isInstanceOf[Namer#MaybeExpandeeCompleter])
-          }
-          val derivedTrees = attachedExpansion(sym).getOrElse(List(stat))
-          val (me, others) = derivedTrees.partition(_.symbol == sym)
-          rewrapAfterTransform(stat, me) ++ expandMacroAnnotations(others)
-        } else {
-          List(stat)
+      def rewrapAfterTransform(stat: Tree, transformed: List[Tree]): List[Tree] =
+        (stat, transformed) match {
+          case (stat @ DocDef(comment, _), List(transformed: MemberDef)) =>
+            List(treeCopy.DocDef(stat, comment, transformed))
+          case (stat @ DocDef(comment, _), List(transformed: DocDef)) => List(transformed)
+          case (_, Nil | List(_: MemberDef))                          => transformed
+          case (_, unexpected) =>
+            unexpected // NOTE: who knows how people are already using macro annotations, so it's scary to fail here
         }
-      })
+      if (phase.id > currentRun.typerPhase.id || !stats.exists(mightNeedTransform)) stats
+      else
+        stats.flatMap(stat => {
+          if (mightNeedTransform(stat)) {
+            val sym = stat.symbol
+            assert(sym != NoSymbol, (sym, stat))
+            if (isMaybeExpandee(sym)) {
+              def assert(what: Boolean) =
+                Predef.assert(
+                  what,
+                  s"${sym.accurateKindString} ${sym.rawname}#${sym.id} with ${sym.rawInfo.kind}")
+              assert(sym.rawInfo.isInstanceOf[Namer#MaybeExpandeeCompleter])
+              sym.rawInfo.completeOnlyExpansions(sym)
+              assert(!sym.rawInfo.isInstanceOf[Namer#MaybeExpandeeCompleter])
+            }
+            val derivedTrees = attachedExpansion(sym).getOrElse(List(stat))
+            val (me, others) = derivedTrees.partition(_.symbol == sym)
+            rewrapAfterTransform(stat, me) ++ expandMacroAnnotations(others)
+          } else {
+            List(stat)
+          }
+        })
     }
   }
 }

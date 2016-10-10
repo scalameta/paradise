@@ -28,7 +28,8 @@ trait PersistPhase extends ReflectToolkit with Converter {
       if (!_backendCheck) {
         _backendCheck = true
         if (!settings.isBCodeActive) {
-          global.reporter.error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
+          global.reporter
+            .error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
         }
       }
     }
@@ -37,7 +38,8 @@ trait PersistPhase extends ReflectToolkit with Converter {
       override def name = "persist"
       override def run(): Unit = {
         global.currentRun.units.foreach(unit => {
-          if (sys.props("persist.debug") != null) println(s"computing scala.meta tree for ${unit.source.file.path}")
+          if (sys.props("persist.debug") != null)
+            println(s"computing scala.meta tree for ${unit.source.file.path}")
           unit.body.metadata("scalameta") = unit.body.toMtree[Source]
           ensureBCodeBackend() // NOTE: actual persistence is delayed until bytecode emission
         })

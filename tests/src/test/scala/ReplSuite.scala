@@ -12,13 +12,22 @@ trait ReplSuite extends ToolSuite with DisableScalaColor {
     s.classpath.value = sys.props("sbt.paths.tests.classpath")
     s.plugin.value = List(sys.props("sbt.paths.plugin.jar"))
     val lines = ILoop.runForTranscript(code, s).lines.toList
-    lines.drop(3).dropRight(2).map(_.replaceAll("\\s+$","")).mkString("\n").trim.stripSuffix("scala>").trim
+    lines
+      .drop(3)
+      .dropRight(2)
+      .map(_.replaceAll("\\s+$", ""))
+      .mkString("\n")
+      .trim
+      .stripSuffix("scala>")
+      .trim
   }
 
   private def replViaReplGlobal(code: String): String = {
     val lines = code.trim.stripMargin.split(EOL)
     val input = lines.mkString(EOL) + EOL
-    val (exitCode, output) = runRepl(input, options => { MainGenericRunner.main(options ++ Array("-Xnojline")); sys.exit(0) })
+    val (exitCode, output) = runRepl(input, options => {
+      MainGenericRunner.main(options ++ Array("-Xnojline")); sys.exit(0)
+    })
     if (exitCode != 0) fail("repl invocation has failed:" + EOL + output)
     val result = {
       // Example output:
@@ -48,7 +57,7 @@ trait ReplSuite extends ToolSuite with DisableScalaColor {
       // scala> :quit
       // ===================
       val unwrapped = output.split(EOL).drop(3).dropRight(2).mkString(EOL)
-      var i = 0
+      var i         = 0
       """(scala> |     \| )""".r.replaceAllIn(unwrapped, m => {
         var prefix = unwrapped.substring(m.start, m.end)
         if (prefix == "     | ") prefix = ""
@@ -62,11 +71,14 @@ trait ReplSuite extends ToolSuite with DisableScalaColor {
   }
 
   // TODO: change this to something less ugly
-  private var _repl: String => String = null
+  private var _repl: String => String            = null
   final protected def repl(code: String): String = _repl(code)
 
-  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(implicit pos: Position): Unit = {
+  override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(
+      implicit pos: Position): Unit = {
     super.test(testName + " (ILoop)", testTags: _*)({ this._repl = replViaILoop _; testFun })
-    super.test(testName + " (ReplGlobal)", testTags: _*)({ this._repl = replViaReplGlobal _; testFun })
+    super.test(testName + " (ReplGlobal)", testTags: _*)({
+      this._repl = replViaReplGlobal _; testFun
+    })
   }
 }
