@@ -43,4 +43,3 @@ class NewRepl extends ReplSuite {
     """.stripMargin.trim)
   }
 }
-

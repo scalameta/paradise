@@ -9,10 +9,17 @@ object socialMacros {
     val result = {
       annottees.map(_.tree).toList match {
         case ClassDef(mods, name, tparams, Template(parents, self, body)) :: rest =>
-          val beforeToString = body.collect{ case ddef @ DefDef(_, name, _, _, _, _) if name == TermName("toString") => ddef }
+          val beforeToString = body.collect {
+            case ddef @ DefDef(_, name, _, _, _, _) if name == TermName("toString") => ddef
+          }
           val List(DefDef(_, _, _, _, _, Literal(Constant(before: String)))) = beforeToString
-          val after = before + "+1"
-          val afterToString = DefDef(Modifiers(OVERRIDE), TermName("toString"), List(), List(List()), TypeTree(), Literal(Constant(after)))
+          val after                                                          = before + "+1"
+          val afterToString = DefDef(Modifiers(OVERRIDE),
+                                     TermName("toString"),
+                                     List(),
+                                     List(List()),
+                                     TypeTree(),
+                                     Literal(Constant(after)))
           val body1 = body.diff(beforeToString) :+ afterToString
           ClassDef(mods, name, tparams, Template(parents, self, body1)) :: rest
       }
@@ -25,7 +32,8 @@ object socialMacros {
       annottees.map(_.tree).toList match {
         case ClassDef(mods, name, tparams, impl) :: rest =>
           def plusOne = Apply(Select(New(Ident(TypeName("plusOne"))), termNames.CONSTRUCTOR), Nil)
-          val mods1 = Modifiers(mods.flags, mods.privateWithin, mods.annotations :+ plusOne :+ plusOne)
+          val mods1 =
+            Modifiers(mods.flags, mods.privateWithin, mods.annotations :+ plusOne :+ plusOne)
           ClassDef(mods1, name, tparams, impl) :: rest
       }
     }

@@ -10,7 +10,12 @@ object argumentativeMacro {
       annottees.map(_.tree).toList match {
         case ModuleDef(mods, name, Template(parents, self, body)) :: Nil =>
           val Apply(Select(Apply(_, List(x, y)), _), _) = c.macroApplication
-          val toStringMethod = DefDef(Modifiers(OVERRIDE), TermName("toString"), List(), List(List()), TypeTree(), Literal(Constant(s"$x $y")))
+          val toStringMethod = DefDef(Modifiers(OVERRIDE),
+                                      TermName("toString"),
+                                      List(),
+                                      List(List()),
+                                      TypeTree(),
+                                      Literal(Constant(s"$x $y")))
           ModuleDef(mods, name, Template(parents, self, body :+ toStringMethod))
       }
     }
