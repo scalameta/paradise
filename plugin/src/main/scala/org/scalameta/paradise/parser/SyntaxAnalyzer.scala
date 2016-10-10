@@ -78,7 +78,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
     }
     override def localModifiers(): Modifiers = {
       def loop(mods: Modifiers): Modifiers = {
-        if (isInline) { val offset = in.offset; in.nextToken(); loop(markInline(offset, mods)) } else if (isLocalModifier)
+        if (isInline) {
+          val offset = in.offset; in.nextToken(); loop(markInline(offset, mods))
+        } else if (isLocalModifier)
           loop(addMod(mods, flagTokens(in.token), tokenRange(in)))
         else mods
       }
@@ -207,7 +209,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                        Block(List(
                                Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY),
                                             termNames.CONSTRUCTOR),
-                                     List())),
+                                     List())
+                             ),
                              Literal(Constant(())))))
               syntheticCtor +: impls1.filter(_.nonEmpty)
             }
