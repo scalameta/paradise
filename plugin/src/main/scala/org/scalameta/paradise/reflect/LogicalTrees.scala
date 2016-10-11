@@ -321,9 +321,11 @@ trait LogicalTrees {
     trait TypeParamName extends Name
 
     object TypeParamDef {
-      def unapply(tree: g.TypeDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.TypeBoundsTree, List[g.Tree], List[g.Tree])] = {
+      def unapply(tree: g.TypeDef): Option[(List[l.Modifier], l.Name, List[g.TypeDef], g.TypeBoundsTree, List[g.Tree], List[g.Tree])] = {
         if (!tree.is(TypeParamRole)) return None
         val g.TypeDef(_, name, tparams, rhs) = tree
+        val lname = if (tree.name.isAnonymous) l.AnonymousName()
+                    else l.TypeName(tree)
         val ltparams = tparams.map(_.set(TypeParamRole(Nil, Nil)))
         val ltbounds = {
           rhs match {
@@ -335,7 +337,7 @@ trait LogicalTrees {
           }
         }
         val TypeParamRole(lvbounds, lcbounds) = tree.get(TypeParamRole)
-        Some((l.Modifiers(tree), l.TypeName(tree), ltparams, ltbounds, lvbounds, lcbounds))
+        Some((l.Modifiers(tree), lname, ltparams, ltbounds, lvbounds, lcbounds))
       }
     }
 
