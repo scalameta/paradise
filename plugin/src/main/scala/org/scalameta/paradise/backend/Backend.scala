@@ -19,7 +19,9 @@ import org.scalameta.unreachable
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 // NOTE: mostly copy/pasted from https://github.com/VladimirNik/tasty/blob/7b45111d066ddbc43d859c9f6c0a81978111cf90/plugin/src/main/scala/scala/tasty/internal/scalac/Plugin.scala
-abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.tools.nsc.Global$genBCode$(global) with ReflectToolkit {
+abstract class ParadiseGenBCode(override val global: NscGlobal)
+    extends scala.tools.nsc.Global$genBCode$(global)
+    with ReflectToolkit {
   import global._
   import definitions._
 
@@ -34,13 +36,13 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
 
   class ParadiseBCodePhase(prev: Phase) extends BCodePhase(prev) {
 
-    override def name = phaseName
+    override def name        = phaseName
     override def description = "Generate bytecode from ASTs using the ASM library"
     override def erasedTypes = true
 
-    private var bytecodeWriter  : BytecodeWriter   = null
-    private var mirrorCodeGen   : JMirrorBuilder   = null
-    private var beanInfoCodeGen : JBeanInfoBuilder = null
+    private var bytecodeWriter: BytecodeWriter    = null
+    private var mirrorCodeGen: JMirrorBuilder     = null
+    private var beanInfoCodeGen: JBeanInfoBuilder = null
 
     /* ---------------- q1 ---------------- */
 
@@ -48,7 +50,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
     //   def isPoison = { arrivalPos == Int.MaxValue }
     // }
     private val poison1 = Item1(Int.MaxValue, null, null)
-    private val q1 = new java.util.LinkedList[Item1]
+    private val q1      = new java.util.LinkedList[Item1]
 
     /* ---------------- q2 ---------------- */
 
@@ -61,7 +63,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
     // }
 
     private val poison2 = Item2(Int.MaxValue, null, null, null, null)
-    private val q2 = new _root_.java.util.LinkedList[Item2]
+    private val q2      = new _root_.java.util.LinkedList[Item2]
 
     /* ---------------- q3 ---------------- */
 
@@ -93,7 +95,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
       }
     }
     private val poison3 = Item3(Int.MaxValue, null, null, null, null)
-    private val q3 = new java.util.PriorityQueue[Item3](1000, i3comparator)
+    private val q3      = new java.util.PriorityQueue[Item3](1000, i3comparator)
 
     /*
      *  Pipeline that takes ClassDefs from queue-1, lowers them into an intermediate form, placing them on queue-2
@@ -108,10 +110,8 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
           if (item.isPoison) {
             q2 add poison2
             return
-          }
-          else {
-            try   { withCurrentUnit(item.cunit)(visit(item)) }
-            catch {
+          } else {
+            try { withCurrentUnit(item.cunit)(visit(item)) } catch {
               case ex: Throwable =>
                 ex.printStackTrace()
                 error(s"Error while emitting ${item.cunit.source}\n${ex.getMessage}")
@@ -128,7 +128,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
        */
       def visit(item: Item1) {
         val Item1(arrivalPos, cd, cunit) = item
-        val claszSymbol = cd.symbol
+        val claszSymbol                  = cd.symbol
 
         // GenASM checks this before classfiles are emitted, https://github.com/scala/scala/commit/e4d1d930693ac75d8eb64c2c3c69f2fc22bec739
         val lowercaseJavaClassName = claszSymbol.javaClassName.toLowerCase
@@ -139,7 +139,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
             reporter.warning(
               claszSymbol.pos,
               s"Class ${claszSymbol.javaClassName} differs only in case from ${dupClassSym.javaClassName}. " +
-              "Such classes will overwrite one another on case-insensitive filesystems."
+                "Such classes will overwrite one another on case-insensitive filesystems."
             )
         }
 
@@ -157,7 +157,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
         // -------------- "plain" class --------------
         val pcb = new PlainClassBuilder(cunit)
         pcb.genPlainClass(cd)
-        val outF = if (needsOutFolder) getOutFolder(claszSymbol, pcb.thisName, cunit) else null;
+        val outF   = if (needsOutFolder) getOutFolder(claszSymbol, pcb.thisName, cunit) else null;
         val plainC = pcb.cnode
 
         // -------------- TASTY attr --------------
@@ -166,10 +166,12 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
           for (meta <- cunit.body.metadata.get("scalameta").map(_.require[m.Source])) {
             enteringTyper {
               if (claszSymbol.owner.isPackageClass) {
-                def fail(message: String) = abort(s"internal error when serializing TASTY: $message")
+                def fail(message: String) =
+                  abort(s"internal error when serializing TASTY: $message")
                 def relevantPart[T <: m.Tree](tree: T, chain: List[g.Symbol]): T = {
                   object loop {
-                    private def correlatePackage(tree: m.Pkg, chain: List[g.Symbol]): Option[m.Pkg] = {
+                    private def correlatePackage(tree: m.Pkg,
+                                                 chain: List[g.Symbol]): Option[m.Pkg] = {
                       def loop(ref: m.Term.Ref, chain: List[g.Symbol]): Option[List[g.Symbol]] = {
                         chain.headOption.flatMap(symbol => {
                           ref match {
@@ -186,23 +188,29 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
                       }
                       loop(tree.ref, chain).flatMap(chain => {
                         val stats1 = apply(tree.stats, chain)
-                        if (stats1.nonEmpty) Some(tree.copy(stats = stats1.require[Seq[m.Stat]])) else None
+                        if (stats1.nonEmpty) Some(tree.copy(stats = stats1.require[Seq[m.Stat]]))
+                        else None
                       })
                     }
-                    private def correlateLeaf(tree: m.Member, name: m.Name, chain: List[g.Symbol]): Option[m.Member] = {
+                    private def correlateLeaf(tree: m.Member,
+                                              name: m.Name,
+                                              chain: List[g.Symbol]): Option[m.Member] = {
                       chain.headOption.flatMap(symbol => {
                         val matchesType = {
-                          if (tree.isInstanceOf[m.Defn.Class]) symbol.isClass && !symbol.isTrait && !symbol.isModuleClass
+                          if (tree.isInstanceOf[m.Defn.Class])
+                            symbol.isClass && !symbol.isTrait && !symbol.isModuleClass
                           else if (tree.isInstanceOf[m.Defn.Trait]) symbol.isTrait
-                          else if (tree.isInstanceOf[m.Defn.Object]) symbol.isModuleClass && !symbol.isPackageClass
+                          else if (tree.isInstanceOf[m.Defn.Object])
+                            symbol.isModuleClass && !symbol.isPackageClass
                           else if (tree.isInstanceOf[m.Pkg.Object]) symbol.isPackageClass
                           else unreachable(debug(tree, showRaw(symbol)))
                         }
                         val matchesName = symbol.name.decoded == name.value
                         val matchesRest = chain.tail match {
-                          case symbol :: Nil => tree.isInstanceOf[m.Pkg.Object] && symbol.isPackageObjectClass
+                          case symbol :: Nil =>
+                            tree.isInstanceOf[m.Pkg.Object] && symbol.isPackageObjectClass
                           case Nil => !tree.isInstanceOf[m.Pkg.Object]
-                          case _ => false
+                          case _   => false
                         }
                         if (matchesType && matchesName && matchesRest) Some(tree) else None
                       })
@@ -211,7 +219,8 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
                       tree match {
                         case tree @ m.Source(stats) =>
                           val stats1 = apply(stats, chain)
-                          if (stats1.nonEmpty) Some(tree.copy(stats = stats1.require[Seq[m.Stat]])) else None
+                          if (stats1.nonEmpty) Some(tree.copy(stats = stats1.require[Seq[m.Stat]]))
+                          else None
                         case tree: m.Pkg =>
                           correlatePackage(tree, chain)
                         case tree: m.Defn.Class =>
@@ -222,8 +231,10 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
                           correlateLeaf(tree, tree.name, chain)
                         case tree: m.Pkg.Object =>
                           correlateLeaf(tree, tree.name, chain)
-                        case _ =>
-                          abort(s"couldn't find representation for $claszSymbol")
+                        case els =>
+                          import scala.meta.Structure
+                          abort(
+                            s"couldn't find representation for $claszSymbol. ${els.show[Structure]}")
                       }
                     }
                     def apply(mtrees: Seq[m.Tree], chain: List[g.Symbol]): Seq[m.Tree] = {
@@ -231,10 +242,10 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
                     }
                   }
                   val relevantSubchain = chain.filter(!_.isEffectiveRoot)
-                  val slice = loop(tree, relevantSubchain)
+                  val slice            = loop(tree, relevantSubchain)
                   slice match {
                     case Some(slice) => slice.asInstanceOf[T]
-                    case None => fail(s"couldn't find representation for $claszSymbol")
+                    case None        => fail(s"couldn't find representation for $claszSymbol")
                   }
                 }
                 val slice = relevantPart(meta, claszSymbol.ownerChain.reverse)
@@ -254,18 +265,17 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
         val beanC =
           if (claszSymbol hasAnnotation BeanInfoAttr) {
             beanInfoCodeGen.genBeanInfoClass(
-              claszSymbol, cunit,
+              claszSymbol,
+              cunit,
               fieldSymbols(claszSymbol),
               methodSymbols(cd)
             )
           } else null
 
-          // ----------- hand over to pipeline-2
+        // ----------- hand over to pipeline-2
 
         val item2 =
-          Item2(arrivalPos,
-                mirrorC, plainC, beanC,
-                outF)
+          Item2(arrivalPos, mirrorC, plainC, beanC, outF)
 
         q2 add item2 // at the very end of this method so that no Worker2 thread starts mutating before we're done.
 
@@ -302,12 +312,11 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
           if (item.isPoison) {
             q3 add poison3
             return
-          }
-          else {
+          } else {
             try {
               localOptimizations(item.plain)
               addToQ3(item)
-          } catch {
+            } catch {
               case ex: Throwable =>
                 ex.printStackTrace()
                 error(s"Error while emitting ${item.plain.name}\n${ex.getMessage}")
@@ -328,9 +337,10 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
 
         val mirrorC = if (mirror == null) null else SubItem3(mirror.name, getByteArray(mirror))
         val plainC  = SubItem3(plain.name, getByteArray(plain))
-        val beanC   = if (bean == null)   null else SubItem3(bean.name, getByteArray(bean))
+        val beanC   = if (bean == null) null else SubItem3(bean.name, getByteArray(bean))
 
-        if (AsmUtils.traceSerializedClassEnabled && plain.name.contains(AsmUtils.traceSerializedClassPattern)) {
+        if (AsmUtils.traceSerializedClassEnabled &&
+            plain.name.contains(AsmUtils.traceSerializedClassPattern)) {
           if (mirrorC != null) AsmUtils.traceClass(mirrorC.jclassBytes)
           AsmUtils.traceClass(plainC.jclassBytes)
           if (beanC != null) AsmUtils.traceClass(beanC.jclassBytes)
@@ -345,21 +355,21 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
     // var arrivalPos = 0
 
     /**
-     * The `run` method is overridden because the backend has a different data flow than the default
-     * phase: the backend does not transform compilation units one by one, but on all units in the
-     * same run. This allows cross-unit optimizations and running some stages of the backend
-     * concurrently on multiple units.
-     *
-     *  A run of the BCodePhase phase comprises:
-     *
-     *    (a) set-up steps (most notably supporting maps in `BCodeTypes`,
-     *        but also "the" writer where class files in byte-array form go)
-     *
-     *    (b) building of ASM ClassNodes, their optimization and serialization.
-     *
-     *    (c) tear down (closing the classfile-writer and clearing maps)
-     *
-     */
+      * The `run` method is overridden because the backend has a different data flow than the default
+      * phase: the backend does not transform compilation units one by one, but on all units in the
+      * same run. This allows cross-unit optimizations and running some stages of the backend
+      * concurrently on multiple units.
+      *
+      *  A run of the BCodePhase phase comprises:
+      *
+      *    (a) set-up steps (most notably supporting maps in `BCodeTypes`,
+      *        but also "the" writer where class files in byte-array form go)
+      *
+      *    (b) building of ASM ClassNodes, their optimization and serialization.
+      *
+      *    (c) tear down (closing the classfile-writer and clearing maps)
+      *
+      */
     override def run() {
       val bcodeStart = Statistics.startTimer(BackendStats.bcodeTimer)
 
@@ -374,8 +384,8 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
       Statistics.stopTimer(BackendStats.bcodeInitTimer, initStart)
 
       // initBytecodeWriter invokes fullName, thus we have to run it before the typer-dependent thread is activated.
-      bytecodeWriter  = initBytecodeWriter(cleanup.getEntryPoints)
-      mirrorCodeGen   = new JMirrorBuilder
+      bytecodeWriter = initBytecodeWriter(cleanup.getEntryPoints)
+      mirrorCodeGen = new JMirrorBuilder
       beanInfoCodeGen = new JBeanInfoBuilder
 
       val needsOutfileForSymbol = bytecodeWriter.isInstanceOf[ClassBytecodeWriter]
@@ -386,17 +396,17 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
       Statistics.stopTimer(BackendStats.bcodeTimer, bcodeStart)
 
       /* TODO Bytecode can be verified (now that all classfiles have been written to disk)
-       *
-       * (1) asm.util.CheckAdapter.verify()
-       *       public static void verify(ClassReader cr, ClassLoader loader, boolean dump, PrintWriter pw)
-       *     passing a custom ClassLoader to verify inter-dependent classes.
-       *     Alternatively,
-       *       - an offline-bytecode verifier could be used (e.g. Maxine brings one as separate tool).
-       *       - -Xverify:all
-       *
-       * (2) if requested, check-java-signatures, over and beyond the syntactic checks in `getGenericSignature()`
-       *
-       */
+     *
+     * (1) asm.util.CheckAdapter.verify()
+     *       public static void verify(ClassReader cr, ClassLoader loader, boolean dump, PrintWriter pw)
+     *     passing a custom ClassLoader to verify inter-dependent classes.
+     *     Alternatively,
+     *       - an offline-bytecode verifier could be used (e.g. Maxine brings one as separate tool).
+     *       - -Xverify:all
+     *
+     * (2) if requested, check-java-signatures, over and beyond the syntactic checks in `getGenericSignature()`
+     *
+     */
     }
 
     /*
@@ -431,15 +441,14 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
     private def drainQ3() {
 
       def sendToDisk(cfr: SubItem3, outFolder: scala.tools.nsc.io.AbstractFile) {
-        if (cfr != null){
+        if (cfr != null) {
           val SubItem3(jclassName, jclassBytes) = cfr
           try {
             val outFile =
               if (outFolder == null) null
               else getFileForClassfile(outFolder, jclassName, ".class")
             bytecodeWriter.writeClass(jclassName, jclassName, jclassBytes, outFile)
-          }
-          catch {
+          } catch {
             case e: FileConflictException =>
               error(s"error writing $jclassName: ${e.getMessage}")
           }
@@ -452,13 +461,13 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
 
       while (moreComing) {
         val incoming = q3.poll
-        moreComing   = !incoming.isPoison
+        moreComing = !incoming.isPoison
         if (moreComing) {
-          val item = incoming
+          val item      = incoming
           val outFolder = item.outFolder
           sendToDisk(item.mirror, outFolder)
-          sendToDisk(item.plain,  outFolder)
-          sendToDisk(item.bean,   outFolder)
+          sendToDisk(item.plain, outFolder)
+          sendToDisk(item.bean, outFolder)
           expected += 1
         }
       }
@@ -476,7 +485,7 @@ abstract class ParadiseGenBCode(override val global: NscGlobal) extends scala.to
         tree match {
           case EmptyTree            => ()
           case PackageDef(_, stats) => stats foreach gen
-          case cd: ClassDef         =>
+          case cd: ClassDef =>
             q1 add Item1(arrivalPos, cd, cunit)
             arrivalPos += 1
         }

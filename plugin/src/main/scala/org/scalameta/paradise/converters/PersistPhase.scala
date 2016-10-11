@@ -4,6 +4,7 @@ package converters
 import scala.meta._
 import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
+
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait PersistPhase extends ReflectToolkit with Converter {
@@ -18,17 +19,18 @@ trait PersistPhase extends ReflectToolkit with Converter {
     // btw this isn't such a big problem for persistence, but it definitely is for macro interpretation
     // let's hope that the research into runtime macros, which entails moving the typechecker to scala-reflect.jar will allow us to restructure things
     // so that delayed typechecks come right after typer, not intermingled with other logic
-    override val runsAfter = List("typer")
+    override val runsAfter      = List("typer")
     override val runsRightAfter = None
-    override val phaseName = "persist"
-    override def description = "persist scala.meta trees"
+    override val phaseName      = "persist"
+    override def description    = "persist scala.meta trees"
 
     private var _backendCheck = false
     private def ensureBCodeBackend(): Unit = {
       if (!_backendCheck) {
         _backendCheck = true
         if (!settings.isBCodeActive) {
-          global.reporter.error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
+          global.reporter
+            .error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
         }
       }
     }
@@ -37,7 +39,8 @@ trait PersistPhase extends ReflectToolkit with Converter {
       override def name = "persist"
       override def run(): Unit = {
         global.currentRun.units.foreach(unit => {
-          if (sys.props("persist.debug") != null) println(s"computing scala.meta tree for ${unit.source.file.path}")
+          if (sys.props("persist.debug") != null)
+            println(s"computing scala.meta tree for ${unit.source.file.path}")
           unit.body.metadata("scalameta") = unit.body.toMtree[Source]
           ensureBCodeBackend() // NOTE: actual persistence is delayed until bytecode emission
         })
