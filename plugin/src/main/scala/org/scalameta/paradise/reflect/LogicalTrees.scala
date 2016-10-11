@@ -576,7 +576,8 @@ trait LogicalTrees { self: ReflectToolkit =>
     object PackageObjectDef {
       def unapply(tree: g.PackageDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
         if (!tree.is(PackageObjectPackageRole)) return None
-        val PackageObjectPackageRole(module @ g.ModuleDef(_, _, templ)) = tree.get(PackageObjectPackageRole)
+        val PackageObjectPackageRole(module @ g.ModuleDef(_, _, templ)) =
+          tree.get(PackageObjectPackageRole)
         Some((Nil, ???, l.Template(module)))
       }
     }
@@ -649,11 +650,11 @@ trait LogicalTrees { self: ReflectToolkit =>
     object Template {
       def apply(tree: g.ImplDef): l.Template = {
         def removeSyntheticParents(parents: List[g.Tree]): List[g.Tree] = parents match {
-          case List(anyRef)
-          if anyRef.toString == "scala.AnyRef" =>
+          case List(anyRef) if anyRef.toString == "scala.AnyRef" =>
             Nil
           case parents :+ product :+ serializable
-          if tree.mods.hasFlag(CASE) && product.toString == "scala.Product" && serializable.toString == "scala.Serializable" =>
+              if tree.mods
+                .hasFlag(CASE) && product.toString == "scala.Product" && serializable.toString == "scala.Serializable" =>
             parents
           case other =>
             other
