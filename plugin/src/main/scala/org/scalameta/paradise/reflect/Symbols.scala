@@ -1,8 +1,7 @@
 package org.scalameta.paradise
 package reflect
 
-trait Symbols {
-  self: ReflectToolkit =>
+trait Symbols { self: ReflectToolkit =>
 
   import global._
   import scala.reflect.internal.Flags._
@@ -18,9 +17,13 @@ trait Symbols {
     def isNewMacroAnnotation = {
       sym.isClass && {
         val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
-        val annMethod = sym.info.decl(InlineAnnotationMethodName)
-        val annImplMethod = sym.owner.info.decl(sym.name.inlineModuleName).info.decl(InlineAnnotationMethodName.inlineImplName)
-        annMethod != NoSymbol && annMethod.initialize.annotations.exists(_.tpe.typeSymbol == MetaInlineClass) && annImplMethod.exists
+        val annMethod       = sym.info.decl(InlineAnnotationMethodName)
+        val annImplMethod = sym.owner.info
+          .decl(sym.name.inlineModuleName)
+          .info
+          .decl(InlineAnnotationMethodName.inlineImplName)
+        annMethod != NoSymbol && annMethod.initialize.annotations
+          .exists(_.tpe.typeSymbol == MetaInlineClass) && annImplMethod.exists
       }
     }
     def isMacroAnnotation = isOldMacroAnnotation || isNewMacroAnnotation

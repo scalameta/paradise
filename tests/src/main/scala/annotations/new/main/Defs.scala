@@ -28,7 +28,6 @@ class printClass extends scala.annotation.StaticAnnotation {
   }
 }
 
-
 @compileTimeOnly("@identity not expanded")
 class identity extends scala.annotation.StaticAnnotation {
   inline def apply(defn: Any): Any = meta {
@@ -71,9 +70,11 @@ object Helpers {
     val parsedStat = stat.parse[Stat].get
 
     defn match {
-      case  q"..$mods def $name[..$tparams](...$paramss): $tpeopt = { ..${stats: immutable.Seq[Stat]} }" =>
+      case q"""..$mods def $name[..$tparams](...$paramss): $tpeopt = {
+                 ..${ stats: immutable.Seq[Stat] }
+               }""" =>
         q"..$mods def $name[..$tparams](...$paramss): $tpeopt = { ..$stats;  $parsedStat}"
-      case  q"..$mods def $name[..$tparams](...$paramss): $tpeopt = $expr" =>
+      case q"..$mods def $name[..$tparams](...$paramss): $tpeopt = $expr" =>
         q"..$mods def $name[..$tparams](...$paramss): $tpeopt = { $expr; $parsedStat  }"
     }
 

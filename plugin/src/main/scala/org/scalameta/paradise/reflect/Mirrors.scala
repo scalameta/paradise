@@ -1,8 +1,7 @@
 package org.scalameta.paradise
 package reflect
 
-trait Mirrors {
-  self: ReflectToolkit =>
+trait Mirrors { self: ReflectToolkit =>
 
   import global._
   import scala.language.reflectiveCalls

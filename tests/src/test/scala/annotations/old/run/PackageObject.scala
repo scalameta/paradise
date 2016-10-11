@@ -2,9 +2,9 @@ import org.scalatest.FunSuite
 
 package object pkg1 {
   @doubler def foo(x: Int) = x
-  @doubler val bar = 2
-  @doubler var baz = 3
-  @doubler lazy val bax = 4
+  @doubler val bar         = 2
+  @doubler var baz         = 3
+  @doubler lazy val bax    = 4
   @doubler type T = Int
 }
 
