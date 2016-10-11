@@ -100,7 +100,7 @@ trait LogicalTrees {
     }
     def displayName = {
       // NOTE: "<empty>", the internal name for empty package, isn't a valid Scala identifier, so we hack around
-      if (name == null || name == rootMirror.EmptyPackage.name || name == rootMirror.EmptyPackageClass.name) "_empty_"
+      if (name == null || name == nme.EMPTY_PACKAGE_NAME || name == tpnme.EMPTY_PACKAGE_NAME) "_empty_"
       // TODO: why did we need this in the past?
       // else if (name.isAnonymous) "_"
       else name.decodedName.toString

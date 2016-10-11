@@ -185,5 +185,7 @@ object build extends Build {
     scalacOptions ++= Seq()
     // scalacOptions ++= Seq("-Xprint:typer")
     // scalacOptions ++= Seq("-Xlog-implicits")
+  ) dependsOn (
+    plugin
   )
 }
