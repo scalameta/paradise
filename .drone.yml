@@ -1,0 +1,4 @@
+build:
+  image: olafurpg/scalafix:0.0.1
+  commands:
+    - sbt test
