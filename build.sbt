@@ -18,7 +18,7 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       description := "Empowers production Scala compiler with latest macro developments",
       resolvers += Resolver.sonatypeRepo("releases"),
       publishMavenStyle := true,
-      publishArtifact in Test := false,
+      publishArtifact := false,
       scalacOptions ++= Seq("-deprecation", "-feature"),
       logBuffered := false,
       triggeredMessage in ThisBuild := Watched.clearWhenTriggered
@@ -43,7 +43,6 @@ lazy val testSettings: Seq[Def.Setting[_]] = Seq(
   libraryDependencies += "org.scalatest"  % "scalatest_2.11" % "3.0.0",
   scalacOptions += "-Ywarn-unused-import",
   scalacOptions += "-Xfatal-warnings",
-  publishArtifact in Compile := false,
   scalacOptions in Compile ++= Seq()
 )
 
@@ -109,7 +108,11 @@ lazy val root = project
   .in(file("."))
   .settings(
     sharedSettings,
-    packagedArtifacts := Map.empty
+    packagedArtifacts := Map.empty,
+    aggregate in publish := false,
+    publish := {
+      val publishPlugin = (publish in plugin).value
+    }
   )
   .aggregate(
     plugin,
@@ -154,7 +157,7 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
       (art, slimJar)
     },
     publishMavenStyle := true,
-    publishArtifact in Test := false,
+    publishArtifact in Compile := true,
     publishTo <<= version { v: String =>
       val nexus = "https://oss.sonatype.org/"
       if (v.trim.endsWith("SNAPSHOT"))
