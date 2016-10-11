@@ -541,8 +541,7 @@ trait LogicalTrees { self: ReflectToolkit =>
         }.get
         val lprimaryctor = gprimaryctor.set(PrimaryCtorRole(l.TypeName(tree)))
         val ltparams     = applyBounds(tparams, lprimaryctor.vparamss)
-        val ltempl       = l.Template(templ, l.TypeName(tree))
-        Some((l.Modifiers(tree), l.TypeName(tree), ltparams, lprimaryctor, ltempl))
+        Some((l.Modifiers(tree), l.TypeName(tree), ltparams, lprimaryctor, l.Template(tree)))
       }
     }
 
@@ -552,8 +551,7 @@ trait LogicalTrees { self: ReflectToolkit =>
         if (!tree.is(TraitRole)) return None
         val g.ClassDef(_, _, tparams, templ) = tree
         val ltparams                         = applyBounds(tparams, Nil)
-        val ltempl                           = l.Template(templ, l.TypeName(tree))
-        Some((l.Modifiers(tree), l.TypeName(tree), tparams, g.EmptyTree, ltempl))
+        Some((l.Modifiers(tree), l.TypeName(tree), tparams, g.EmptyTree, l.Template(tree)))
       }
     }
 
@@ -561,8 +559,7 @@ trait LogicalTrees { self: ReflectToolkit =>
       def unapply(tree: g.ModuleDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
         if (!tree.is(ObjectRole)) return None
         val g.ModuleDef(_, name, templ) = tree
-        val ltempl                      = l.Template(templ, l.TermName(tree))
-        Some((l.Modifiers(tree), l.TermName(tree), ltempl))
+        Some((l.Modifiers(tree), l.TermName(tree), l.Template(tree)))
       }
     }
 
@@ -579,9 +576,8 @@ trait LogicalTrees { self: ReflectToolkit =>
     object PackageObjectDef {
       def unapply(tree: g.PackageDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
         if (!tree.is(PackageObjectPackageRole)) return None
-        val PackageObjectPackageRole(g.ModuleDef(_, _, templ)) = tree.get(PackageObjectPackageRole)
-        val ltempl                                             = l.Template(templ, l.TermName(tree))
-        Some((Nil, ???, ltempl))
+        val PackageObjectPackageRole(module @ g.ModuleDef(_, _, templ)) = tree.get(PackageObjectPackageRole)
+        Some((Nil, ???, l.Template(module)))
       }
     }
 
@@ -651,15 +647,19 @@ trait LogicalTrees { self: ReflectToolkit =>
                         stats: Option[List[g.Tree]])
         extends Tree
     object Template {
-      def apply(tree0: g.Template, lowner: g.Tree): l.Template = {
-        def containsSyntheticAnyRef(tree: g.Tree): Boolean = tree match {
-          case g.Select(scala: g.Ident, g.TypeName("AnyRef"))
-              if scala.symbol == definitions.ScalaPackage =>
-            true
-          case _ => false
+      def apply(tree: g.ImplDef): l.Template = {
+        def removeSyntheticParents(parents: List[g.Tree]): List[g.Tree] = parents match {
+          case List(anyRef)
+          if anyRef.toString == "scala.AnyRef" =>
+            Nil
+          case parents :+ product :+ serializable
+          if tree.mods.hasFlag(CASE) && product.toString == "scala.Product" && serializable.toString == "scala.Serializable" =>
+            parents
+          case other =>
+            other
         }
-        val tree =
-          g.Template(tree0.parents.filterNot(containsSyntheticAnyRef), tree0.self, tree0.body)
+        val template =
+          g.Template(removeSyntheticParents(tree.impl.parents), tree.impl.self, tree.impl.body)
         def indexOfFirstCtor(trees: List[g.Tree]) = trees.indexWhere {
           case LowlevelCtor(_, _, _) => true; case _ => false
         }
@@ -680,13 +680,14 @@ trait LogicalTrees { self: ReflectToolkit =>
                 None
             }
         }
-        val g.Template(parents, self, stats) = tree
+        val g.Template(parents, self, stats) = template
         val lself = {
           val result = {
             if (self != noSelfType) self
             else g.ValDef(g.Modifiers(), g.nme.WILDCARD, g.TypeTree(), g.EmptyTree)
           }
-          result.set(SelfRole(lowner))
+          val owner = if (tree.name.isTermName) l.TermName(tree) else l.TypeName(tree)
+          result.set(SelfRole(owner))
         }
         val (rawEdefs, rest) = stats.span(isEarlyDef)
         val (gvdefs, etdefs) = rawEdefs.partition(isEarlyValDef)
