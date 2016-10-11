@@ -713,7 +713,7 @@ trait LogicalTrees { self: ReflectToolkit =>
             val lparent = argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args))
             lparent.set(new SupercallRole)
         }
-        val lstats = Some(templateStats(userDefinedStats)) // TODO: somehow guess Some vs None
+        val lstats = if (userDefinedStats.nonEmpty) Some(templateStats(userDefinedStats)) else None
         l.Template(edefs, lparents, lself, lstats)
       }
     }
