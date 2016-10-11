@@ -294,10 +294,10 @@ trait ToMtree { self: Converter =>
               case l.Annotation(lapply) =>
                 // scala.reflect uses Term.New here, but we need only its parent
                 val m.Term.New(
-                m.Template(Nil,
-                           Seq(mparent),
-                           m.Term.Param(Nil, m.Name.Anonymous(), None, None),
-                           None)) =
+                  m.Template(Nil,
+                             Seq(mparent),
+                             m.Term.Param(Nil, m.Name.Anonymous(), None, None),
+                             None)) =
                   lapply.toMtree[m.Term.New]
                 m.Mod.Annot(mparent)
 

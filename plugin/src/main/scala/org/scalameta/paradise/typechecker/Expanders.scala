@@ -62,7 +62,10 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
         }
         val expandee = {
           val annotationMacroSym = annotationSym.info.member(nme.macroTransform)
-          val prefix             = Select(annotationTree, nme.macroTransform) setSymbol annotationMacroSym setPos annotationTree.pos
+          val prefix =
+            Select(annotationTree, nme.macroTransform)
+              .setSymbol(annotationMacroSym)
+              .setPos(annotationTree.pos)
           Apply(prefix, expandees) setPos annotationTree.pos
         }
         (new DefMacroExpander(typer, expandee, NOmode, WildcardType) {
@@ -136,10 +139,11 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
           newStyleMacroMeth.setAccessible(true)
           val metaExpansion = {
             macroExpandWithRuntime({
-              try newStyleMacroMeth
-                .invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*)
-                .asInstanceOf[m.Tree]
-              catch {
+              try {
+                newStyleMacroMeth
+                  .invoke(annotationModule, metaArgs.asInstanceOf[List[AnyRef]].toArray: _*)
+                  .asInstanceOf[m.Tree]
+              } catch {
                 case ex: Throwable =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
                   realex match {
@@ -189,21 +193,16 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
                   attachExpansion(sym, List(expandedClass))
                   attachExpansion(companion, Nil)
                   Some(expanded)
-                case (expandedCompanion @ ModuleDef(_, moduleName, _)) :: (expandedClass @ ClassDef(
-                    _,
-                    className,
-                    _,
-                    _)) :: Nil
+                case (expandedCompanion @ ModuleDef(_, moduleName, _)) ::
+                      (expandedClass @ ClassDef(_, className, _, _)) :: Nil
                     if className == originalName && moduleName == originalName.toTermName =>
                   attachExpansion(
                     sym,
                     if (wasWeak) List(expandedClass, expandedCompanion) else List(expandedClass))
                   attachExpansion(companion, List(expandedCompanion))
                   Some(expanded)
-                case (expandedClass @ ClassDef(_, className, _, _)) :: (expandedCompanion @ ModuleDef(
-                    _,
-                    moduleName,
-                    _)) :: Nil
+                case (expandedClass @ ClassDef(_, className, _, _)) ::
+                      (expandedCompanion @ ModuleDef(_, moduleName, _)) :: Nil
                     if className == originalName && moduleName == originalName.toTermName =>
                   attachExpansion(
                     sym,
