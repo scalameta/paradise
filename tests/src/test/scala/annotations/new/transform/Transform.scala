@@ -20,10 +20,12 @@ class Transform extends ToolSuite {
     """.stripMargin.trim)
     writer.close
 
-    val (exitCode, output) = runCompiler(testDir, options => Main.main(options ++ Array("-Xprint:typer")))
+    val (exitCode, output) =
+      runCompiler(testDir, options => Main.main(options ++ Array("-Xprint:typer")))
     if (exitCode != 0) fail("compiling a simple inline def failed: " + EOL + output)
 
-    assert(output.trim === """
+    assert(
+      output.trim === """
       |[[syntax trees at end of                     typer]] // test.scala
       |package <empty> {
       |  import scala.meta._;

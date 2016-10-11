@@ -10,7 +10,10 @@ class ParameterZoo {
 
 class Parameters extends FunSuite {
   test("combo") {
-    assert(typeOf[ParameterZoo].decls.sorted.map(_.toString).mkString("\n") === """
+    assert(
+      typeOf[ParameterZoo].decls.sorted
+        .map(_.toString)
+        .mkString("\n") === """
       |constructor ParameterZoo
       |object С
       |class CTx

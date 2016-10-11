@@ -9,13 +9,14 @@ import org.scalameta.paradise.parser.HijackSyntaxAnalyzer
 import org.scalameta.paradise.typechecker.HijackAnalyzer
 import org.scalameta.paradise.typechecker.AnalyzerPlugins
 
-class Plugin(val global: Global) extends NscPlugin
-                                    with HijackSyntaxAnalyzer
-                                    with HijackAnalyzer
-                                    with AnalyzerPlugins {
-  val name = "macroparadise"
+class Plugin(val global: Global)
+    extends NscPlugin
+    with HijackSyntaxAnalyzer
+    with HijackAnalyzer
+    with AnalyzerPlugins {
+  val name        = "macroparadise"
   val description = "Empowers production Scala compiler with latest macro developments"
-  val components = Nil
+  val components  = Nil
 
   hijackSyntaxAnalyzer()
   val newAnalyzer = hijackAnalyzer()

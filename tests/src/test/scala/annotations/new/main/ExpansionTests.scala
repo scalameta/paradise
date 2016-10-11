@@ -50,7 +50,8 @@ class ExpansionTests extends FunSuite {
   test("Verify expansion order") {
     var letters = ""
 
-    @appendB @appendC
+    @appendB
+    @appendC
     def foo() = {
       @appendA
       def bar() = {}
@@ -95,7 +96,8 @@ class ExpansionTests extends FunSuite {
   test("Placebo after expandee should compile and work") {
     var letters = ""
 
-    @appendA @placebo
+    @appendA
+    @placebo
     def bar() = {}
 
     bar()
@@ -106,7 +108,8 @@ class ExpansionTests extends FunSuite {
   test("Placebo before expandee should compile and work") {
     var letters = ""
 
-    @placebo @appendA
+    @placebo
+    @appendA
     def bar() = {}
 
     bar()
@@ -117,7 +120,9 @@ class ExpansionTests extends FunSuite {
   test("Multiple expandees of same kinds with others in between should expand") {
     var letters = ""
 
-    @appendA @identity @appendB
+    @appendA
+    @identity
+    @appendB
     def bar() = {}
 
     bar()
@@ -125,11 +130,11 @@ class ExpansionTests extends FunSuite {
     assert(letters === "ab")
   }
 
- test("Multiple expandees of similar kinds should expand in the correct order") {
-   var letters = ""
+  test("Multiple expandees of similar kinds should expand in the correct order") {
+    var letters = ""
 
-
-   @appendA @appendB
+    @appendA
+    @appendB
     def bar() = {}
 
     bar()
@@ -140,7 +145,8 @@ class ExpansionTests extends FunSuite {
   test("Identity expandee followed by regular expandee should expand correctly") {
     var letters = ""
 
-    @identity @appendA
+    @identity
+    @appendA
     def bar() = {}
 
     bar()
@@ -151,7 +157,8 @@ class ExpansionTests extends FunSuite {
   test("Regular expandee followed by Identity expandee should expand correctly") {
     var letters = ""
 
-    @appendA @identity
+    @appendA
+    @identity
     def bar() = {}
 
     bar()
@@ -162,7 +169,8 @@ class ExpansionTests extends FunSuite {
   test("Placebo in package doesnt accidentally get removed if second") {
     var letters = ""
 
-    @appendA @placebo.appendA
+    @appendA
+    @placebo.appendA
     def bar() = {}
 
     bar()
@@ -173,7 +181,8 @@ class ExpansionTests extends FunSuite {
   test("Placebo in package doesnt accidentally get removed if first") {
     var letters = ""
 
-    @placebo.appendA @appendA
+    @placebo.appendA
+    @appendA
     def bar() = {}
 
     bar()

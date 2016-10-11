@@ -8,16 +8,17 @@ object funnyMacro {
     val (annottee: MemberDef) :: (expandee: MemberDef) :: rest = annottees.map(_.tree).toList
     def funnify[T <: Name](name: T): T = {
       val sfunnified = name.toString + annottee.name.toString
-      val funnified = if (name.isTermName) TermName(sfunnified) else TypeName(sfunnified)
+      val funnified  = if (name.isTermName) TermName(sfunnified) else TypeName(sfunnified)
       funnified.asInstanceOf[T]
     }
     val expandee1 = {
       expandee match {
         case ClassDef(mods, name, tparams, impl) => ClassDef(mods, funnify(name), tparams, impl)
-        case ModuleDef(mods, name, impl) => ModuleDef(mods, funnify(name), impl)
-        case DefDef(mods, name, tparams, vparamss, tpt, rhs) => DefDef(mods, funnify(name), tparams, vparamss, tpt, rhs)
+        case ModuleDef(mods, name, impl)         => ModuleDef(mods, funnify(name), impl)
+        case DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
+          DefDef(mods, funnify(name), tparams, vparamss, tpt, rhs)
         case TypeDef(mods, name, tparams, rhs) => TypeDef(mods, funnify(name), tparams, rhs)
-        case ValDef(mods, name, tpt, rhs) => ValDef(mods, funnify(name), tpt, rhs)
+        case ValDef(mods, name, tpt, rhs)      => ValDef(mods, funnify(name), tpt, rhs)
       }
     }
     c.Expr[Any](Block(expandee1 :: rest, Literal(Constant(()))))

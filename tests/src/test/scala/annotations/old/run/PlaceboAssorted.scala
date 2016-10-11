@@ -3,15 +3,18 @@ import scala.reflect.runtime.universe._
 
 class PlaceboAssortedZoo {
   @placebo def foo(x: Int) = x
-  @placebo val bar = 2
-  @placebo var baz = 3
-  @placebo lazy val bax = 4
+  @placebo val bar         = 2
+  @placebo var baz         = 3
+  @placebo lazy val bax    = 4
   @placebo type T = Int
 }
 
 class PlaceboAssorted extends FunSuite {
   test("nested") {
-    assert(typeOf[PlaceboAssortedZoo].decls.sorted.map(_.toString).mkString("\n") === """
+    assert(
+      typeOf[PlaceboAssortedZoo].decls.sorted
+        .map(_.toString)
+        .mkString("\n") === """
       |constructor PlaceboAssortedZoo
       |method foo
       |type T
@@ -27,9 +30,9 @@ class PlaceboAssorted extends FunSuite {
 
   test("local") {
     @placebo def foo(x: Int) = x
-    @placebo val bar = 2
-    @placebo var baz = 3
-    @placebo lazy val bax = 4
+    @placebo val bar         = 2
+    @placebo var baz         = 3
+    @placebo lazy val bax    = 4
     @placebo type T = Int
 
     assert(foo(1) === 1)
