@@ -19,7 +19,7 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       resolvers += Resolver.sonatypeRepo("releases"),
       publishMavenStyle := true,
       publishArtifact := false,
-      scalacOptions ++= Seq("-deprecation", "-feature"),
+      scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
       logBuffered := false,
       triggeredMessage in ThisBuild := Watched.clearWhenTriggered
     )
@@ -117,7 +117,8 @@ lazy val root = project
   .aggregate(
     plugin,
     testsAnnotationsMeta,
-    testsAnnotationsReflect
+    testsAnnotationsReflect,
+    testsConverter
   )
 
 // main scala.meta paradise plugin
@@ -225,3 +226,13 @@ lazy val testsAnnotationsMeta = project
     exposePaths("testsAnnotationsMeta", Test)
   )
   .dependsOn(testsCommon)
+
+lazy val testsConverter = project
+  .in(file("tests/converter"))
+  .settings(
+    sharedSettings,
+    usePluginSettings,
+    testSettings,
+    exposePaths("testsConverter", Test)
+  )
+  .dependsOn(testsCommon, plugin)
