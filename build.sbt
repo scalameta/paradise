@@ -16,6 +16,7 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       version := "4.0.0-SNAPSHOT",
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
+      resolvers += Resolver.sonatypeRepo("snapshots"),
       resolvers += Resolver.sonatypeRepo("releases"),
       publishMavenStyle := true,
       publishArtifact := false,
