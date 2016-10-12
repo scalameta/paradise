@@ -1,8 +1,6 @@
-import sbtassembly.Plugin._
-import AssemblyKeys._
-
 lazy val ScalaVersions = Seq("2.11.8")
-lazy val MetaVersion   = "1.1.0"
+lazy val MetaOrg       = "org.scalameta"
+lazy val MetaVersion   = "1.2.0"
 
 // ==========================================
 // Settings
@@ -37,7 +35,7 @@ lazy val usePluginSettings: Seq[Def.Setting[_]] = Seq(
 )
 
 lazy val testSettings: Seq[Def.Setting[_]] = Seq(
-  libraryDependencies += "org.scalameta"  %% "scalameta"     % MetaVersion,
+  libraryDependencies += MetaOrg          %% "scalameta"     % MetaVersion,
   libraryDependencies += "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
   libraryDependencies += "org.scalatest"  % "scalatest_2.11" % "3.0.0",
@@ -125,11 +123,10 @@ lazy val root = project
 lazy val plugin = Project(id = "paradise", base = file("plugin"))
   .settings(
     sharedSettings,
-    assemblySettings,
     resourceDirectory in Compile <<=
       baseDirectory(_ / "src" / "main" / "scala" / "org" / "scalameta" / "paradise" / "embedded"),
     libraryDependencies ++= Seq(
-      "org.scalameta"  %% "scalameta"     % MetaVersion,
+      MetaOrg          %% "scalameta"     % MetaVersion,
       "org.scala-lang" % "scala-library"  % scalaVersion.value,
       "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
@@ -138,7 +135,7 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     test in assembly := {},
     logLevel in assembly := Level.Error,
-    jarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
+    assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
     assemblyOption in assembly ~= { _.copy(includeScala = false) },
     Keys.`package` in Compile := {
       val slimJar = (Keys.`package` in Compile).value
