@@ -11,13 +11,14 @@ import org.scalameta.paradise.typechecker.HijackAnalyzer
 import org.scalameta.paradise.typechecker.AnalyzerPlugins
 import org.scalameta.paradise.backend.HijackBackend
 
-class Plugin(val global: Global) extends NscPlugin
-                                    with PersistPhase
-                                    with HijackSyntaxAnalyzer
-                                    with HijackAnalyzer
-                                    with AnalyzerPlugins
-                                    with HijackBackend {
-  val name = "macroparadise"
+class Plugin(val global: Global)
+    extends NscPlugin
+    with PersistPhase
+    with HijackSyntaxAnalyzer
+    with HijackAnalyzer
+    with AnalyzerPlugins
+    with HijackBackend {
+  val name        = "macroparadise"
   val description = "Empowers production Scala compiler with latest macro developments"
   val components = {
     val persistEnabled = sys.props("persist.enable") != null

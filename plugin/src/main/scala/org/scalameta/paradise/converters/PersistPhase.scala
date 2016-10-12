@@ -18,17 +18,18 @@ trait PersistPhase extends ReflectToolkit with Converter {
     // btw this isn't such a big problem for persistence, but it definitely is for macro interpretation
     // let's hope that the research into runtime macros, which entails moving the typechecker to scala-reflect.jar will allow us to restructure things
     // so that delayed typechecks come right after typer, not intermingled with other logic
-    override val runsAfter = List("typer")
+    override val runsAfter      = List("typer")
     override val runsRightAfter = None
-    override val phaseName = "persist"
-    override def description = "persist scala.meta trees"
+    override val phaseName      = "persist"
+    override def description    = "persist scala.meta trees"
 
     private var _backendCheck = false
     private def ensureBCodeBackend(): Unit = {
       if (!_backendCheck) {
         _backendCheck = true
         if (!settings.isBCodeActive) {
-          global.reporter.error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
+          global.reporter
+            .error(NoPosition, "scala.meta tree persistence requires -Ybackend:GenBCode")
         }
       }
     }
