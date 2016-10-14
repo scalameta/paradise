@@ -8,5 +8,5 @@ class Syntactic extends ConverterSuite {
       case (2 | 3 | 4 | 5) => false
     }
   """)
-  syntactic("def add(a: Int)(implicit z: Int = 0) = a.+(z)")
+  syntactic("def add(a: Int)(implicit z: Int = 0) = a + z")
 }
