@@ -1,3 +1,4 @@
+import scala.collection.immutable.Seq
 import scala.{meta => m}
 import scala.tools.cmd.CommandLineParser
 import scala.tools.nsc.{Global, CompilerCommand, Settings}
@@ -23,7 +24,87 @@ trait ConverterSuite extends FunSuite {
     g
   }
 
-  def syntactic(code: String) {
+  case class MismatchException(details: String) extends Exception
+  private def checkMismatchesModuloDesugarings(parsed: m.Tree, converted: m.Tree): Unit = {
+    import scala.meta._
+    def loop(x: Any, y: Any): Boolean = {
+      val ok = (x, y) match {
+        case (x, y) if x == null || y == null =>
+          x == null && y == null
+        case (x: Some[_], y: Some[_]) =>
+          loop(x.get, y.get)
+        case (x: None.type, y: None.type) =>
+          true
+        case (xs: Seq[_], ys: Seq[_])                               =>
+          xs.length == ys.length && xs.zip(ys).forall { case (x, y) => loop(x, y) }
+        case (x: Tree, y: Tree) =>
+          def sameDesugaring = {
+            // NOTE: Workaround for https://github.com/scalameta/scalameta/issues/519.
+            object TermApply519 {
+              def unapply(tree: Tree): Option[(Term, Seq[Seq[Type.Arg]], Seq[Seq[Term.Arg]])] =
+                tree match {
+                  case q"$fun[..$targs](...$argss)" => Some((fun, Seq(targs), argss))
+                  case q"$fun(...$argss)"           => Some((fun, Nil, argss))
+                  case _                            => None
+                }
+            }
+
+            // NOTE: This is a desugaring performed by the scala.reflect parser.
+            // We may want to undo it in the converter.
+            object TermApplyInfixRightAssoc {
+              def unapply(tree: Tree): Option[(Term, Term.Name, Seq[Type.Arg], Seq[Term.Arg])] =
+                tree match {
+                  case q"{ val $tmp1 = $lhs; ${ TermApply519(q"$rhs.$op", targss, Seq(Seq(tmp2))) } }"
+                      if tmp1.syntax == tmp2.syntax && tmp1.syntax.contains("$") =>
+                    val args = rhs match {
+                      case q"$tuple(..$args)" if tuple.syntax.startsWith("scala.Tuple") => args
+                      case arg                                                          => Seq(arg)
+                    }
+                    Some((lhs, op, targss.flatten, args))
+                  case _ =>
+                    None
+                }
+            }
+
+            (x, y) match {
+              case (q"$xlhs $xop [..$xtargs] (..$xargs)",
+                    TermApply519(q"$ylhs.$yop", ytargss, Seq(yargs))) =>
+                loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(xargs,
+                                                                                            yargs)
+              case (q"$xlhs $xop [..$xtargs] (..$xargs)",
+                    TermApplyInfixRightAssoc(ylhs, yop, ytargs, yargs)) =>
+                loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargs) && loop(xargs, yargs)
+              case (q"{}", q"()") =>
+                true
+              case (q"{ $xstat }", q"$ystat") =>
+                loop(xstat, ystat)
+              case (q"(..$xargs)", q"$tuple(..$yargs)")
+                  if tuple.syntax.startsWith("scala.Tuple") =>
+                loop(xargs, yargs)
+              case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
+                loop(xctor, yctor)
+              case (xpat, p"$ypat @ _") =>
+                loop(xpat, ypat)
+              case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
+                loop(xlhs, ylhs)
+              case _ =>
+                false
+            }
+          }
+          def sameStructure =
+            x.productPrefix == y.productPrefix && loop(x.productIterator.toList,
+                                                       y.productIterator.toList)
+          sameDesugaring || sameStructure
+        case _ =>
+          x == y
+      }
+      if (!ok) throw MismatchException(s"$x != $y")
+      else true
+    }
+    loop(parsed, converted)
+  }
+
+  def syntactic(code: String): Unit = {
     test(code.trim) {
       val parsedScalacTree: g.Tree = {
         import g._
@@ -51,11 +132,14 @@ trait ConverterSuite extends FunSuite {
         converter(parsedScalacTree)
       }
 
-      // TODO: account for the fact that scala.reflect desugars stuff (e.g. for loops) even during parsing
-      // TODO: alternatively, we can just go ahead and undesugar for loops, because for syntactic APIs that's actually easy
-      if (parsedMetaTree.structure != convertedMetaTree.structure) {
-        fail(
-          s"scala -> meta converter error\nparsed tree:\n${parsedMetaTree.structure}\nconverted tree\n${convertedMetaTree.structure}")
+      try {
+        checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree)
+      } catch {
+        case MismatchException(details) =>
+          val header = s"scala -> meta converter error\n$details"
+          val fullDetails =
+            s"parsed tree:\n${parsedMetaTree.structure}\nconverted tree:\n${convertedMetaTree.structure}"
+          fail(s"$header\n$fullDetails")
       }
     }
   }
