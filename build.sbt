@@ -20,7 +20,8 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
       resolvers +=
-          Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
+        Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(
+          Resolver.ivyStylePatterns),
       resolvers += Resolver.sonatypeRepo("releases"),
       publishMavenStyle := !isSnapshot,
       publishArtifact := false,
