@@ -163,7 +163,6 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
     publishArtifact in Compile := true,
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
-      println("PRVERSION: " + PRVersion)
       if (PRVersion.isDefined) (publishTo in bintray).value
       else if (isSnapshot) Some("snapshots" at nexus + "content/repositories/snapshots")
       else Some("releases" at nexus + "service/local/staging/deploy/maven2")
