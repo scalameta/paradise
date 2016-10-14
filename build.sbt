@@ -1,6 +1,11 @@
-lazy val ScalaVersions = Seq("2.11.8")
-lazy val MetaOrg       = "org.scalameta"
-lazy val MetaVersion   = "1.2.0"
+import scala.util.Try
+
+lazy val ScalaVersions  = Seq("2.11.8")
+lazy val MetaOrg        = "org.scalameta"
+lazy val MetaVersion    = "1.2.0"
+lazy val LibraryVersion = "3.0.0-SNAPSHOT"
+lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
+lazy val PRVersion      = latestPullRequestVersion()
 
 // ==========================================
 // Settings
@@ -11,11 +16,11 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
     Seq(
       scalaVersion := ScalaVersions.head,
       crossVersion := CrossVersion.full,
-      version := "3.0.0-SNAPSHOT",
+      version := PRVersion.getOrElse(LibraryVersion),
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
       resolvers += Resolver.sonatypeRepo("releases"),
-      publishMavenStyle := true,
+      publishMavenStyle := !isSnapshot,
       publishArtifact := false,
       scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
       logBuffered := false,
@@ -154,18 +159,21 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
       IO.copy(List(fatJar -> slimJar), overwrite = true)
       (art, slimJar)
     },
-    publishMavenStyle := true,
+    publishMavenStyle := !isSnapshot,
     publishArtifact in Compile := true,
-    publishTo <<= version { v: String =>
+    publishTo := {
       val nexus = "https://oss.sonatype.org/"
-      if (v.trim.endsWith("SNAPSHOT"))
-        Some("snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("releases" at nexus + "service/local/staging/deploy/maven2")
+      println("PRVERSION: " + PRVersion)
+      if (PRVersion.isDefined) (publishTo in bintray).value
+      else if (isSnapshot) Some("snapshots" at nexus + "content/repositories/snapshots")
+      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
     },
     pomIncludeRepository := { x =>
       false
     },
+    bintrayOrganization := Some("scalameta"),
+    licenses +=
+      "BSD" -> url("https://github.com/scalameta/paradise/blob/master/LICENSE.md"),
     pomExtra := (
       <url>https://github.com/scalameta/paradise</url>
               <inceptionYear>2012</inceptionYear>
@@ -191,8 +199,8 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
                   <url>http://xeno.by</url>
                 </developer>
               </developers>
-    ),
-    credentials ++= loadCredentials()
+    )
+//    , credentials ++= loadCredentials()
   )
 
 lazy val testsCommon = project
@@ -233,3 +241,26 @@ lazy val testsConverter = project
     exposePaths("testsConverter", Test)
   )
   .dependsOn(testsCommon, plugin)
+
+def parsePullRequestFromCommitMessage: Option[String] = {
+  import sys.process._
+  val PullRequest = "\\s+Merge pull request #(\\d+).*".r
+  for {
+    commitMsg <- Try(Seq("git", "log", "-1").!!.trim).toOption
+    pr <- augmentString(commitMsg).lines.collectFirst {
+      case PullRequest(pr) => pr
+    }
+  } yield pr
+}
+
+/** Replaces -SNAPSHOT with latest pull request number, if it exists.j */
+def latestPullRequestVersion(): Option[String] = {
+  for {
+    _ <- sys.env.get("BINTRAY_API_KEY")
+    if isSnapshot
+    if !sys.env.contains("CI_PULL_REQUEST")
+    pullRequest <- parsePullRequestFromCommitMessage
+  } yield {
+    LibraryVersion.replace("-SNAPSHOT", s".$pullRequest")
+  }
+}
