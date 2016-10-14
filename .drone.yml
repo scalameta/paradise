@@ -1,8 +1,18 @@
 build:
-  image: olafurpg/scalafix:0.0.1
-  commands:
-    - ./bin/scalafmt --version 0.4.5 --test
-    - sbt clean test
+  tests:
+    image: olafurpg/scalafix:0.0.1
+    commands:
+      - ./bin/scalafmt --version 0.4.5 --test
+      - sbt clean test
+  publish:
+    image: olafurpg/scalafix:0.0.1
+    environment:
+      - BINTRAY_USERNAME=$$BINTRAY_USERNAME
+      - BINTRAY_API_KEY=$$BINTRAY_API_KEY
+    commands:
+      - ./bin/bintray.sh
+    when:
+      branch: [master, 4.x]
 cache:
   mount:
     - $HOME/.scalafmt-bin
