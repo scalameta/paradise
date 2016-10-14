@@ -283,9 +283,7 @@ trait LogicalTrees { self: ReflectToolkit =>
                           Nil,
                           g.Block(
                             List(body),
-                            g.If(cond,
-                              g.Apply(Ident(name2), Nil),
-                              g.Literal(g.Constant(())))))
+                            g.If(cond, g.Apply(Ident(name2), Nil), g.Literal(g.Constant(())))))
               if name1 == name2 && name1.startsWith(nme.DO_WHILE_PREFIX) =>
             Some((body, cond))
           case _ =>
@@ -303,9 +301,11 @@ trait LogicalTrees { self: ReflectToolkit =>
               .set(SelfRole(g.EmptyTree))
           Some(l.Template(Nil, List(lparent), lself, None))
         case g.Block(
-          List(tree @ g.ClassDef(g.Modifiers(FINAL, g.tpnme.EMPTY, Nil), g.TypeName(anon1), Nil, templ)),
-          g.Apply(g.Select(g.New(g.Ident(g.TypeName(anon2))), nme.CONSTRUCTOR), args))
-          if anon1 == tpnme.ANON_CLASS_NAME.toString && anon2 == tpnme.ANON_CLASS_NAME.toString =>
+            List(
+              tree @ g
+                .ClassDef(g.Modifiers(FINAL, g.tpnme.EMPTY, Nil), g.TypeName(anon1), Nil, templ)),
+            g.Apply(g.Select(g.New(g.Ident(g.TypeName(anon2))), nme.CONSTRUCTOR), args))
+            if anon1 == tpnme.ANON_CLASS_NAME.toString && anon2 == tpnme.ANON_CLASS_NAME.toString =>
           Some(l.Template(tree))
         case _ =>
           None

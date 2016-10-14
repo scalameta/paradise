@@ -49,7 +49,7 @@ trait ToMtree { self: Converter =>
                 m.Term.This(mname)
 
               case l.TermSuper(lthis, lsuper) =>
-                val mthis = lthis.toMtree[m.Name.Qualifier]
+                val mthis  = lthis.toMtree[m.Name.Qualifier]
                 val msuper = lsuper.toMtree[m.Name.Qualifier]
                 m.Term.Super(mthis, msuper)
 
@@ -103,7 +103,7 @@ trait ToMtree { self: Converter =>
                 m.Term.Match(mscrut, mcases)
 
               case l.TermTryWithCases(lexpr, lcatches, lfinally) =>
-                val mexpr = lexpr.toMtree[m.Term]
+                val mexpr    = lexpr.toMtree[m.Term]
                 val mcatches = lcatches.toMtrees[m.Case]
                 val mfinally = lfinally.toMtreeopt[m.Term]
                 m.Term.TryWithCases(mexpr, mcatches, mfinally)
