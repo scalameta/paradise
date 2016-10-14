@@ -9,7 +9,7 @@ host = api.bintray.com
 user = $BINTRAY_USERNAME
 password = $BINTRAY_API_KEY
 EOF
-  sbt ++$SCALA_VERSION "$PUBLISH"
+  sbt "$PUBLISH"
 fi
 
 
