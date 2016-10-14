@@ -1,7 +1,4 @@
-import scala.util.Try
-
 lazy val ScalaVersions  = Seq("2.11.8")
-lazy val MetaOrg        = "org.scalameta"
 lazy val MetaVersion    = "1.2.0"
 lazy val LibraryVersion = "3.0.0-SNAPSHOT"
 lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
@@ -40,7 +37,7 @@ lazy val usePluginSettings: Seq[Def.Setting[_]] = Seq(
 )
 
 lazy val testSettings: Seq[Def.Setting[_]] = Seq(
-  libraryDependencies += MetaOrg          %% "scalameta"     % MetaVersion,
+  libraryDependencies += "org.scalameta"  %% "scalameta"     % MetaVersion,
   libraryDependencies += "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
   libraryDependencies += "org.scalatest"  % "scalatest_2.11" % "3.0.0",
@@ -131,7 +128,7 @@ lazy val plugin = Project(id = "paradise", base = file("plugin"))
     resourceDirectory in Compile <<=
       baseDirectory(_ / "src" / "main" / "scala" / "org" / "scalameta" / "paradise" / "embedded"),
     libraryDependencies ++= Seq(
-      MetaOrg          %% "scalameta"     % MetaVersion,
+      "org.scalameta"  %% "scalameta"     % MetaVersion,
       "org.scala-lang" % "scala-library"  % scalaVersion.value,
       "org.scala-lang" % "scala-reflect"  % scalaVersion.value,
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
@@ -245,7 +242,7 @@ def parsePullRequestFromCommitMessage: Option[String] = {
   import sys.process._
   val PullRequest = "\\s+Merge pull request #(\\d+).*".r
   for {
-    commitMsg <- Try(Seq("git", "log", "-1").!!.trim).toOption
+    commitMsg <- scala.util.Try(Seq("git", "log", "-1").!!.trim).toOption
     pr <- augmentString(commitMsg).lines.collectFirst {
       case PullRequest(pr) => pr
     }
