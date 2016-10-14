@@ -459,7 +459,7 @@ trait LogicalTrees { self: ReflectToolkit =>
           case head :: Nil            => head
           case trees @ (head :: tail) => g.Alternative(trees)
         }
-        Some((llhs, lrhs))
+        Some((llhs.set(PatLoc), lrhs.set(PatLoc)))
       }
     }
 

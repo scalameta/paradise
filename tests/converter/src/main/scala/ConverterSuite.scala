@@ -77,6 +77,10 @@ trait ConverterSuite extends FunSuite {
                 loop(xargs, yargs)
               case (ctor"$xctor(...${Seq()})", ctor"$yctor(...${Seq(Seq())})") =>
                 loop(xctor, yctor)
+              case (xpat, p"$ypat @ _") =>
+                loop(xpat, ypat)
+              case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
+                loop(xlhs, ylhs)
               case _ =>
                 false
             }
