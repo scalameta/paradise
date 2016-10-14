@@ -149,10 +149,20 @@ trait LogicalTrees { self: ReflectToolkit =>
     // ============ TERMS ============
 
     object TermThis {
-      // qual
       def unapply(tree: g.This): Option[l.QualifierName] = {
         if (tree.qual == tpnme.EMPTY) Some(l.AnonymousName())
         else Some(l.IndeterminateName(tree.displayName))
+      }
+    }
+
+    object TermSuper {
+      def unapply(tree: g.Super): Option[(l.QualifierName, l.QualifierName)] = {
+        val g.Super(l.TermThis(lthis), qual) = tree
+        val lsuper = {
+          if (qual == tpnme.EMPTY) l.AnonymousName()
+          else l.IndeterminateName(qual.displayName)
+        }
+        Some((lthis, lsuper))
       }
     }
 
@@ -186,6 +196,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermApply {
       def unapply(tree: g.Apply): Option[(g.Tree, List[g.Tree])] = {
         if (!tree.is(TermLoc)) return None
+        if (TermNew.unapply(tree).isDefined) return None
         Some((tree.fun, tree.args))
       }
     }
@@ -202,8 +213,21 @@ trait LogicalTrees { self: ReflectToolkit =>
       }
     }
 
+    object TermReturn {
+      def unapply(tree: g.Return): Option[g.Tree] = {
+        Some(tree.expr)
+      }
+    }
+
+    object TermThrow {
+      def unapply(tree: g.Throw): Option[g.Tree] = {
+        Some(tree.expr)
+      }
+    }
+
     object TermBlock {
       def unapply(tree: g.Block): Option[List[g.Tree]] = {
+        if (TermNew.unapply(tree).isDefined) return None
         val lstats = blockStats(tree.stats :+ tree.expr)
         Some(lstats)
       }
@@ -218,6 +242,13 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermMatch {
       def unapply(tree: g.Match): Option[(g.Tree, List[g.Tree])] = {
         Some((tree.selector, tree.cases))
+      }
+    }
+
+    object TermTryWithCases {
+      def unapply(tree: g.Try): Option[(g.Tree, List[g.Tree], Option[g.Tree])] = {
+        val lfinallyp = if (tree.finalizer != g.EmptyTree) Some(tree.finalizer) else None
+        Some((tree.block, tree.catches, lfinallyp))
       }
     }
 
@@ -245,6 +276,24 @@ trait LogicalTrees { self: ReflectToolkit =>
       }
     }
 
+    object TermDo {
+      def unapply(tree: g.LabelDef): Option[(g.Tree, g.Tree)] = {
+        tree match {
+          case g.LabelDef(name1,
+                          Nil,
+                          g.Block(
+                            List(body),
+                            g.If(cond,
+                              g.Apply(Ident(name2), Nil),
+                              g.Literal(g.Constant(())))))
+              if name1 == name2 && name1.startsWith(nme.DO_WHILE_PREFIX) =>
+            Some((body, cond))
+          case _ =>
+            None
+        }
+      }
+    }
+
     object TermNew {
       def unapply(tree: g.Tree): Option[l.Template] = tree match {
         case g.Apply(g.Select(g.New(tpt), nme.CONSTRUCTOR), args) =>
@@ -253,6 +302,11 @@ trait LogicalTrees { self: ReflectToolkit =>
             g.ValDef(g.Modifiers(), g.nme.WILDCARD, g.TypeTree(), g.EmptyTree)
               .set(SelfRole(g.EmptyTree))
           Some(l.Template(Nil, List(lparent), lself, None))
+        case g.Block(
+          List(tree @ g.ClassDef(g.Modifiers(FINAL, g.tpnme.EMPTY, Nil), g.TypeName(anon1), Nil, templ)),
+          g.Apply(g.Select(g.New(g.Ident(g.TypeName(anon2))), nme.CONSTRUCTOR), args))
+          if anon1 == tpnme.ANON_CLASS_NAME.toString && anon2 == tpnme.ANON_CLASS_NAME.toString =>
+          Some(l.Template(tree))
         case _ =>
           None
       }
@@ -315,6 +369,13 @@ trait LogicalTrees { self: ReflectToolkit =>
       def unapply(tree: g.Select): Option[(g.Tree, l.TypeName)] = {
         val g.Select(qual, name) = tree
         if (name.isTermName) return None
+        Some((qual, l.TypeName(tree)))
+      }
+    }
+
+    object TypeProject {
+      def unapply(tree: g.SelectFromTypeTree): Option[(g.Tree, l.TypeName)] = {
+        val g.SelectFromTypeTree(qual, name) = tree
         Some((qual, l.TypeName(tree)))
       }
     }
@@ -1008,6 +1069,7 @@ trait LogicalTrees { self: ReflectToolkit =>
             seenPrimaryCtor = true // skip this
           case g.DefDef(_, nme.MIXIN_CONSTRUCTOR, _, _, _, _)         => // and this
           case g.ValDef(mods, _, _, _) if mods.hasFlag(PARAMACCESSOR) => // and this
+          case g.EmptyTree                                            => // and this
           case _                                                      => lresult += stat
         }
       }
@@ -1015,7 +1077,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     }
 
     private def blockStats(stats: List[g.Tree]): List[g.Tree] = {
-      stats
+      stats.filter(_ != g.EmptyTree)
     }
   }
 

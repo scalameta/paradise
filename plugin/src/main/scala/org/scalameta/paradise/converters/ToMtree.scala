@@ -48,6 +48,11 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Name.Qualifier]
                 m.Term.This(mname)
 
+              case l.TermSuper(lthis, lsuper) =>
+                val mthis = lthis.toMtree[m.Name.Qualifier]
+                val msuper = lsuper.toMtree[m.Name.Qualifier]
+                m.Term.Super(mthis, msuper)
+
               case l.TermName(lvalue) =>
                 m.Term.Name(lvalue)
 
@@ -74,6 +79,14 @@ trait ToMtree { self: Converter =>
                 val mrhs = lrhs.toMtree[m.Term]
                 m.Term.Assign(mlhs, mrhs)
 
+              case l.TermReturn(lexpr) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                m.Term.Return(mexpr)
+
+              case l.TermThrow(lexpr) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                m.Term.Throw(mexpr)
+
               case l.TermBlock(lstats) =>
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Term.Block(mstats)
@@ -89,15 +102,26 @@ trait ToMtree { self: Converter =>
                 val mcases = lcases.toMtrees[m.Case]
                 m.Term.Match(mscrut, mcases)
 
+              case l.TermTryWithCases(lexpr, lcatches, lfinally) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                val mcatches = lcatches.toMtrees[m.Case]
+                val mfinally = lfinally.toMtreeopt[m.Term]
+                m.Term.TryWithCases(mexpr, mcatches, mfinally)
+
               case l.TermFunction(lparams, lbody) =>
                 val mparams = lparams.toMtrees[m.Term.Param]
                 val mbody   = lbody.toMtree[m.Term]
                 m.Term.Function(mparams, mbody)
 
-              case l.TermWhile(lcond, lbody) =>
-                val mcond = lcond.toMtree[m.Term]
+              case l.TermWhile(lexpr, lbody) =>
+                val mexpr = lexpr.toMtree[m.Term]
                 val mbody = lbody.toMtree[m.Term]
-                m.Term.While(mcond, mbody)
+                m.Term.While(mexpr, mbody)
+
+              case l.TermDo(lbody, lexpr) =>
+                val mbody = lbody.toMtree[m.Term]
+                val mexpr = lexpr.toMtree[m.Term]
+                m.Term.Do(mbody, mexpr)
 
               case l.TermNew(ltempl) =>
                 val mtempl = ltempl.toMtree[m.Template]
@@ -127,10 +151,15 @@ trait ToMtree { self: Converter =>
               case l.TypeIdent(lname) =>
                 lname.toMtree[m.Type.Name]
 
-              case l.TypeSelect(lpre, lname) =>
-                val mpre  = lpre.toMtree[m.Term.Ref]
+              case l.TypeSelect(lqual, lname) =>
+                val mqual = lqual.toMtree[m.Term.Ref]
                 val mname = lname.toMtree[m.Type.Name]
-                m.Type.Select(mpre, mname)
+                m.Type.Select(mqual, mname)
+
+              case l.TypeProject(lqual, lname) =>
+                val mqual = lqual.toMtree[m.Type]
+                val mname = lname.toMtree[m.Type.Name]
+                m.Type.Project(mqual, mname)
 
               case l.TypeApply(ltpt, largs) =>
                 val mtpt  = ltpt.toMtree[m.Type]
