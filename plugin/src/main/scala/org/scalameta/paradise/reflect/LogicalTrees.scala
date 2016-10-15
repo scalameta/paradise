@@ -197,6 +197,7 @@ trait LogicalTrees { self: ReflectToolkit =>
       def unapply(tree: g.Apply): Option[(g.Tree, List[g.Tree])] = {
         if (!tree.is(TermLoc)) return None
         if (TermNew.unapply(tree).isDefined) return None
+        if (TermTuple.unapply(tree).isDefined) return None
         Some((tree.fun, tree.args))
       }
     }
@@ -222,6 +223,23 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermThrow {
       def unapply(tree: g.Throw): Option[g.Tree] = {
         Some(tree.expr)
+      }
+    }
+
+    object TermAscribe {
+      def unapply(tree: g.Typed): Option[(g.Tree, g.Tree)] = {
+        if (!tree.is(TermLoc)) return None
+        if (TermArg.Repeated.unapply(tree).isDefined) return None
+        Some((tree.expr, tree.tpt))
+      }
+    }
+
+    object TermTuple {
+      def unapply(tree: g.Apply): Option[List[g.Tree]] = {
+        val g.Apply(fun, args) = tree
+        if (!tree.is(TermLoc)) return None
+        if (!fun.toString.startsWith("scala.Tuple") || args.length <= 1) return None
+        Some(args)
       }
     }
 
@@ -380,9 +398,71 @@ trait LogicalTrees { self: ReflectToolkit =>
       }
     }
 
+    object TypeSingleton {
+      def unapply(tree: g.SingletonTypeTree): Option[g.Tree] = {
+        Some(tree.ref)
+      }
+    }
+
     object TypeApply {
       def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
+        if (TypeFunction.unapply(tree).isDefined) return None
+        if (TypeTuple.unapply(tree).isDefined) return None
         Some((tree.tpt, tree.args))
+      }
+    }
+
+    object TypeFunction {
+      def unapply(tree: g.AppliedTypeTree): Option[(List[g.Tree], g.Tree)] = {
+        val g.AppliedTypeTree(tpt, args) = tree
+        if (!tpt.toString.startsWith("_root_.scala.Function")) return None
+        Some((args.init, args.last))
+      }
+    }
+
+    object TypeTuple {
+      def unapply(tree: g.AppliedTypeTree): Option[List[g.Tree]] = {
+        val g.AppliedTypeTree(tpt, args) = tree
+        if (!tpt.toString.startsWith("scala.Tuple") || args.length <= 1) return None
+        Some(args)
+      }
+    }
+
+    object TypeWith {
+      def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
+        case tree @ g.CompoundTypeTree(g.Template(parents0, _, Nil)) =>
+          val parents = parents0.filter(_.toString != "scala.AnyRef")
+          parents match {
+            case Nil               => None
+            case List(tpe)         => None
+            case List(left, right) => Some((left, right))
+            case lefts :+ right =>
+              Some((g.CompoundTypeTree(g.Template(lefts, noSelfType, Nil)), right))
+          }
+        case _ =>
+          None
+      }
+    }
+
+    object TypeRefine {
+      def unapply(tree: g.CompoundTypeTree): Option[(Option[g.Tree], List[g.Tree])] = {
+        val g.Template(parents0, _, stats) = tree.templ
+        val parents                        = parents0.filter(_.toString != "scala.AnyRef")
+        parents match {
+          case Nil =>
+            Some((None, stats))
+          case List(tpe) =>
+            Some((Some(tpe), stats))
+          case tpes =>
+            if (stats.isEmpty) None
+            else Some((Some(g.CompoundTypeTree(g.Template(tpes, noSelfType, Nil))), stats))
+        }
+      }
+    }
+
+    object TypeExistential {
+      def unapply(tree: g.ExistentialTypeTree): Option[(g.Tree, List[g.Tree])] = {
+        Some((tree.tpt, tree.whereClauses))
       }
     }
 
@@ -463,9 +543,23 @@ trait LogicalTrees { self: ReflectToolkit =>
       }
     }
 
+    object PatTuple {
+      def unapply(tree: g.Tree): Option[List[g.Tree]] = {
+        if (!tree.is(PatLoc)) return None
+        tree match {
+          case g.Apply(fun, args) =>
+            if (!fun.toString.startsWith("scala.Tuple") || args.length <= 1) return None
+            Some(args.map(_.set(PatLoc)))
+          case _ =>
+            None
+        }
+      }
+    }
+
     object PatExtract {
       def unapply(tree: g.Tree): Option[(g.Tree, List[g.Tree], List[g.Tree])] = {
         if (!tree.is(PatLoc)) return None
+        if (PatTuple.unapply(tree).isDefined) return None
         val (fun, targs, args) = tree match {
           case g.Apply(g.TypeApply(fun, targs), args) => (fun, targs, args)
           case g.Apply(fun, args)                     => (fun, Nil, args)
@@ -528,7 +622,13 @@ trait LogicalTrees { self: ReflectToolkit =>
     object AbstractTypeDef {
       def unapply(tree: g.TypeDef)
         : Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.TypeBoundsTree)] = {
-        ???
+        if (!tree.is(TypeMemberRole)) return None
+        tree match {
+          case g.TypeDef(mods, name, tparams, rhs: g.TypeBoundsTree) if mods.hasFlag(DEFERRED) =>
+            Some((l.Modifiers(tree), l.TypeName(tree), tparams, rhs))
+          case _ =>
+            None
+        }
       }
     }
 

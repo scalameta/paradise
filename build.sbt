@@ -1,5 +1,5 @@
 lazy val ScalaVersions  = Seq("2.11.8")
-lazy val MetaVersion    = "1.2.0"
+lazy val MetaVersion    = "1.3.0.521"
 lazy val LibraryVersion = "3.0.0-SNAPSHOT"
 lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
 lazy val PRVersion      = latestPullRequestVersion()
@@ -17,6 +17,9 @@ lazy val sharedSettings: Seq[Def.Setting[_]] =
       organization := "org.scalameta",
       description := "Empowers production Scala compiler with latest macro developments",
       resolvers += Resolver.sonatypeRepo("releases"),
+      resolvers += Resolver.url(
+        "scalameta-bintray",
+        url("https://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
       publishMavenStyle := !isSnapshot,
       publishArtifact := false,
       scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),

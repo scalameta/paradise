@@ -87,6 +87,15 @@ trait ToMtree { self: Converter =>
                 val mexpr = lexpr.toMtree[m.Term]
                 m.Term.Throw(mexpr)
 
+              case l.TermAscribe(lexpr, ldecltpe) =>
+                val mexpr    = lexpr.toMtree[m.Term]
+                val mdecltpe = ldecltpe.toMtree[m.Type]
+                m.Term.Ascribe(mexpr, mdecltpe)
+
+              case l.TermTuple(lelements) =>
+                val melements = lelements.toMtrees[m.Term]
+                m.Term.Tuple(melements)
+
               case l.TermBlock(lstats) =>
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Term.Block(mstats)
@@ -161,10 +170,38 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Type.Name]
                 m.Type.Project(mqual, mname)
 
+              case l.TypeSingleton(lref) =>
+                val mref = lref.toMtree[m.Term.Ref]
+                m.Type.Singleton(mref)
+
               case l.TypeApply(ltpt, largs) =>
                 val mtpt  = ltpt.toMtree[m.Type]
                 val margs = largs.toMtrees[m.Type]
                 m.Type.Apply(mtpt, margs)
+
+              case l.TypeFunction(lparams, lres) =>
+                val mparams = lparams.toMtrees[m.Type]
+                val mres    = lres.toMtree[m.Type]
+                m.Type.Function(mparams, mres)
+
+              case l.TypeTuple(lelements) =>
+                val melements = lelements.toMtrees[m.Type]
+                m.Type.Tuple(melements)
+
+              case l.TypeWith(llhs, lrhs) =>
+                val mlhs = llhs.toMtree[m.Type]
+                val mrhs = lrhs.toMtree[m.Type]
+                m.Type.With(mlhs, mrhs)
+
+              case l.TypeRefine(ltpe, lstats) =>
+                val mtpe   = ltpe.toMtreeopt[m.Type]
+                val mstats = lstats.toMtrees[m.Stat]
+                m.Type.Refine(mtpe, mstats)
+
+              case l.TypeExistential(ltpe, lstats) =>
+                val mtpe   = ltpe.toMtree[m.Type]
+                val mstats = lstats.toMtrees[m.Stat]
+                m.Type.Existential(mtpe, mstats)
 
               case l.TypeBounds(llo, lhi) =>
                 val mlo = llo.toMtreeopt[m.Type]
@@ -199,6 +236,10 @@ trait ToMtree { self: Converter =>
                 val mlrhs = lrhs.toMtree[m.Pat]
                 m.Pat.Alternative(mllhs, mlrhs)
 
+              case l.PatTuple(lelements) =>
+                val melements = lelements.toMtrees[m.Pat]
+                m.Pat.Tuple(melements)
+
               case l.PatExtract(lref, ltargs, largs) =>
                 val mref   = lref.toMtree[m.Term.Ref]
                 val mtargs = ltargs.toMtrees[m.Pat.Type] // dveim replaced
@@ -224,6 +265,13 @@ trait ToMtree { self: Converter =>
                 val mparamss = lparamss.toMtreess[m.Term.Param]
                 val mtpt     = ltpt.toMtree[m.Type]
                 m.Decl.Def(mmods, mname, mtparams, mparamss, mtpt)
+
+              case l.AbstractTypeDef(lmods, lname, ltparams, lbounds) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mname    = lname.toMtree[m.Type.Name]
+                val mtparams = ltparams.toMtrees[m.Type.Param]
+                val mbounds  = lbounds.toMtree[m.Type.Bounds]
+                m.Decl.Type(mmods, mname, mtparams, mbounds)
 
               // ============ DEFNS ============
 
