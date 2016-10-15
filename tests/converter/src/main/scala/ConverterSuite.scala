@@ -57,8 +57,8 @@ trait ConverterSuite extends FunSuite {
                   case q"{ val $tmp1 = $lhs; ${ TermApply519(q"$rhs.$op", targss, Seq(Seq(tmp2))) } }"
                       if tmp1.syntax == tmp2.syntax && tmp1.syntax.contains("$") =>
                     val args = rhs match {
-                      case q"$tuple(..$args)" if tuple.syntax.startsWith("scala.Tuple") => args
-                      case arg                                                          => Seq(arg)
+                      case q"(..$args)" => args
+                      case arg          => Seq(arg)
                     }
                     Some((lhs, op, targss.flatten, args))
                   case _ =>
@@ -66,29 +66,34 @@ trait ConverterSuite extends FunSuite {
                 }
             }
 
-            (x, y) match {
-              case (q"$xlhs $xop [..$xtargs] (..$xargs)",
-                    TermApply519(q"$ylhs.$yop", ytargss, Seq(yargs))) =>
-                loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(xargs,
-                                                                                            yargs)
-              case (q"$xlhs $xop [..$xtargs] (..$xargs)",
-                    TermApplyInfixRightAssoc(ylhs, yop, ytargs, yargs)) =>
-                loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargs) && loop(xargs, yargs)
-              case (q"{}", q"()") =>
-                true
-              case (q"{ $xstat }", q"$ystat") =>
-                loop(xstat, ystat)
-              case (q"(..$xargs)", q"$tuple(..$yargs)")
-                  if tuple.syntax.startsWith("scala.Tuple") =>
-                loop(xargs, yargs)
-              case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
-                loop(xctor, yctor)
-              case (xpat, p"$ypat @ _") =>
-                loop(xpat, ypat)
-              case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
-                loop(xlhs, ylhs)
-              case _ =>
-                false
+            try {
+              (x, y) match {
+                case (q"$xlhs $xop [..$xtargs] (..$xargs)",
+                      TermApply519(q"$ylhs.$yop", ytargss, Seq(yargs))) =>
+                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(xargs,
+                                                                                              yargs)
+                case (q"$xlhs $xop [..$xtargs] (..$xargs)",
+                      TermApplyInfixRightAssoc(ylhs, yop, ytargs, yargs)) =>
+                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargs) && loop(xargs, yargs)
+                case (q"{}", q"()") =>
+                  true
+                case (q"{ $xstat }", q"$ystat") =>
+                  loop(xstat, ystat)
+                case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
+                  loop(xctor, yctor)
+                case (xpat, p"$ypat @ _") =>
+                  loop(xpat, ypat)
+                case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
+                  loop(xlhs, ylhs)
+                case (t"${Some(xtpe)} {}", t"$ytpe") =>
+                  loop(xtpe, ytpe)
+                case (t"$xlhs $xop $xrhs", t"$yop[$ylhs, $yrhs]") =>
+                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
+                case _ =>
+                  false
+              }
+            } catch {
+              case _: MismatchException => false
             }
           }
           def sameStructure =
