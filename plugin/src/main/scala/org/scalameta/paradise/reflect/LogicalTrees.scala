@@ -433,10 +433,11 @@ trait LogicalTrees { self: ReflectToolkit =>
         case tree @ g.CompoundTypeTree(g.Template(parents0, _, Nil)) =>
           val parents = parents0.filter(_.toString != "scala.AnyRef")
           parents match {
-            case Nil => None
-            case List(tpe) => None
+            case Nil               => None
+            case List(tpe)         => None
             case List(left, right) => Some((left, right))
-            case lefts :+ right => Some((g.CompoundTypeTree(g.Template(lefts, noSelfType, Nil)), right))
+            case lefts :+ right =>
+              Some((g.CompoundTypeTree(g.Template(lefts, noSelfType, Nil)), right))
           }
         case _ =>
           None
@@ -446,7 +447,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TypeRefine {
       def unapply(tree: g.CompoundTypeTree): Option[(Option[g.Tree], List[g.Tree])] = {
         val g.Template(parents0, _, stats) = tree.templ
-        val parents = parents0.filter(_.toString != "scala.AnyRef")
+        val parents                        = parents0.filter(_.toString != "scala.AnyRef")
         parents match {
           case Nil =>
             Some((None, stats))

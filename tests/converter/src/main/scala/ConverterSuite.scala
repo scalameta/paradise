@@ -70,8 +70,9 @@ trait ConverterSuite extends FunSuite {
               (x, y) match {
                 case (q"$xlhs $xop [..$xtargs] (..$xargs)",
                       TermApply519(q"$ylhs.$yop", ytargss, Seq(yargs))) =>
-                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(xargs,
-                                                                                              yargs)
+                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(
+                    xargs,
+                    yargs)
                 case (q"$xlhs $xop [..$xtargs] (..$xargs)",
                       TermApplyInfixRightAssoc(ylhs, yop, ytargs, yargs)) =>
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargs) && loop(xargs, yargs)
@@ -85,7 +86,7 @@ trait ConverterSuite extends FunSuite {
                   loop(xpat, ypat)
                 case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
                   loop(xlhs, ylhs)
-                case (t"${Some(xtpe)} {}", t"$ytpe") =>
+                case (t"${ Some(xtpe) } {}", t"$ytpe") =>
                   loop(xtpe, ytpe)
                 case (t"$xlhs $xop $xrhs", t"$yop[$ylhs, $yrhs]") =>
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)

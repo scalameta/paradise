@@ -88,7 +88,7 @@ trait ToMtree { self: Converter =>
                 m.Term.Throw(mexpr)
 
               case l.TermAscribe(lexpr, ldecltpe) =>
-                val mexpr = lexpr.toMtree[m.Term]
+                val mexpr    = lexpr.toMtree[m.Term]
                 val mdecltpe = ldecltpe.toMtree[m.Type]
                 m.Term.Ascribe(mexpr, mdecltpe)
 
@@ -181,7 +181,7 @@ trait ToMtree { self: Converter =>
 
               case l.TypeFunction(lparams, lres) =>
                 val mparams = lparams.toMtrees[m.Type]
-                val mres = lres.toMtree[m.Type]
+                val mres    = lres.toMtree[m.Type]
                 m.Type.Function(mparams, mres)
 
               case l.TypeTuple(lelements) =>
@@ -194,12 +194,12 @@ trait ToMtree { self: Converter =>
                 m.Type.With(mlhs, mrhs)
 
               case l.TypeRefine(ltpe, lstats) =>
-                val mtpe = ltpe.toMtreeopt[m.Type]
+                val mtpe   = ltpe.toMtreeopt[m.Type]
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Type.Refine(mtpe, mstats)
 
               case l.TypeExistential(ltpe, lstats) =>
-                val mtpe = ltpe.toMtree[m.Type]
+                val mtpe   = ltpe.toMtree[m.Type]
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Type.Existential(mtpe, mstats)
 
