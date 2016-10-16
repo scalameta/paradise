@@ -12,6 +12,7 @@ build:
     commands:
       - ./bin/bintray.sh
     when:
+      event: push # merge into master only, not pull requests.
       branch: [master, 4.x]
 cache:
   mount:
