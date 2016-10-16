@@ -1048,16 +1048,18 @@ trait LogicalTrees { self: ReflectToolkit =>
 
     // ============ ODDS & ENDS ============
 
-    case class ImportSelector(name: l.QualifierName, rename: l.QualifierName)
+    case class ImportSelector(name: l.QualifierName, rename: Option[l.QualifierName])
 
     object Import {
       def unapply(tree: g.Import): Option[(g.Tree, List[l.ImportSelector])] = {
         val g.Import(expr, selectors) = tree
         val lname                     = expr
         val lselectors = selectors.map {
+          case g.ImportSelector(name, _, null, _) =>
+            l.ImportSelector(l.IndeterminateName(name.displayName), None)
           case g.ImportSelector(name, _, rename, _) =>
             l.ImportSelector(l.IndeterminateName(name.displayName),
-                             l.IndeterminateName(rename.displayName))
+                             Some(l.IndeterminateName(rename.displayName)))
         }
         Some(lname, lselectors)
       }

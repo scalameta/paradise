@@ -122,6 +122,16 @@ class Syntactic extends ConverterSuite {
   syntactic("val a: Option[(Int, String)] = ???")
   syntactic("val a: T forSome { type T } = ???")
 
+  // imports
+  syntactic("import a._")
+  syntactic("import a.b")
+//  syntactic("import a.{b => b}")
+  syntactic("import a.{b => c, d => e}")
+  syntactic("import a.{b => c, _}")
+  syntactic("import a.{b => _}")
+  syntactic("import a.{b => _, c => _, d, _}")
+  syntactic("import a.{b => c, _ => _}")
+
   // random stuff
   syntactic("case class C()")
   syntactic("object M { override val toString = test5 }")
