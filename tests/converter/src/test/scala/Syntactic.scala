@@ -121,6 +121,7 @@ class Syntactic extends ConverterSuite {
   syntactic("val a: M[(A)] = ???")
   syntactic("val a: Option[(Int, String)] = ???")
   syntactic("val a: T forSome { type T } = ???")
+  syntactic("trait Service[F[_]]")
 
   // random stuff
   syntactic("case class C()")
