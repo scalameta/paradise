@@ -247,13 +247,13 @@ trait ToMtree { self: Converter =>
 
               case l.PatExtract(lref, ltargs, largs) =>
                 val mref   = lref.toMtree[m.Term.Ref]
-                val mtargs = ltargs.toMtrees[m.Pat.Type] // dveim replaced
+                val mtargs = ltargs.toMtrees[m.Pat.Type]
                 val margs  = largs.toMtrees[m.Pat.Arg]
                 m.Pat.Extract(mref, mtargs, margs)
 
               case l.PatTyped(llhs, lrhs) =>
                 val mlrhs = llhs.toMtree[m.Pat]
-                val mrhs  = lrhs.toMtree[m.Pat.Type] // dveim replaced
+                val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
 
               // ============ LITERALS ============
