@@ -92,6 +92,9 @@ trait ConverterSuite extends FunSuite {
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
                 case (importee"$xfrom => $xto", importee"$yfrom") =>
                   loop(xfrom, yfrom) && xfrom.value == xto.value
+                // TODO: Account for `import x, y` being desugared to `import x; import y`.
+                // This is not an easy fix, because we need to process both blocks and templates in a non-trivial way.
+                // I'm leaving this for future work though, because I think this is gonna be a pretty rare occurrence in tests.
                 case _ =>
                   false
               }
