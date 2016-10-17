@@ -51,21 +51,18 @@ trait LogicalTrees { self: ReflectToolkit =>
   //    But we do have `case class Modifiers(...)`, because g.Modifiers isn't a tree, so we can't really
   //    adorn it with additional metadata that will help the converter.
   //
-  // 3) Since we generally don't create intermediate data structures, the unapply methods in extractors
-  //    should have comments that explain the fields that they are extracting.
-  //
-  // 4) Extractors and supporting intermediate data structures should be created in the same order
+  // 3) Extractors and supporting intermediate data structures should be written in the same order
   //    that the corresponding AST nodes in scala/meta/Trees.scala are in.
   //
-  // 5) Quite often, there comes a situation when it is impossible to write an extractor
+  // 4) Quite often, there comes a situation when it is impossible to write an extractor
   //    that makes a decision solely on the basis of the tree being inspected. For instance,
   //    just by looking at a g.DefDef, it is impossible to figure out whether it's a primary or a secondary ctor.
   //    A useful pattern to handle these situations is to use ROLES (see the very end of the file)
   //    to classify trees when extracting their parents and then save this information as attachments.
   //
-  // 6) It is disallowed to use attachments (or the metadata mechanism based on attachments)
+  // 5) It is disallowed to use attachments (or the metadata mechanism based on attachments)
   //    in extractor bodies. If there is a necessity to pass custom data between extractors,
-  //    one should use ROLES (see #5 above).
+  //    one should use ROLES (see #4 above).
   //
   // Source code that one might find helpful in implementing extractors:
   //
@@ -73,12 +70,12 @@ trait LogicalTrees { self: ReflectToolkit =>
   //    Contains several dozen clearly modularized recipes for resugarings.
   //    Want to know what synthetic members are generated for lazy abstract vals?
   //    What about default parameters on class constructors? It's all there.
-  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/foundation/src/main/scala/org/scalameta/reflection/Ensugar.scala
+  //    https://github.com/scalameta/scalameta/blob/92b65b841685871b4401f00456a25de2b7a177b6/foundation/src/main/scala/org/scalameta/reflection/Ensugar.scala
   //
   // 2) ToMtree.scala (the converter module of the previous implementation of scalahost).
   //    Transforms scala.reflect's encodings of Scala syntax into scala.meta.
   //    Contains knowledge how to collapse multipart val/var definitions and other related stuff.
-  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/interface/src/main/scala/scala/meta/internal/hosts/scalac/converters/ToMtree.scala
+  //    https://github.com/scalameta/scalameta/blob/92b65b841685871b4401f00456a25de2b7a177b6/interface/src/main/scala/scala/meta/internal/hosts/scalac/converters/ToMtree.scala
   //
   // 3) ReificationSupport.scala (the quasiquote support module of scala/scala)
   //    Contains various SyntacticXXX extractors that do things similar to our l.XXX extractors.
