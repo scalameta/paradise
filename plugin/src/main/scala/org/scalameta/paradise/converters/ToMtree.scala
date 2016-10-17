@@ -18,6 +18,8 @@ trait ToMtree { self: Converter =>
     object toMtree {
       implicit class XtensionGtreeToMtree(gtree0: g.Tree) {
         def toMtree[T <: m.Tree: ClassTag]: T = {
+          println("gtree: " + gtree0)
+          println("gtreeraw: " + g.showRaw(gtree0))
           wrap[T](gtree0, (gtree, gexpansion) => {
             val mtree = gtree match {
               // ============ NAMES ============
@@ -303,6 +305,8 @@ trait ToMtree { self: Converter =>
                 val mname    = lname.toMtree[m.Term.Name]
                 val mtparams = ltparams.toMtrees[m.Type.Param]
                 val mparamss = lparamss.toMtreess[m.Term.Param]
+                println("mparamss: " + gtree0)
+                println("mparamss: " + g.showRaw(gtree0))
                 val mtpt     = ltpt.toMtreeopt[m.Type]
                 val mrhs     = lrhs.toMtree[m.Term]
                 m.Defn.Def(mmods, mname, mtparams, mparamss, mtpt, mrhs)

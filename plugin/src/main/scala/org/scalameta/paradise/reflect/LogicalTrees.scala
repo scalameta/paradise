@@ -532,6 +532,7 @@ trait LogicalTrees { self: ReflectToolkit =>
                                             List[g.Tree],
                                             List[g.Tree])] = {
         if (!tree.is(TypeParamRole)) return None
+        println("TREE: " + tree)
         val g.TypeDef(_, name, tparams, rhs) = tree
         val lname =
           if (tree.name.isAnonymous) l.AnonymousName()
@@ -1193,9 +1194,11 @@ trait LogicalTrees { self: ReflectToolkit =>
         }
       }
 
-      val (explicitss, implicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
+      val (implicitss, explicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
       val (bounds, implicits) =
         implicitss.flatten.partition(_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
+      println("implicits: " + implicits)
+      println("bounds: " + bounds)
       tparams.map(tparam => {
         val vbounds = bounds.flatMap(ViewBound.unapply).filter(_._1.name == tparam.name).map(_._2)
         val cbounds =
@@ -1300,7 +1303,14 @@ trait LogicalTrees { self: ReflectToolkit =>
   object TypeParamRole {
     def get(tree: g.TypeDef): Option[TypeParamRole] = {
       if (!tree.is(ParamLoc)) return None
-      val attachment = tree.metadata.get("logicalTparam").map(_.asInstanceOf[TypeParamRole])
+      val attachment = //
+      for {
+        typ  <- tree.metadata.get("logicalTparam")
+// How do I use .get()?
+//  could not find implicit value for parameter evCanEnroll: org.scalameta.roles.CanEnroll[T,R,LogicalTrees.this.g.TypeDef]
+// [error] role <- XtensionRole(typ.asInstanceOf[TypeDef]).get(tree)
+        role <- typ.asInstanceOf[TypeDef].get(tree) // <--- error here
+      } yield role.asInstanceOf[TypeParamRole]
       attachment.orElse(Some(TypeParamRole(Nil, Nil)))
     }
     def set[U <: g.TypeDef](tree: U, c: TypeParamRole): U = {

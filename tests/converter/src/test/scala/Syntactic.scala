@@ -157,3 +157,7 @@ class Syntactic extends ConverterSuite {
   syntactic("def f(x: => T) = ???")
 
 }
+class Playground extends ConverterSuite {
+//  syntactic("def add(a: T)(implicit evidence: ClassTag[T]) = ???")
+  syntactic("def add[T:Classtag](a: T) = ???")
+}
