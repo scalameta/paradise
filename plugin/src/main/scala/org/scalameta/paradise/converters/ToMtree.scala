@@ -421,35 +421,26 @@ trait ToMtree { self: Converter =>
 
               // ============ ODDS & ENDS ============
 
-              case l.Import(lident, lselectors) =>
-                val NO_NAME  = g.termNames.NO_NAME.toString
-                val WILDCARD = g.termNames.WILDCARD.toString
-                val mname    = lident.toMtree[m.Term.Ref]
-                val mimportees = lselectors.map {
-                  case l.ImportSelector(l.IndeterminateName(WILDCARD),
-                                        Some(l.IndeterminateName(WILDCARD))) =>
-                    m.Importee.Wildcard()
-                  case l.ImportSelector(name, None) =>
-                    m.Importee.Wildcard()
-                  case l.ImportSelector(name, Some(l.IndeterminateName(NO_NAME)) | None) =>
-                    m.Importee.Name(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name @ l.IndeterminateName(value),
-                                        Some(l.IndeterminateName(same))) if value == same =>
-                    m.Importee.Name(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name, Some(l.IndeterminateName(WILDCARD))) =>
-                    m.Importee.Unimport(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name, Some(lrename)) =>
-                    println(g.showRaw(name))
-                    println(g.showRaw(lrename))
-                    val mrename = lrename match {
-                      case l.IndeterminateName(WILDCARD) => m.Importee.Wildcard
-                      case _                             => lrename.toMtree[m.Name.Indeterminate]
-                    }
-                    m.Importee.Rename(name.toMtree[m.Name.Indeterminate],
-                                      lrename.toMtree[m.Name.Indeterminate])
-                }
+              case l.Importer(lref, limportees) =>
+                val mref       = lref.toMtree[m.Term.Ref]
+                val mimportees = limportees.toMtrees[m.Importee]
+                m.Import(List(m.Importer(mref, mimportees)))
 
-                m.Import(List(m.Importer(mname, mimportees)))
+              case l.ImporteeWildcard() =>
+                m.Importee.Wildcard()
+
+              case l.ImporteeName(lname) =>
+                val mname = lname.toMtree[m.Name.Indeterminate]
+                m.Importee.Name(mname)
+
+              case l.ImporteeRename(lname, lrename) =>
+                val mname   = lname.toMtree[m.Name.Indeterminate]
+                val mrename = lrename.toMtree[m.Name.Indeterminate]
+                m.Importee.Rename(mname, mrename)
+
+              case l.ImporteeUnimport(lname) =>
+                val mname = lname.toMtree[m.Name.Indeterminate]
+                m.Importee.Unimport(mname)
 
               case l.CaseDef(lpat, lguard, lbody) =>
                 val mpat   = lpat.toMtree[m.Pat]

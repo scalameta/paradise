@@ -126,12 +126,14 @@ class Syntactic extends ConverterSuite {
   // imports
   syntactic("import a._")
   syntactic("import a.b")
-//  syntactic("import a.{b => b}")
+  syntactic("import a.{b => b}")
   syntactic("import a.{b => c, d => e}")
   syntactic("import a.{b => c, _}")
   syntactic("import a.{b => _}")
   syntactic("import a.{b => _, c => _, d, _}")
   syntactic("import a.{b => c, _ => _}")
+  // TODO: fixup in ConverterSuite.scala
+  // syntactic("import a.b, a.c")
 
   // random stuff
   syntactic("case class C()")
