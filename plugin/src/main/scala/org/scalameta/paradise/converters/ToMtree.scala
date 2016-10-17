@@ -56,10 +56,10 @@ trait ToMtree { self: Converter =>
                 m.Term.Apply(mfun, margs)
 
               case l.TermApplyInfix(llhs, lop, ltargs, largs) =>
-                val mlhs  = llhs.toMtree[m.Term]
-                val mop = lop.toMtree[m.Term.Name]
+                val mlhs   = llhs.toMtree[m.Term]
+                val mop    = lop.toMtree[m.Term.Name]
                 val mtargs = ltargs.toMtrees[m.Type]
-                val margs = largs.toMtrees[m.Term.Arg]
+                val margs  = largs.toMtrees[m.Term.Arg]
                 m.Term.ApplyInfix(mlhs, mop, mtargs, margs)
 
               case l.TermApplyType(lfun, ltargs) =>
@@ -173,8 +173,8 @@ trait ToMtree { self: Converter =>
                 m.Type.Apply(mtpt, margs)
 
               case l.TypeApplyInfix(llhs, lop, lrhs) =>
-                val mlhs  = llhs.toMtree[m.Type]
-                val mop = lop.toMtree[m.Type.Name]
+                val mlhs = llhs.toMtree[m.Type]
+                val mop  = lop.toMtree[m.Type.Name]
                 val mrhs = lrhs.toMtree[m.Type]
                 m.Type.ApplyInfix(mlhs, mop, mrhs)
 
@@ -233,7 +233,7 @@ trait ToMtree { self: Converter =>
                 // However, in this case, that'd be too complicated engineering-wise, so I make an exception.
                 mrhs match {
                   case m.Pat.Wildcard() => mlhs
-                  case mrhs => m.Pat.Bind(mlhs, mrhs)
+                  case mrhs             => m.Pat.Bind(mlhs, mrhs)
                 }
 
               case l.PatAlternative(llhs, lrhs) =>

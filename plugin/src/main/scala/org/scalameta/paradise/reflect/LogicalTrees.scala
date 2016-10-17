@@ -92,7 +92,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     def looksLikeInfix = {
       val hasSymbolicName =
         !name.decoded.forall(c => Character.isLetter(c) || Character.isDigit(c) || c == '_')
-      val idiomaticallyUsedAsInfix = name == nme.eq || name == nme.ne
+      val idiomaticallyUsedAsInfix    = name == nme.eq || name == nme.ne
       val idiomaticallyNotUsedAsInfix = name == nme.CONSTRUCTOR
       (hasSymbolicName || idiomaticallyUsedAsInfix) && !idiomaticallyNotUsedAsInfix
     }
@@ -208,17 +208,16 @@ trait LogicalTrees { self: ReflectToolkit =>
       def unapply(tree: g.Tree): Option[(g.Tree, l.TermName, List[g.Tree], List[g.Tree])] = {
         tree match {
           case g.treeInfo.Applied(g.Select(lhs, op: g.TermName), targs, List(rhs))
-          if op.looksLikeInfix && !op.isRightAssoc =>
+              if op.looksLikeInfix && !op.isRightAssoc =>
             Some((lhs, l.TermName(op.displayName), targs, rhs))
-          case g.Block(
-            List(g.ValDef(mods, synthetic1, g.TypeTree(), lhs)),
-            g.treeInfo.Applied(g.Select(rhs, op), targs, List(List(synthetic2))))
-          if mods == g.Modifiers(SYNTHETIC | ARTIFACT) &&
-             synthetic1.toString == synthetic2.toString &&
-             synthetic1.decodedName.toString.contains("$") =>
+          case g.Block(List(g.ValDef(mods, synthetic1, g.TypeTree(), lhs)),
+                       g.treeInfo.Applied(g.Select(rhs, op), targs, List(List(synthetic2))))
+              if mods == g.Modifiers(SYNTHETIC | ARTIFACT) &&
+                synthetic1.toString == synthetic2.toString &&
+                synthetic1.decodedName.toString.contains("$") =>
             val args = rhs match {
               case q"$tuple(..$args)" if tuple.toString.startsWith("scala.Tuple") => args
-              case arg          => List(arg)
+              case arg                                                            => List(arg)
             }
             Some((lhs, l.TermName(op.displayName), targs, args))
           case _ =>
@@ -442,7 +441,8 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TypeApplyInfix {
       def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, l.TypeName, g.Tree)] = {
         tree match {
-          case g.AppliedTypeTree(op @ Ident(name: g.TypeName), List(lhs, rhs)) if name.looksLikeInfix =>
+          case g.AppliedTypeTree(op @ Ident(name: g.TypeName), List(lhs, rhs))
+              if name.looksLikeInfix =>
             Some((lhs, l.TypeName(op), rhs))
           case _ =>
             None
