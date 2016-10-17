@@ -404,6 +404,15 @@ trait LogicalTrees { self: ReflectToolkit =>
       }
     }
 
+    object TypeArgByName {
+      def unapply(tree: g.AppliedTypeTree): Option[g.Tree] = {
+        tree match {
+          case TypeApply(TypeSelect(_, TypeName("<byname>")), Seq(tpe)) => Some(tpe)
+          case _                                                        => None
+        }
+      }
+    }
+
     object TypeApply {
       def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
         if (TypeFunction.unapply(tree).isDefined) return None
