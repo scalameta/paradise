@@ -96,13 +96,6 @@ for arg in "$1" "$2" "$3"; do
 	esac
 done
 
-if [[ ! -e $version_file && $upgrade = false ]]; then
-  echo "No version file, checking for latest..."
-  check_latest
-  echo "Setting latest version to: $latest_version"
-  scalafmt_version=$latest_version
-fi
-
 if [[ ! "$default_dir" ]]; then
   default_dir="$HOME/.scalafmt-bin/releases/$scalafmt_version"
 fi
