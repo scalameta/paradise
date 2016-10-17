@@ -1,9 +1,11 @@
 build:
   tests:
     image: olafurpg/scalafix:0.0.1
+    environment:
+      - COURSIER_CACHE=.cache/coursier
     commands:
-      - ./bin/scalafmt --version 0.4.5 --test
-      - sbt clean test
+      - ./bin/scalafmt --dir .cache/scalafmt --version 0.4.5 --test
+      - sbt -Dsbt.ivy.home=.cache/ivy2 clean test
   publish:
     image: olafurpg/scalafix:0.0.1
     environment:
@@ -16,6 +18,4 @@ build:
       branch: [master, 4.x]
 cache:
   mount:
-    - $HOME/.scalafmt-bin
-    - $HOME/.ivy2
-    - $HOME/.coursier
+    - .cache
