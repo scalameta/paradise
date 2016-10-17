@@ -148,7 +148,7 @@ trait ToMtree { self: Converter =>
               case l.TermParamDef(lmods, lname, ltpt, ldefault) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mname    = lname.toMtree[m.Term.Param.Name]
-                val mtpt     = ltpt.toMtreeopt[m.Type]
+                val mtpt     = ltpt.toMtreeopt[m.Type.Arg]
                 val mdefault = ldefault.toMtreeopt[m.Term]
                 m.Term.Param(mmods, mname, mtpt, mdefault)
 
@@ -173,6 +173,10 @@ trait ToMtree { self: Converter =>
               case l.TypeSingleton(lref) =>
                 val mref = lref.toMtree[m.Term.Ref]
                 m.Type.Singleton(mref)
+
+              case l.TypeArgByName(ltpe) =>
+                val mtpe = ltpe.toMtree[m.Type]
+                m.Type.Arg.ByName(mtpe)
 
               case l.TypeApply(ltpt, largs) =>
                 val mtpt  = ltpt.toMtree[m.Type]

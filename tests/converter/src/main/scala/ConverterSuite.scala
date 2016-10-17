@@ -149,7 +149,11 @@ trait ConverterSuite extends FunSuite {
         case MismatchException(details) =>
           val header = s"scala -> meta converter error\n$details"
           val fullDetails =
-            s"parsed tree:\n${parsedMetaTree.structure}\nconverted tree:\n${convertedMetaTree.structure}"
+            s"""parsed tree:
+               |${parsedMetaTree.structure}
+               |converted tree:
+               |${convertedMetaTree.syntax}
+               |${convertedMetaTree.structure}""".stripMargin
           fail(s"$header\n$fullDetails")
       }
     }
