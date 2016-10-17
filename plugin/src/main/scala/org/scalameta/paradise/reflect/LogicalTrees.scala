@@ -51,21 +51,18 @@ trait LogicalTrees { self: ReflectToolkit =>
   //    But we do have `case class Modifiers(...)`, because g.Modifiers isn't a tree, so we can't really
   //    adorn it with additional metadata that will help the converter.
   //
-  // 3) Since we generally don't create intermediate data structures, the unapply methods in extractors
-  //    should have comments that explain the fields that they are extracting.
-  //
-  // 4) Extractors and supporting intermediate data structures should be created in the same order
+  // 3) Extractors and supporting intermediate data structures should be written in the same order
   //    that the corresponding AST nodes in scala/meta/Trees.scala are in.
   //
-  // 5) Quite often, there comes a situation when it is impossible to write an extractor
+  // 4) Quite often, there comes a situation when it is impossible to write an extractor
   //    that makes a decision solely on the basis of the tree being inspected. For instance,
   //    just by looking at a g.DefDef, it is impossible to figure out whether it's a primary or a secondary ctor.
   //    A useful pattern to handle these situations is to use ROLES (see the very end of the file)
   //    to classify trees when extracting their parents and then save this information as attachments.
   //
-  // 6) It is disallowed to use attachments (or the metadata mechanism based on attachments)
+  // 5) It is disallowed to use attachments (or the metadata mechanism based on attachments)
   //    in extractor bodies. If there is a necessity to pass custom data between extractors,
-  //    one should use ROLES (see #5 above).
+  //    one should use ROLES (see #4 above).
   //
   // Source code that one might find helpful in implementing extractors:
   //
@@ -73,12 +70,12 @@ trait LogicalTrees { self: ReflectToolkit =>
   //    Contains several dozen clearly modularized recipes for resugarings.
   //    Want to know what synthetic members are generated for lazy abstract vals?
   //    What about default parameters on class constructors? It's all there.
-  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/foundation/src/main/scala/org/scalameta/reflection/Ensugar.scala
+  //    https://github.com/scalameta/scalameta/blob/92b65b841685871b4401f00456a25de2b7a177b6/foundation/src/main/scala/org/scalameta/reflection/Ensugar.scala
   //
   // 2) ToMtree.scala (the converter module of the previous implementation of scalahost).
   //    Transforms scala.reflect's encodings of Scala syntax into scala.meta.
   //    Contains knowledge how to collapse multipart val/var definitions and other related stuff.
-  //    https://github.com/scalameta/scalahost/blob/92b65b841685871b4401f00456a25de2b7a177b6/interface/src/main/scala/scala/meta/internal/hosts/scalac/converters/ToMtree.scala
+  //    https://github.com/scalameta/scalameta/blob/92b65b841685871b4401f00456a25de2b7a177b6/interface/src/main/scala/scala/meta/internal/hosts/scalac/converters/ToMtree.scala
   //
   // 3) ReificationSupport.scala (the quasiquote support module of scala/scala)
   //    Contains various SyntacticXXX extractors that do things similar to our l.XXX extractors.
@@ -95,8 +92,12 @@ trait LogicalTrees { self: ReflectToolkit =>
     def looksLikeInfix = {
       val hasSymbolicName =
         !name.decoded.forall(c => Character.isLetter(c) || Character.isDigit(c) || c == '_')
-      val idiomaticallyUsedAsInfix = name == nme.eq || name == nme.ne
-      hasSymbolicName || idiomaticallyUsedAsInfix
+      val idiomaticallyUsedAsInfix    = name == nme.eq || name == nme.ne
+      val idiomaticallyNotUsedAsInfix = name == nme.CONSTRUCTOR
+      (hasSymbolicName || idiomaticallyUsedAsInfix) && !idiomaticallyNotUsedAsInfix
+    }
+    def isRightAssoc = {
+      name.decoded.endsWith(":")
     }
     def displayName = {
       // NOTE: "<empty>", the internal name for empty package, isn't a valid Scala identifier, so we hack around
@@ -198,7 +199,30 @@ trait LogicalTrees { self: ReflectToolkit =>
         if (!tree.is(TermLoc)) return None
         if (TermNew.unapply(tree).isDefined) return None
         if (TermTuple.unapply(tree).isDefined) return None
+        if (TermApplyInfix.unapply(tree).isDefined) return None
         Some((tree.fun, tree.args))
+      }
+    }
+
+    object TermApplyInfix {
+      def unapply(tree: g.Tree): Option[(g.Tree, l.TermName, List[g.Tree], List[g.Tree])] = {
+        tree match {
+          case g.treeInfo.Applied(g.Select(lhs, op: g.TermName), targs, List(rhs))
+              if op.looksLikeInfix && !op.isRightAssoc =>
+            Some((lhs, l.TermName(op.displayName), targs, rhs))
+          case g.Block(List(g.ValDef(mods, synthetic1, g.TypeTree(), lhs)),
+                       g.treeInfo.Applied(g.Select(rhs, op), targs, List(List(synthetic2))))
+              if mods == g.Modifiers(SYNTHETIC | ARTIFACT) &&
+                synthetic1.toString == synthetic2.toString &&
+                synthetic1.decodedName.toString.contains("$") =>
+            val args = rhs match {
+              case q"$tuple(..$args)" if tuple.toString.startsWith("scala.Tuple") => args
+              case arg                                                            => List(arg)
+            }
+            Some((lhs, l.TermName(op.displayName), targs, args))
+          case _ =>
+            None
+        }
       }
     }
 
@@ -246,6 +270,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermBlock {
       def unapply(tree: g.Block): Option[List[g.Tree]] = {
         if (TermNew.unapply(tree).isDefined) return None
+        if (TermApplyInfix.unapply(tree).isDefined) return None
         val lstats = blockStats(tree.stats :+ tree.expr)
         Some(lstats)
       }
@@ -415,9 +440,22 @@ trait LogicalTrees { self: ReflectToolkit =>
 
     object TypeApply {
       def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
+        if (TypeApplyInfix.unapply(tree).isDefined) return None
         if (TypeFunction.unapply(tree).isDefined) return None
         if (TypeTuple.unapply(tree).isDefined) return None
         Some((tree.tpt, tree.args))
+      }
+    }
+
+    object TypeApplyInfix {
+      def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, l.TypeName, g.Tree)] = {
+        tree match {
+          case g.AppliedTypeTree(op @ Ident(name: g.TypeName), List(lhs, rhs))
+              if name.looksLikeInfix =>
+            Some((lhs, l.TypeName(op), rhs))
+          case _ =>
+            None
+        }
       }
     }
 
@@ -532,10 +570,13 @@ trait LogicalTrees { self: ReflectToolkit =>
     object PatBind {
       def unapply(tree: g.Bind): Option[(g.Tree, g.Tree)] = {
         if (tree.name.isTypeName) return None
-        val g.Bind(name, body) = tree
-        val llhs               = l.PatVarTerm(tree)
-        val lrhs               = body.set(PatLoc)
-        Some((llhs, lrhs))
+        tree match {
+          case g.Bind(name, g.Typed(Ident(nme.WILDCARD), tpe)) =>
+            None
+          case g.Bind(name, body) =>
+            Some((l.PatVarTerm(tree), body.set(PatLoc)))
+        }
+
       }
     }
 
@@ -583,11 +624,16 @@ trait LogicalTrees { self: ReflectToolkit =>
     }
 
     object PatTyped {
-      def unapply(tree: g.Typed): Option[(g.Tree, g.Tree)] = {
+      def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
         if (!tree.is(PatLoc)) return None
-        val g.Typed(lhs, rhs) = tree
-        val llhs              = lhs.set(PatLoc)
-        Some((llhs, rhs))
+        tree match {
+          case g.Typed(lhs, rhs) =>
+            Some((lhs.set(PatLoc), rhs))
+          case tree @ g.Bind(lhsname, g.Typed(Ident(nme.WILDCARD), rhs)) =>
+            Some((l.PatVarTerm(tree), rhs))
+          case _ =>
+            None
+        }
       }
     }
 

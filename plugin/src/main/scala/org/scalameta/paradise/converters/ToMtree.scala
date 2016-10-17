@@ -8,20 +8,6 @@ import scala.compat.Platform.EOL
 import scala.meta.prettyprinters._
 import scala.{meta => m}
 
-// This module exposes a method that can wrap scala.reflect trees
-// into equivalent scala.meta trees.
-//
-// Unlike in the previous implementation, we don't care
-// about preserving syntactic details of the original code:
-// we just produce scala.meta trees for everything that we see
-// (desugared forms or non-desugared forms alike),
-// so that the result of the conversion captures all the semantics of the original code.
-//
-// In order to obtain a scala.meta tree that combines syntactic and semantic precision,
-// you will need to use a dedicated module called `mergeTrees`
-// that is capable of merging syntactically precise trees (obtained from parsing)
-// and semantically precise trees (obtain from converting).
-
 trait ToMtree { self: Converter =>
 
   protected implicit class XtensionGtreeToMtree(gtree: g.Tree) {
@@ -64,10 +50,17 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Term.Select(mpre, mname)
 
-              case l.TermApply(lfun, largs) if !termSelectContainsConstructor(lfun) =>
+              case l.TermApply(lfun, largs) =>
                 val mfun  = lfun.toMtree[m.Term]
                 val margs = largs.toMtrees[m.Term.Arg]
                 m.Term.Apply(mfun, margs)
+
+              case l.TermApplyInfix(llhs, lop, ltargs, largs) =>
+                val mlhs   = llhs.toMtree[m.Term]
+                val mop    = lop.toMtree[m.Term.Name]
+                val mtargs = ltargs.toMtrees[m.Type]
+                val margs  = largs.toMtrees[m.Term.Arg]
+                m.Term.ApplyInfix(mlhs, mop, mtargs, margs)
 
               case l.TermApplyType(lfun, ltargs) =>
                 val mfun   = lfun.toMtree[m.Term]
@@ -183,6 +176,12 @@ trait ToMtree { self: Converter =>
                 val margs = largs.toMtrees[m.Type]
                 m.Type.Apply(mtpt, margs)
 
+              case l.TypeApplyInfix(llhs, lop, lrhs) =>
+                val mlhs = llhs.toMtree[m.Type]
+                val mop  = lop.toMtree[m.Type.Name]
+                val mrhs = lrhs.toMtree[m.Type]
+                m.Type.ApplyInfix(mlhs, mop, mrhs)
+
               case l.TypeFunction(lparams, lres) =>
                 val mparams = lparams.toMtrees[m.Type]
                 val mres    = lres.toMtree[m.Type]
@@ -233,7 +232,13 @@ trait ToMtree { self: Converter =>
               case l.PatBind(llhs, lrhs) =>
                 val mlhs = llhs.toMtree[m.Pat.Var.Term]
                 val mrhs = lrhs.toMtree[m.Pat.Arg]
-                m.Pat.Bind(mlhs, mrhs)
+                // NOTE: This pattern match goes against the rules of ToMtree.
+                // Typically, the idea is that all non-trivial logic goes into extractors in LogicalTree.
+                // However, in this case, that'd be too complicated engineering-wise, so I make an exception.
+                mrhs match {
+                  case m.Pat.Wildcard() => mlhs
+                  case mrhs             => m.Pat.Bind(mlhs, mrhs)
+                }
 
               case l.PatAlternative(llhs, lrhs) =>
                 val mllhs = llhs.toMtree[m.Pat]
@@ -246,13 +251,13 @@ trait ToMtree { self: Converter =>
 
               case l.PatExtract(lref, ltargs, largs) =>
                 val mref   = lref.toMtree[m.Term.Ref]
-                val mtargs = ltargs.toMtrees[m.Pat.Type] // dveim replaced
+                val mtargs = ltargs.toMtrees[m.Pat.Type]
                 val margs  = largs.toMtrees[m.Pat.Arg]
                 m.Pat.Extract(mref, mtargs, margs)
 
               case l.PatTyped(llhs, lrhs) =>
                 val mlrhs = llhs.toMtree[m.Pat]
-                val mrhs  = lrhs.toMtree[m.Pat.Type] // dveim replaced
+                val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
 
               // ============ LITERALS ============
@@ -314,9 +319,12 @@ trait ToMtree { self: Converter =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mname    = lname.toMtree[m.Type.Name]
                 val mtparams = ltparams.toMtrees[m.Type.Param]
-                val mctor =
+                val mctor = {
+                  // TODO: This conditional expression is non-idiomatic.
+                  // We should strive to move all non-trivial logic to LogicalTrees.
                   if (lctor == g.EmptyTree) m.Ctor.Primary(Nil, m.Ctor.Name("this"), Nil)
                   else lctor.toMtree[m.Ctor.Primary]
+                }
                 val mimpl = limpl.toMtree[m.Template]
                 m.Defn.Trait(mmods, mname, mtparams, mctor, mimpl)
 
@@ -503,11 +511,6 @@ trait ToMtree { self: Converter =>
         } finally {
           if (!isDuplicate) backtrace = backtrace.tail
         }
-      }
-
-      def termSelectContainsConstructor(lfun: g.Tree): Boolean = lfun match {
-        case g.Select(_, g.nme.CONSTRUCTOR) => true
-        case _                              => false
       }
 
       def fail(diagnostics: String, ex: Option[Throwable] = None): Nothing = {
