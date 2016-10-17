@@ -1048,18 +1048,26 @@ trait LogicalTrees { self: ReflectToolkit =>
 
     // ============ ODDS & ENDS ============
 
-    case class ImportSelector(name: l.QualifierName, rename: Option[l.QualifierName])
+    trait Importee                                                                extends Tree
+    case class ImporteeWildcard()                                                 extends Importee
+    case class ImporteeName(value: l.IndeterminateName)                           extends Importee
+    case class ImporteeRename(from: l.IndeterminateName, to: l.IndeterminateName) extends Importee
+    case class ImporteeUnimport(name: l.IndeterminateName)                        extends Importee
 
-    object Import {
-      def unapply(tree: g.Import): Option[(g.Tree, List[l.ImportSelector])] = {
+    object Importer {
+      def unapply(tree: g.Import): Option[(g.Tree, List[l.Importee])] = {
         val g.Import(expr, selectors) = tree
         val lname                     = expr
         val lselectors = selectors.map {
-          case g.ImportSelector(name, _, null, _) =>
-            l.ImportSelector(l.IndeterminateName(name.displayName), None)
+          case g.ImportSelector(nme.WILDCARD, _, _, _) =>
+            l.ImporteeWildcard()
+          case g.ImportSelector(name, _, nme.WILDCARD, _) =>
+            l.ImporteeUnimport(l.IndeterminateName(name.displayName))
+          case g.ImportSelector(name, _, rename, _) if name == rename =>
+            l.ImporteeName(l.IndeterminateName(name.displayName))
           case g.ImportSelector(name, _, rename, _) =>
-            l.ImportSelector(l.IndeterminateName(name.displayName),
-                             Some(l.IndeterminateName(rename.displayName)))
+            l.ImporteeRename(l.IndeterminateName(name.displayName),
+                             l.IndeterminateName(rename.displayName))
         }
         Some(lname, lselectors)
       }
