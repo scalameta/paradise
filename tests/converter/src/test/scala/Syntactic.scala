@@ -126,7 +126,7 @@ class Syntactic extends ConverterSuite {
   // imports
   syntactic("import a._")
   syntactic("import a.b")
-//  syntactic("import a.{b => b}")
+  syntactic("import a.{b => b}")
   syntactic("import a.{b => c, d => e}")
   syntactic("import a.{b => c, _}")
   syntactic("import a.{b => _}")

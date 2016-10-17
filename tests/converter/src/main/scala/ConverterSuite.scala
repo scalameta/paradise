@@ -90,6 +90,8 @@ trait ConverterSuite extends FunSuite {
                   loop(xtpe, ytpe)
                 case (t"$xlhs $xop $xrhs", t"$yop[$ylhs, $yrhs]") =>
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
+                case (importee"$xfrom => $xto", importee"$yfrom") =>
+                  loop(xfrom, yfrom) && xfrom.value == xto.value
                 case _ =>
                   false
               }
