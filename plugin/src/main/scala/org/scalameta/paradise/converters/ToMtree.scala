@@ -55,6 +55,13 @@ trait ToMtree { self: Converter =>
                 val margs = largs.toMtrees[m.Term.Arg]
                 m.Term.Apply(mfun, margs)
 
+              case l.TermApplyInfix(llhs, lop, ltargs, largs) =>
+                val mlhs  = llhs.toMtree[m.Term]
+                val mop = lop.toMtree[m.Term.Name]
+                val mtargs = ltargs.toMtrees[m.Type]
+                val margs = largs.toMtrees[m.Term.Arg]
+                m.Term.ApplyInfix(mlhs, mop, mtargs, margs)
+
               case l.TermApplyType(lfun, ltargs) =>
                 val mfun   = lfun.toMtree[m.Term]
                 val mtargs = ltargs.toMtrees[m.Type]
@@ -165,6 +172,12 @@ trait ToMtree { self: Converter =>
                 val margs = largs.toMtrees[m.Type]
                 m.Type.Apply(mtpt, margs)
 
+              case l.TypeApplyInfix(llhs, lop, lrhs) =>
+                val mlhs  = llhs.toMtree[m.Type]
+                val mop = lop.toMtree[m.Type.Name]
+                val mrhs = lrhs.toMtree[m.Type]
+                m.Type.ApplyInfix(mlhs, mop, mrhs)
+
               case l.TypeFunction(lparams, lres) =>
                 val mparams = lparams.toMtrees[m.Type]
                 val mres    = lres.toMtree[m.Type]
@@ -215,7 +228,13 @@ trait ToMtree { self: Converter =>
               case l.PatBind(llhs, lrhs) =>
                 val mlhs = llhs.toMtree[m.Pat.Var.Term]
                 val mrhs = lrhs.toMtree[m.Pat.Arg]
-                m.Pat.Bind(mlhs, mrhs)
+                // NOTE: This pattern match goes against the rules of ToMtree.
+                // Typically, the idea is that all non-trivial logic goes into extractors in LogicalTree.
+                // However, in this case, that'd be too complicated engineering-wise, so I make an exception.
+                mrhs match {
+                  case m.Pat.Wildcard() => mlhs
+                  case mrhs => m.Pat.Bind(mlhs, mrhs)
+                }
 
               case l.PatAlternative(llhs, lrhs) =>
                 val mllhs = llhs.toMtree[m.Pat]
@@ -296,9 +315,12 @@ trait ToMtree { self: Converter =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mname    = lname.toMtree[m.Type.Name]
                 val mtparams = ltparams.toMtrees[m.Type.Param]
-                val mctor =
+                val mctor = {
+                  // TODO: This conditional expression is non-idiomatic.
+                  // We should strive to move all non-trivial logic to LogicalTrees.
                   if (lctor == g.EmptyTree) m.Ctor.Primary(Nil, m.Ctor.Name("this"), Nil)
                   else lctor.toMtree[m.Ctor.Primary]
+                }
                 val mimpl = limpl.toMtree[m.Template]
                 m.Defn.Trait(mmods, mname, mtparams, mctor, mimpl)
 

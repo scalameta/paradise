@@ -41,7 +41,7 @@ trait ConverterSuite extends FunSuite {
           def sameDesugaring = {
             // NOTE: Workaround for https://github.com/scalameta/scalameta/issues/519.
             object TermApply519 {
-              def unapply(tree: Tree): Option[(Term, Seq[Seq[Type.Arg]], Seq[Seq[Term.Arg]])] =
+              def unapply(tree: Tree): Option[(Term, Seq[Seq[Type]], Seq[Seq[Term.Arg]])] =
                 tree match {
                   case q"$fun[..$targs](...$argss)" => Some((fun, Seq(targs), argss))
                   case q"$fun(...$argss)"           => Some((fun, Nil, argss))
@@ -49,46 +49,25 @@ trait ConverterSuite extends FunSuite {
                 }
             }
 
-            // NOTE: This is a desugaring performed by the scala.reflect parser.
-            // We may want to undo it in the converter.
-            object TermApplyInfixRightAssoc {
-              def unapply(tree: Tree): Option[(Term, Term.Name, Seq[Type.Arg], Seq[Term.Arg])] =
-                tree match {
-                  case q"{ val $tmp1 = $lhs; ${ TermApply519(q"$rhs.$op", targss, Seq(Seq(tmp2))) } }"
-                      if tmp1.syntax == tmp2.syntax && tmp1.syntax.contains("$") =>
-                    val args = rhs match {
-                      case q"(..$args)" => args
-                      case arg          => Seq(arg)
-                    }
-                    Some((lhs, op, targss.flatten, args))
-                  case _ =>
-                    None
-                }
-            }
-
             try {
               (x, y) match {
-                case (q"$xlhs $xop [..$xtargs] (..$xargs)",
-                      TermApply519(q"$ylhs.$yop", ytargss, Seq(yargs))) =>
-                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargss.flatten) && loop(
-                    xargs,
-                    yargs)
-                case (q"$xlhs $xop [..$xtargs] (..$xargs)",
-                      TermApplyInfixRightAssoc(ylhs, yop, ytargs, yargs)) =>
-                  loop(xlhs, ylhs) && loop(xop, yop) && loop(xtargs, ytargs) && loop(xargs, yargs)
+                case (TermApply519(q"$xlhs.$xop", xtargss, Seq(xargs)),
+                      q"$ylhs $yop [..$ytargs] (..$yargs)") =>
+                  loop(xlhs, ylhs) && loop(xop, yop) &&
+                    loop(xtargss.flatten, ytargs) && loop(xargs, yargs)
                 case (q"{}", q"()") =>
                   true
                 case (q"{ $xstat }", q"$ystat") =>
                   loop(xstat, ystat)
                 case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
                   loop(xctor, yctor)
-                case (xpat, p"$ypat @ _") =>
+                case (p"$xpat @ _", p"$ypat") =>
                   loop(xpat, ypat)
-                case (p"$xlhs: $xtpe", p"$ylhs @ (_: $ytpe)") =>
-                  loop(xlhs, ylhs)
+                case (p"$xlhs @ (_: $xtpe)", p"$ylhs: $ytpe") =>
+                  loop(xlhs, ylhs) && loop(xtpe, ytpe)
                 case (t"${ Some(xtpe) } {}", t"$ytpe") =>
                   loop(xtpe, ytpe)
-                case (t"$xlhs $xop $xrhs", t"$yop[$ylhs, $yrhs]") =>
+                case (t"$xop[$xlhs, $xrhs]", t"$ylhs $yop $yrhs") =>
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
                 case (importee"$xfrom => $xto", importee"$yfrom") =>
                   loop(xfrom, yfrom) && xfrom.value == xto.value

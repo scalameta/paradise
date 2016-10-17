@@ -93,7 +93,11 @@ trait LogicalTrees { self: ReflectToolkit =>
       val hasSymbolicName =
         !name.decoded.forall(c => Character.isLetter(c) || Character.isDigit(c) || c == '_')
       val idiomaticallyUsedAsInfix = name == nme.eq || name == nme.ne
-      hasSymbolicName || idiomaticallyUsedAsInfix
+      val idiomaticallyNotUsedAsInfix = name == nme.CONSTRUCTOR
+      (hasSymbolicName || idiomaticallyUsedAsInfix) && !idiomaticallyNotUsedAsInfix
+    }
+    def isRightAssoc = {
+      name.decoded.endsWith(":")
     }
     def displayName = {
       // NOTE: "<empty>", the internal name for empty package, isn't a valid Scala identifier, so we hack around
@@ -195,7 +199,31 @@ trait LogicalTrees { self: ReflectToolkit =>
         if (!tree.is(TermLoc)) return None
         if (TermNew.unapply(tree).isDefined) return None
         if (TermTuple.unapply(tree).isDefined) return None
+        if (TermApplyInfix.unapply(tree).isDefined) return None
         Some((tree.fun, tree.args))
+      }
+    }
+
+    object TermApplyInfix {
+      def unapply(tree: g.Tree): Option[(g.Tree, l.TermName, List[g.Tree], List[g.Tree])] = {
+        tree match {
+          case g.treeInfo.Applied(g.Select(lhs, op: g.TermName), targs, List(rhs))
+          if op.looksLikeInfix && !op.isRightAssoc =>
+            Some((lhs, l.TermName(op.displayName), targs, rhs))
+          case g.Block(
+            List(g.ValDef(mods, synthetic1, g.TypeTree(), lhs)),
+            g.treeInfo.Applied(g.Select(rhs, op), targs, List(List(synthetic2))))
+          if mods == g.Modifiers(SYNTHETIC | ARTIFACT) &&
+             synthetic1.toString == synthetic2.toString &&
+             synthetic1.decodedName.toString.contains("$") =>
+            val args = rhs match {
+              case q"$tuple(..$args)" if tuple.toString.startsWith("scala.Tuple") => args
+              case arg          => List(arg)
+            }
+            Some((lhs, l.TermName(op.displayName), targs, args))
+          case _ =>
+            None
+        }
       }
     }
 
@@ -243,6 +271,7 @@ trait LogicalTrees { self: ReflectToolkit =>
     object TermBlock {
       def unapply(tree: g.Block): Option[List[g.Tree]] = {
         if (TermNew.unapply(tree).isDefined) return None
+        if (TermApplyInfix.unapply(tree).isDefined) return None
         val lstats = blockStats(tree.stats :+ tree.expr)
         Some(lstats)
       }
@@ -403,9 +432,21 @@ trait LogicalTrees { self: ReflectToolkit =>
 
     object TypeApply {
       def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
+        if (TypeApplyInfix.unapply(tree).isDefined) return None
         if (TypeFunction.unapply(tree).isDefined) return None
         if (TypeTuple.unapply(tree).isDefined) return None
         Some((tree.tpt, tree.args))
+      }
+    }
+
+    object TypeApplyInfix {
+      def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, l.TypeName, g.Tree)] = {
+        tree match {
+          case g.AppliedTypeTree(op @ Ident(name: g.TypeName), List(lhs, rhs)) if name.looksLikeInfix =>
+            Some((lhs, l.TypeName(op), rhs))
+          case _ =>
+            None
+        }
       }
     }
 
@@ -520,10 +561,13 @@ trait LogicalTrees { self: ReflectToolkit =>
     object PatBind {
       def unapply(tree: g.Bind): Option[(g.Tree, g.Tree)] = {
         if (tree.name.isTypeName) return None
-        val g.Bind(name, body) = tree
-        val llhs               = l.PatVarTerm(tree)
-        val lrhs               = body.set(PatLoc)
-        Some((llhs, lrhs))
+        tree match {
+          case g.Bind(name, g.Typed(Ident(nme.WILDCARD), tpe)) =>
+            None
+          case g.Bind(name, body) =>
+            Some((l.PatVarTerm(tree), body.set(PatLoc)))
+        }
+
       }
     }
 
@@ -571,11 +615,16 @@ trait LogicalTrees { self: ReflectToolkit =>
     }
 
     object PatTyped {
-      def unapply(tree: g.Typed): Option[(g.Tree, g.Tree)] = {
+      def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
         if (!tree.is(PatLoc)) return None
-        val g.Typed(lhs, rhs) = tree
-        val llhs              = lhs.set(PatLoc)
-        Some((llhs, rhs))
+        tree match {
+          case g.Typed(lhs, rhs) =>
+            Some((lhs.set(PatLoc), rhs))
+          case tree @ g.Bind(lhsname, g.Typed(Ident(nme.WILDCARD), rhs)) =>
+            Some((l.PatVarTerm(tree), rhs))
+          case _ =>
+            None
+        }
       }
     }
 
