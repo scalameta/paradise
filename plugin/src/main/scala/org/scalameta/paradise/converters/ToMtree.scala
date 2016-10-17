@@ -422,17 +422,31 @@ trait ToMtree { self: Converter =>
               // ============ ODDS & ENDS ============
 
               case l.Import(lident, lselectors) =>
-                val mname = lident.toMtree[m.Term.Ref]
+                val NO_NAME  = g.termNames.NO_NAME.toString
+                val WILDCARD = g.termNames.WILDCARD.toString
+                val mname    = lident.toMtree[m.Term.Ref]
                 val mimportees = lselectors.map {
-                  case l.ImportSelector(g.termNames.WILDCARD, g.termNames.NO_NAME) =>
+                  case l.ImportSelector(l.IndeterminateName(WILDCARD),
+                                        Some(l.IndeterminateName(WILDCARD))) =>
                     m.Importee.Wildcard()
-                  case l.ImportSelector(name, g.termNames.NO_NAME) =>
+                  case l.ImportSelector(name, None) =>
+                    m.Importee.Wildcard()
+                  case l.ImportSelector(name, Some(l.IndeterminateName(NO_NAME)) | None) =>
                     m.Importee.Name(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name, g.termNames.WILDCARD) =>
+                  case l.ImportSelector(name @ l.IndeterminateName(value),
+                                        Some(l.IndeterminateName(same))) if value == same =>
+                    m.Importee.Name(name.toMtree[m.Name.Indeterminate])
+                  case l.ImportSelector(name, Some(l.IndeterminateName(WILDCARD))) =>
                     m.Importee.Unimport(name.toMtree[m.Name.Indeterminate])
-                  case l.ImportSelector(name, rename) =>
+                  case l.ImportSelector(name, Some(lrename)) =>
+                    println(g.showRaw(name))
+                    println(g.showRaw(lrename))
+                    val mrename = lrename match {
+                      case l.IndeterminateName(WILDCARD) => m.Importee.Wildcard
+                      case _                             => lrename.toMtree[m.Name.Indeterminate]
+                    }
                     m.Importee.Rename(name.toMtree[m.Name.Indeterminate],
-                                      rename.toMtree[m.Name.Indeterminate])
+                                      lrename.toMtree[m.Name.Indeterminate])
                 }
 
                 m.Import(List(m.Importer(mname, mimportees)))
