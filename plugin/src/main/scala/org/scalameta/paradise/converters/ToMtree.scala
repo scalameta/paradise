@@ -50,7 +50,7 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Term.Select(mpre, mname)
 
-              case l.TermApply(lfun, largs) if !termSelectContainsConstructor(lfun) =>
+              case l.TermApply(lfun, largs) =>
                 val mfun  = lfun.toMtree[m.Term]
                 val margs = largs.toMtrees[m.Term.Arg]
                 m.Term.Apply(mfun, margs)
@@ -507,11 +507,6 @@ trait ToMtree { self: Converter =>
         } finally {
           if (!isDuplicate) backtrace = backtrace.tail
         }
-      }
-
-      def termSelectContainsConstructor(lfun: g.Tree): Boolean = lfun match {
-        case g.Select(_, g.nme.CONSTRUCTOR) => true
-        case _                              => false
       }
 
       def fail(diagnostics: String, ex: Option[Throwable] = None): Nothing = {
