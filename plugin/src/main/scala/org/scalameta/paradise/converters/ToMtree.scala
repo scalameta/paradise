@@ -439,8 +439,6 @@ trait ToMtree { self: Converter =>
                   case l.ImportSelector(name, Some(l.IndeterminateName(WILDCARD))) =>
                     m.Importee.Unimport(name.toMtree[m.Name.Indeterminate])
                   case l.ImportSelector(name, Some(lrename)) =>
-                    println(g.showRaw(name))
-                    println(g.showRaw(lrename))
                     val mrename = lrename match {
                       case l.IndeterminateName(WILDCARD) => m.Importee.Wildcard
                       case _                             => lrename.toMtree[m.Name.Indeterminate]
