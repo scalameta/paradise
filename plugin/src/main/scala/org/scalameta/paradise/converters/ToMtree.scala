@@ -337,9 +337,9 @@ trait ToMtree { self: Converter =>
               // ============ PKGS ============
 
               case l.PackageDef(lname, lstats) =>
-                val mname  = lname.toMtree[m.Term.Name]
+                val mref   = lname.toMtree[m.Term.Ref]
                 val mstats = lstats.toMtrees[m.Stat]
-                m.Pkg(mname, mstats)
+                m.Pkg(mref, mstats)
 
               // ============ CTORS ============
 

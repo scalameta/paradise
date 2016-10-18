@@ -71,6 +71,8 @@ trait ConverterSuite extends FunSuite {
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
                 case (importee"$xfrom => $xto", importee"$yfrom") =>
                   loop(xfrom, yfrom) && xfrom.value == xto.value
+                case (pkg1: Pkg, Source(Seq(pkg2: Pkg))) => // ToMtree wraps packages in Source
+                  loop(pkg1, pkg2)
                 // TODO: Account for `import x, y` being desugared to `import x; import y`.
                 // This is not an easy fix, because we need to process both blocks and templates in a non-trivial way.
                 // I'm leaving this for future work though, because I think this is gonna be a pretty rare occurrence in tests.
@@ -114,10 +116,10 @@ trait ConverterSuite extends FunSuite {
             fail(s"meta parse error: $pos at $message")
         }
       }
-      val convertedMetaTree: m.Stat = {
+      val convertedMetaTree: m.Tree = {
         object converter extends Converter {
           lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-          def apply(gtree: g.Tree): m.Stat            = gtree.toMtree[m.Stat]
+          def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
         }
         converter(parsedScalacTree)
       }
