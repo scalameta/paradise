@@ -379,6 +379,15 @@ trait ToMtree { self: Converter =>
                 m.Term.Param(Nil, mname, mtpt, None)
 
               // ============ MODIFIERS ============
+              case l.TypeAnnotate(lexpr, lmods) =>
+                val mexpr = lexpr.toMtree[m.Type]
+                val mmods = lmods.toMtrees[m.Mod.Annot]
+                m.Type.Annotate(mexpr, mmods)
+
+              case l.TermAnnotate(lexpr, lmods) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                val mmods = lmods.toMtrees[m.Mod.Annot]
+                m.Term.Annotate(mexpr, mmods)
 
               case l.Annotation(lapply) =>
                 // scala.reflect uses Term.New here, but we need only its parent

@@ -48,6 +48,18 @@ trait ConverterSuite extends FunSuite {
                   case _                            => None
                 }
             }
+            object FlatTermAnnotated {
+              // See LogicalTrees.Annotated for explanation.
+              def flatTerm(t: Term, accum: Seq[Mod.Annot] = Nil): (Term, Seq[Mod.Annot]) =
+                t match {
+                  case Term.Annotate(t2, as) => flatTerm(t2, as ++ accum)
+                  case _                     => (t, accum)
+                }
+              def unapply(tree: Tree): Option[(Term, Seq[Mod.Annot])] = tree match {
+                case t: Term.Annotate => Some(flatTerm(t))
+                case _                => None
+              }
+            }
 
             try {
               (x, y) match {
@@ -71,6 +83,8 @@ trait ConverterSuite extends FunSuite {
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
                 case (importee"$xfrom => $xto", importee"$yfrom") =>
                   loop(xfrom, yfrom) && xfrom.value == xto.value
+                case (FlatTermAnnotated(expr1, annotsnel1), q"$expr2: ..@$annotsnel2") =>
+                  loop(expr1, expr2) && loop(annotsnel1, annotsnel2)
                 // TODO: Account for `import x, y` being desugared to `import x; import y`.
                 // This is not an easy fix, because we need to process both blocks and templates in a non-trivial way.
                 // I'm leaving this for future work though, because I think this is gonna be a pretty rare occurrence in tests.

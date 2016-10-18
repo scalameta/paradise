@@ -1,6 +1,7 @@
 package org.scalameta.paradise
 package reflect
 
+import scala.annotation.tailrec
 import scala.tools.nsc.Global
 import scala.reflect.internal.{Flags, HasFlags}
 import scala.reflect.internal.Flags._
@@ -1091,6 +1092,34 @@ trait LogicalTrees { self: ReflectToolkit =>
       require(syntacticAnnots.isEmpty || semanticAnnots.isEmpty)
       if (syntacticAnnots.nonEmpty) syntacticAnnots.map(Annotation.apply)
       else semanticAnnots.map(Annotation.apply)
+    }
+
+    object TermAnnotate {
+      def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+        val (larg, lannots) = Annotated.flatten(gtree)
+        if (!larg.isTerm) return None
+        Some((larg, lannots.map(Annotation.apply)))
+      }
+    }
+
+    object TypeAnnotate {
+      def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+        val (larg, lannots) = Annotated.flatten(gtree)
+        if (!larg.isType) return None
+        Some((larg, lannots.map(Annotation.apply)))
+      }
+    }
+
+    object Annotated {
+      // Reflect trees represent flat Seq[Mod.Annot] as nested Mod.Annot(Mod.Annot(...term), annot).
+      // We flatten the nested structure to match the meta representation for the most common case.
+      // Unfortunately, this means we might flatten the structure when the original syntax used nesting.
+      @tailrec
+      final def flatten(gtree: g.Tree, accum: List[g.Tree] = Nil): (g.Tree, List[g.Tree]) =
+        gtree match {
+          case g.Annotated(annot, arg) => flatten(arg, annot :: accum)
+          case tree                    => (tree, accum)
+        }
     }
 
     case class Annotation(tree: g.Tree) extends Modifier
