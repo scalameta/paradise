@@ -11,12 +11,11 @@ trait ReflectToolkit
     with TreeInfo
     with StdAttachments
     with Mirrors
+    with Trees
     with Symbols
     with ReplIntegration
     with Names
-    with Metadata
-    with LogicalTrees {
+    with Metadata {
   val global: NscGlobal
   lazy val g: global.type = global
-  object l extends LogicalTrees
 }
