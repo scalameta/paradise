@@ -156,4 +156,18 @@ class Syntactic extends ConverterSuite {
   syntactic("def add(a: Int)(implicit z: Int = 0) = a + z")
   syntactic("def f(x: => T) = ???")
 
+  // TypeDef
+  syntactic("type Age = Int")
+  syntactic("type Age = Int with Old")
+  syntactic("type Container[T] = List[T]")
+  syntactic("type Container[A <: B] = List[A]")
+  // Can't parse these because they're abstract
+  //  syntactic("type Age >: Int <: Any")
+  //  syntactic("type Age <: Int + Boolean")
+  //  syntactic("type Container[T]")
+  // Can parse these but rhs is TypeBoundsTree, I expected the rhs to be empty.
+  //  syntactic("type Container[T] <: List[T] { def isEmpty: Boolean; type M }")
+  //  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M }")
+  //  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
+  //  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
 }

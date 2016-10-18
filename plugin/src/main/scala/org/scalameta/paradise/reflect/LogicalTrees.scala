@@ -742,8 +742,10 @@ trait LogicalTrees { self: ReflectToolkit =>
 
     object TypeDef {
       def unapply(
-          tree: g.TypeDef): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree)] = {
-        ???
+          tree: g.TypeDef
+      ): Option[(List[l.Modifier], l.TypeName, List[g.TypeDef], g.Tree)] = {
+        val ltparams = applyBounds(tree.tparams, Nil)
+        Some(l.Modifiers(tree), l.TypeName(tree), ltparams, tree.rhs)
       }
     }
 

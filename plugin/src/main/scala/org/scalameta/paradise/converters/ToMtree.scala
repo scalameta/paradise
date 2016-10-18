@@ -307,6 +307,13 @@ trait ToMtree { self: Converter =>
                 val mrhs     = lrhs.toMtree[m.Term]
                 m.Defn.Def(mmods, mname, mtparams, mparamss, mtpt, mrhs)
 
+              case l.TypeDef(lmods, lname, ltparams, lbody) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mname    = lname.toMtree[m.Type.Name]
+                val mtparams = ltparams.toMtrees[m.Type.Param]
+                val mbody    = lbody.toMtree[m.Type]
+                m.Defn.Type(mmods, mname, mtparams, mbody)
+
               case l.ClassDef(lmods, lname, ltparams, lctor, limpl) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mname    = lname.toMtree[m.Type.Name]
