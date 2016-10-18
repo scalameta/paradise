@@ -782,10 +782,11 @@ trait LogicalTrees { self: ReflectToolkit =>
     // ============ PKGS ============
 
     object PackageDef {
-      def unapply(tree: g.PackageDef): Option[(l.TermName, List[g.Tree])] = {
+      def unapply(tree: g.PackageDef): Option[(g.RefTree, List[g.Tree])] = {
         require(tree.pid.name != nme.EMPTY_PACKAGE_NAME)
         val lstats = toplevelStats(tree.stats)
-        Some((l.TermName(tree.pid), lstats))
+        val lref   = tree.pid
+        Some((lref, lstats))
       }
     }
 
