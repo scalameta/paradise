@@ -160,7 +160,7 @@ class Syntactic extends ConverterSuite {
   syntactic("@annot val x = 1")
   syntactic("def f(@annot x: Int) = 1")
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
-//  syntactic("(x: @unchecked()): @optimize(3)") // Can't distinguish from flat structure
+  syntactic("(x: @unchecked()): @optimize(3)") // converted tree looses nesting.
   syntactic("(x: @unchecked() @optimize(3) @bar)")
   syntactic("((x: @unchecked()).foo: @optimize(3))")
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
