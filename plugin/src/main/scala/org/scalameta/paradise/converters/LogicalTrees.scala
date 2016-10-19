@@ -762,10 +762,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   // ============ PKGS ============
 
   object PackageDef {
-    def unapply(tree: g.PackageDef): Option[(l.TermName, List[g.Tree])] = {
+    def unapply(tree: g.PackageDef): Option[(g.Tree, List[g.Tree])] = {
       require(tree.pid.name != nme.EMPTY_PACKAGE_NAME)
+      val lpid   = tree.pid
       val lstats = toplevelStats(tree.stats)
-      Some((l.TermName(tree.pid), lstats))
+      Some((lpid, lstats))
     }
   }
 
