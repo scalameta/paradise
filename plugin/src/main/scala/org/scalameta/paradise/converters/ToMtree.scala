@@ -339,10 +339,10 @@ trait ToMtree { self: Converter =>
 
               // ============ PKGS ============
 
-              case l.PackageDef(lname, lstats) =>
-                val mname  = lname.toMtree[m.Term.Name]
+              case l.PackageDef(lref, lstats) =>
+                val mref   = lref.toMtree[m.Term.Ref]
                 val mstats = lstats.toMtrees[m.Stat]
-                m.Pkg(mname, mstats)
+                m.Pkg(mref, mstats)
 
               // ============ CTORS ============
 
@@ -533,9 +533,11 @@ trait ToMtree { self: Converter =>
             case g.PackageDef(g.Ident(g.nme.EMPTY_PACKAGE_NAME), gstats) =>
               val mstats = gstats.toMtrees[m.Stat]
               m.Source(mstats)
-            case g.PackageDef(_, _) =>
+            case g.PackageDef(_, _) if classTag[T].runtimeClass == classOf[m.Source] =>
               val mstats = List(gtree.toMtree[m.Pkg])
               m.Source(mstats)
+            case g.PackageDef(_, _) =>
+              gtree.toMtree[m.Pkg]
             case _ =>
               gtree.toMtree[T]
           }
