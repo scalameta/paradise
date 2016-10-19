@@ -155,6 +155,26 @@ class Syntactic extends ConverterSuite {
   // TODO: fixup in ConverterSuite.scala
   // syntactic("import a.b, a.c")
 
+  // annotation
+  syntactic("@static val a: m.A = ???")
+  syntactic("@static() val a: m.A = ???")
+  syntactic("@static() @volatile() val a: m.A = ???")
+  syntactic("@main class App { println(100) }")
+  syntactic("@main() class App { println(100) }")
+  syntactic("@optimize(5) def fact(n: Int) = ???")
+  syntactic("@optimize(5) @log(3) def fact(n: Int) = ???")
+  syntactic("(x: @unchecked)")
+  syntactic("(x: @unchecked())")
+  syntactic("(x: @unchecked @optimize)")
+  syntactic("(x: @unchecked() @optimize(3))")
+  syntactic("(x: @unchecked()): @optimize(3)")
+  syntactic("(x: @unchecked() @optimize(3) @bar)")
+  syntactic("((x: @unchecked()).foo: @optimize(3))")
+  syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance]")
+  syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance()]")
+  syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
+  syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
+
   // random stuff
   syntactic("case class C()")
   syntactic("object M { override val toString = test5 }")

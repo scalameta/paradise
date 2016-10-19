@@ -52,4 +52,12 @@ trait Trees { self: ReflectToolkit =>
       patterns.toSet
     }
   }
+
+  implicit class XtensionPrimaryCtor(tree: ClassDef) {
+    def primaryCtor: DefDef = {
+      tree.impl.body.collectFirst {
+        case ctor @ g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _) => ctor
+      }.get
+    }
+  }
 }
