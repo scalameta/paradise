@@ -100,7 +100,20 @@ trait ConverterSuite extends FunSuite {
         import g._
         val reporter = new StoreReporter()
         g.reporter = reporter
-        val tree   = gen.mkTreeOrBlock(newUnitParser(code, "<toolbox>").parseStatsOrPackages())
+        val tree = {
+          // NOTE: `parseStatsOrPackages` fails to parse abstract type defs without bounds,
+          // so we need to apply a workaround to ensure that we correctly process those.
+          def somewhatBrokenParse(code: String) =
+            gen.mkTreeOrBlock(newUnitParser(code, "<toolbox>").parseStatsOrPackages())
+          val rxAbstractTypeNobounds = """^type (\w+)(\[[^=]*?\])?$""".r
+          code match {
+            case rxAbstractTypeNobounds(_ *) =>
+              val tdef @ TypeDef(mods, name, tparams, _) = somewhatBrokenParse(code + " <: Dummy")
+              treeCopy.TypeDef(tdef, mods, name, tparams, TypeBoundsTree(EmptyTree, EmptyTree))
+            case _ =>
+              somewhatBrokenParse(code)
+          }
+        }
         val errors = reporter.infos.filter(_.severity == g.reporter.ERROR)
         errors.foreach(error => fail(s"scalac parse error: ${error.msg} at ${error.pos}"))
         tree
