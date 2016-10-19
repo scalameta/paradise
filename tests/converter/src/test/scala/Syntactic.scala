@@ -104,6 +104,18 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")
 
+  // definitions
+  syntactic("type Age = Int")
+  syntactic("type Age")
+  syntactic("type Age >: Int <: Any")
+  syntactic("type Age <: Int + Boolean")
+  syntactic("type Container[T]")
+  syntactic("type Container[T] = List[T]")
+  syntactic("type Container[T] <: List[T] { def isEmpty: Boolean; type M }")
+  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M }")
+  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
+  syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
+
   // types
   syntactic("val a: A with B = ???")
   syntactic("val a: A { def x: Int } = ???")

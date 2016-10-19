@@ -713,7 +713,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TypeDef {
     def unapply(
         tree: g.TypeDef): Option[(List[l.Modifier], l.TypeName, List[l.TypeParamDef], g.Tree)] = {
-      ???
+      tree match {
+        case g.TypeDef(mods, name, tparams, rhs) if !mods.hasFlag(DEFERRED) =>
+          val ltparams = mkTparams(tparams, Nil)
+          Some((l.Modifiers(tree), l.TypeName(tree), ltparams, rhs))
+        case _ =>
+          None
+      }
     }
   }
 
