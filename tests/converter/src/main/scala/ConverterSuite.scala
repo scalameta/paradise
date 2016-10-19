@@ -35,7 +35,7 @@ trait ConverterSuite extends FunSuite {
           loop(x.get, y.get)
         case (x: None.type, y: None.type) =>
           true
-        case (xs: Seq[_], ys: Seq[_])                               =>
+        case (xs: Seq[_], ys: Seq[_]) =>
           xs.length == ys.length && xs.zip(ys).forall { case (x, y) => loop(x, y) }
         case (x: Tree, y: Tree) =>
           def sameDesugaring = {

@@ -21,9 +21,9 @@ trait Trees { self: ReflectToolkit =>
                     case g.Ident(nme.WILDCARD) =>
                       patterns += tree
                     case g.Ident(_) =>
-                      // converted as term
+                    // converted as term
                     case g.Select(_, _) =>
-                      // converted as term
+                    // converted as term
                     case g.Bind(_, body) =>
                       patterns += tree
                       traverse(body)
@@ -37,13 +37,13 @@ trait Trees { self: ReflectToolkit =>
                       patterns += tree
                       args.foreach(traverse)
                     case _ =>
-                      // do nothing special
+                    // do nothing special
                   }
                 }
               }
               traverser.traverse(pat)
             case _ =>
-              // do nothing special
+            // do nothing special
           }
           super.traverse(tree)
         }
