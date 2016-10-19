@@ -48,6 +48,17 @@ trait ConverterSuite extends FunSuite {
                   case _                            => None
                 }
             }
+            object NestedTermAnnotated {
+              def flatTerm(t: Term, accum: Seq[Mod.Annot] = Nil): (Term, Seq[Mod.Annot]) =
+                t match {
+                  case Term.Annotate(t2, as) => flatTerm(t2, as ++ accum)
+                  case _                     => (t, accum)
+                }
+              def unapply(tree: Tree): Option[(Term, Seq[Mod.Annot])] = tree match {
+                case t: Term.Annotate => Some(flatTerm(t))
+                case _                => None
+              }
+            }
 
             try {
               (x, y) match {
@@ -60,6 +71,8 @@ trait ConverterSuite extends FunSuite {
                 case (q"{ $xstat }", q"$ystat") =>
                   loop(xstat, ystat)
                 case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
+                  loop(xctor, yctor)
+                case (ctor"$xctor(...${ Seq(Seq()) })", ctor"$yctor(...${ Seq() })") =>
                   loop(xctor, yctor)
                 case (p"$xpat @ _", p"$ypat") =>
                   loop(xpat, ypat)
@@ -74,6 +87,8 @@ trait ConverterSuite extends FunSuite {
                 // TODO: Account for `import x, y` being desugared to `import x; import y`.
                 // This is not an easy fix, because we need to process both blocks and templates in a non-trivial way.
                 // I'm leaving this for future work though, because I think this is gonna be a pretty rare occurrence in tests.
+                case (NestedTermAnnotated(xexpr1, xannots1), q"$xexpr2: ..@$xannots2") =>
+                  loop(xexpr1, xexpr2) && loop(xannots1, xannots2)
                 case _ =>
                   false
               }

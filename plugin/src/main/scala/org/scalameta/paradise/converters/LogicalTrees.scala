@@ -1,6 +1,7 @@
 package org.scalameta.paradise
 package converters
 
+import scala.annotation.tailrec
 import scala.collection.{immutable, mutable}
 import scala.tools.nsc.Global
 import scala.reflect.internal.{Flags, HasFlags}
@@ -150,6 +151,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TermSelect {
     def unapply(tree: g.Select): Option[(g.Tree, l.TermName)] = {
       val g.Select(qual, name) = tree
+      if (TermNew.unapply(tree).isDefined) return None
       if (name.isTypeName) return None
       Some((qual, l.TermName(tree)))
     }
@@ -216,6 +218,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       if (patterns(tree)) return None
       if (TermArg.Repeated.unapply(tree).isDefined) return None
       Some((tree.expr, tree.tpt))
+    }
+  }
+
+  object TermAnnotate {
+    def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+      val (lexpr, lannots) = flattenAnnotated(gtree)
+      if (!lexpr.isTerm) return None
+      Some((lexpr, lannots.map(Annotation.apply)))
     }
   }
 
@@ -296,6 +306,10 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     def unapply(tree: g.Tree): Option[l.Template] = tree match {
       case g.Apply(g.Select(g.New(tpt), nme.CONSTRUCTOR), args) =>
         val lparent = l.Parent(g.Apply(tpt, args))
+        val lself   = l.Self(l.AnonymousName(), g.TypeTree())
+        Some(l.Template(Nil, List(lparent), lself, None))
+      case g.Select(g.New(tpt), nme.CONSTRUCTOR) =>
+        val lparent = l.Parent(tpt)
         val lself   = l.Self(l.AnonymousName(), g.TypeTree())
         Some(l.Template(Nil, List(lparent), lself, None))
       case g.Block(
@@ -469,6 +483,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TypeExistential {
     def unapply(tree: g.ExistentialTypeTree): Option[(g.Tree, List[g.Tree])] = {
       Some((tree.tpt, tree.whereClauses))
+    }
+  }
+
+  object TypeAnnotate {
+    def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+      val (ltpe, lannots) = flattenAnnotated(gtree)
+      if (!ltpe.isType) return None
+      Some((ltpe, lannots.map(Annotation.apply)))
     }
   }
 
@@ -729,11 +751,8 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       tree match {
         case g.ClassDef(mods, _, tparams, templ @ g.Template(_, _, body))
             if !mods.hasFlag(TRAIT) =>
-          val gprimaryctor = body.collectFirst {
-            case ctor @ g.DefDef(_, nme.CONSTRUCTOR, _, _, _, _) => ctor
-          }.get
-          val lprimaryctor = l.PrimaryCtorDef(gprimaryctor)
-          val ltparams     = mkTparams(tparams, gprimaryctor.vparamss)
+          var lprimaryctor = l.PrimaryCtorDef(tree)
+          val ltparams     = mkTparams(tparams, tree.primaryCtor.vparamss)
           Some((l.Modifiers(tree), l.TypeName(tree), ltparams, lprimaryctor, l.Template(tree)))
         case _ =>
           None
@@ -809,10 +828,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       extends CtorDef
 
   object PrimaryCtorDef {
-    def apply(tree: g.DefDef): l.PrimaryCtorDef = {
-      val CtorDef(lmods, lname, lparamss, lstats) = tree
-      require(lstats.isEmpty)
-      PrimaryCtorDef(lmods, lname, lparamss)
+    def apply(tree: g.ClassDef): l.PrimaryCtorDef = {
+      val CtorDef(mods, name, paramss, stats) = tree.primaryCtor
+      val lparamss = paramss match {
+        case List(List()) if !tree.mods.hasFlag(CASE) => Nil
+        case paramss                                  => paramss
+      }
+      require(stats.isEmpty)
+      PrimaryCtorDef(mods, name, lparamss)
     }
   }
 
@@ -1003,7 +1026,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       }
 
       val lannotationMods: List[l.Modifier] = {
-        aggregateAnnotations(tree)
+        val trimmedAnnots = tree.mods.annotations.map({
+          case tree @ g.Apply(_: g.Apply, _) => tree
+          case g.Apply(tpt, Nil)             => tpt
+          case annot                         => annot
+        })
+        trimmedAnnots.map(Annotation.apply)
       }
 
       val laccessQualifierMods: List[l.Modifier] = {
@@ -1066,21 +1094,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  private def aggregateAnnotations(mdef: g.MemberDef): List[l.Annotation] = {
-    val syntacticAnnots = mdef.mods.annotations
-    val semanticAnnots  = mdef.symbol.annotations
-    require(syntacticAnnots.isEmpty || semanticAnnots.isEmpty)
-    if (syntacticAnnots.nonEmpty) syntacticAnnots.map(Annotation.apply)
-    else semanticAnnots.map(Annotation.apply)
-  }
-
   case class Annotation(tree: g.Tree) extends Modifier
-  object Annotation {
-    def apply(info: g.AnnotationInfo): l.Annotation = {
-      // TODO: set Annotation.tree's parent to g.EmptyTree
-      ???
-    }
-  }
 
   // ============ ODDS & ENDS ============
 
@@ -1222,5 +1236,16 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   private def blockStats(stats: List[g.Tree]): List[g.Tree] = {
     stats.filter(_ != g.EmptyTree)
+  }
+
+  // Reflect trees represent flat Seq[Mod.Annot] as nested Mod.Annot(Mod.Annot(...term), annot).
+  // We flatten the nested structure to match the meta representation for the most common case.
+  // Unfortunately, this means we might flatten the structure when the original syntax used nesting.
+  @tailrec
+  private def flattenAnnotated(gtree: g.Tree, accum: List[g.Tree] = Nil): (g.Tree, List[g.Tree]) = {
+    gtree match {
+      case g.Annotated(annot, arg) => flattenAnnotated(arg, annot :: accum)
+      case tree                    => (tree, accum)
+    }
   }
 }

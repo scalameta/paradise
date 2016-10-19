@@ -88,6 +88,11 @@ trait ToMtree { self: Converter =>
                 val mdecltpe = ldecltpe.toMtree[m.Type]
                 m.Term.Ascribe(mexpr, mdecltpe)
 
+              case l.TermAnnotate(lexpr, lannots) =>
+                val mexpr   = lexpr.toMtree[m.Term]
+                val mannots = lannots.toMtrees[m.Mod.Annot]
+                m.Term.Annotate(mexpr, mannots)
+
               case l.TermTuple(lelements) =>
                 val melements = lelements.toMtrees[m.Term]
                 m.Term.Tuple(melements)
@@ -208,6 +213,11 @@ trait ToMtree { self: Converter =>
                 val mtpe   = ltpe.toMtree[m.Type]
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Type.Existential(mtpe, mstats)
+
+              case l.TypeAnnotate(ltpe, lannots) =>
+                val mtpe    = ltpe.toMtree[m.Type]
+                val mannots = lannots.toMtrees[m.Mod.Annot]
+                m.Type.Annotate(mtpe, mannots)
 
               case l.TypeBounds(llo, lhi) =>
                 val mlo = llo.toMtreeopt[m.Type]
