@@ -2,6 +2,7 @@ package org.scalameta.paradise
 package converters
 
 import org.scalameta.paradise.reflect._
+import scala.collection.{immutable, mutable}
 import scala.collection.immutable.Seq
 import scala.reflect.{classTag, ClassTag}
 import scala.compat.Platform.EOL
@@ -15,6 +16,8 @@ trait ToMtree { self: Converter =>
   }
 
   private def toMtree[T <: m.Tree: ClassTag](gtree: g.Tree): T = {
+    object l extends LogicalTrees[g.type](g, gtree)
+
     object toMtree {
       implicit class XtensionGtreeToMtree(gtree0: g.Tree) {
         def toMtree[T <: m.Tree: ClassTag]: T = {
@@ -373,7 +376,7 @@ trait ToMtree { self: Converter =>
                   m.Term.Apply(mcurr, margs)
                 })
 
-              case l.SelfDef(lname, ltpt) =>
+              case l.Self(lname, ltpt) =>
                 val mname = lname.toMtree[m.Term.Param.Name]
                 val mtpt  = if (ltpt.nonEmpty) Some(ltpt.toMtree[m.Type]) else None
                 m.Term.Param(Nil, mname, mtpt, None)

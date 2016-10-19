@@ -1,5 +1,5 @@
 lazy val ScalaVersions  = Seq("2.11.8")
-lazy val MetaVersion    = "1.3.0.521"
+lazy val MetaVersion    = "1.3.0.522"
 lazy val LibraryVersion = "3.0.0-SNAPSHOT"
 lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
 lazy val PRVersion      = latestPullRequestVersion()
@@ -53,7 +53,7 @@ def exposePaths(projectName: String, config: Configuration) = {
   def uncapitalize(s: String) =
     if (s.length == 0) ""
     else { val chars = s.toCharArray; chars(0) = chars(0).toLower; new String(chars) }
-  val prefix         = "sbt.paths." + projectName + "." + uncapitalize(config.name) + "."
+  val prefix = "sbt.paths." + projectName + "." + uncapitalize(config.name) + "."
   Seq(
     sourceDirectory in config := {
       val defaultValue = (sourceDirectory in config).value

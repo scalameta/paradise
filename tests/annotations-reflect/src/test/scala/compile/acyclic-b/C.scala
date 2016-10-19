@@ -7,7 +7,7 @@ object CC {
   val x = new X
 
   @doubler
-  object C  {
+  object C {
     class X { override def toString = "CX" }
   }
 }
