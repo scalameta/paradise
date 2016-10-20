@@ -8,7 +8,7 @@ import scala.tools.nsc.reporters.StoreReporter
 import org.scalatest._
 import org.scalameta.paradise.converters.Converter
 
-trait ConverterSuite extends FunSuite {
+trait ConverterSuite extends FunSuiteLike {
 
   // If true, parses code as a compilation unit.
   val parseAsCompilationUnit = false
@@ -153,16 +153,12 @@ trait ConverterSuite extends FunSuite {
     }
   }
 
-  private def getConvertedMetaTree(parsedScalacTree: g.Tree): m.Tree = {
+  def getConvertedMetaTree(code: String): m.Tree = {
     object converter extends Converter {
       lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
       def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
     }
-    converter(parsedScalacTree)
-  }
-
-  def getConvertedMetaTree(code: String): m.Tree = {
-    getConvertedMetaTree(getParsedScalacTree(code))
+    converter(getParsedScalacTree(code))
   }
 
   def syntactic(code: String): Unit = {

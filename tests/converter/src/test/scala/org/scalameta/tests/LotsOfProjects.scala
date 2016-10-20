@@ -1,5 +1,6 @@
 package org.scalameta.tests
 
+import scala.collection.mutable
 import scala.util.Try
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -8,7 +9,7 @@ import scala.collection.JavaConverters._
 import org.scalameta.paradise.converters.ConvertException
 import org.scalatest.exceptions.TestFailedException
 
-class PropertySuite extends ConverterSuite {
+object LotsOfProjects extends ConverterSuite {
   override val parseAsCompilationUnit: Boolean = true
 
   def err2message(e: Throwable): String = {
@@ -24,31 +25,34 @@ class PropertySuite extends ConverterSuite {
     s"${e.getClass.getSimpleName}: $details"
   }
 
-  val files   = ScalaFile.getAll
-  val counter = new AtomicInteger()
-  val results = new java.util.concurrent.CopyOnWriteArrayList[String]()
+  def getResults: mutable.Buffer[String] = {
+    val files   = ScalaFile.getAll
+    val counter = new AtomicInteger()
+    val results = new java.util.concurrent.CopyOnWriteArrayList[String]()
 
-  test("converter doesn't crash") {
     files.toArray.par.foreach { file =>
       val code = file.read
       val n    = counter.incrementAndGet()
       if (n % 1000 == 0) println(s"$n...")
       Try(getConvertedMetaTree(code)) match {
         // Uncomment to investigate a specific error further.
-//          case scala.util.Failure(e: ConvertException)
-//              if e.culprit.getClass.getSimpleName == "EmptyTree$" =>
-//            val culprit = e.culprit.toString.lines.take(1).mkString
-//            e.printStackTrace()
-//            results.add(err2message(e))
+        //          case scala.util.Failure(e: ConvertException)
+        //              if e.culprit.getClass.getSimpleName == "EmptyTree$" =>
+        //            val culprit = e.culprit.toString.lines.take(1).mkString
+        //            e.printStackTrace()
+        //            results.add(err2message(e))
         case scala.util.Failure(e) =>
           results.add(err2message(e))
         case _ =>
           results.add("Success")
       }
     }
+    results.asScala
+  }
 
+  def printResults(results: mutable.Buffer[String]): Unit = {
     val mappedResults =
-      results.asScala
+      results
         .groupBy(x => x)
         .mapValues(_.length)
 
@@ -59,7 +63,12 @@ class PropertySuite extends ConverterSuite {
       .foreach {
         case (k, v) => println(s"$k: $v")
       }
-    println(s"Total: ${results.size()}")
-    assert(mappedResults("Success") > 18300) // baseline
+    println(s"Total: ${mappedResults.size}")
+  }
+
+  def main(args: Array[String]): Unit = {
+    val results = getResults
+    printResults(results)
+    assert(results.count(_ == "Success") > 18300) // baseline
   }
 }
