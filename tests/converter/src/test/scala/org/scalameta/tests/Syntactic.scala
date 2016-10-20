@@ -1,5 +1,6 @@
-// NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
+package org.scalameta.tests
 
+// NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
   // terms
   syntactic("null")

@@ -1,3 +1,5 @@
+package org.scalameta.tests
+
 import scala.collection.immutable.Seq
 import scala.{meta => m}
 import scala.tools.cmd.CommandLineParser
@@ -6,7 +8,11 @@ import scala.tools.nsc.reporters.StoreReporter
 import org.scalatest._
 import org.scalameta.paradise.converters.Converter
 
-trait ConverterSuite extends FunSuite {
+trait ConverterSuite extends FunSuiteLike {
+
+  // If true, parses code as a compilation unit.
+  val parseAsCompilationUnit = false
+
   private lazy val g: Global = {
     def fail(msg: String) = sys.error(s"ReflectToMeta initialization failed: $msg")
     val classpath         = System.getProperty("sbt.paths.testsConverter.test.classes")
@@ -109,47 +115,56 @@ trait ConverterSuite extends FunSuite {
     loop(parsed, converted)
   }
 
+  private def getParsedScalacTree(code: String): g.Tree = {
+    import g._
+    val reporter = new StoreReporter()
+    g.reporter = reporter
+    val tree = {
+      if (parseAsCompilationUnit) {
+        val cu     = new g.CompilationUnit(g.newSourceFile(code))
+        val parser = new g.syntaxAnalyzer.UnitParser(cu, Nil)
+        parser.parse()
+      } else {
+        // NOTE: `parseStatsOrPackages` fails to parse abstract type defs without bounds,
+        // so we need to apply a workaround to ensure that we correctly process those.
+        def somewhatBrokenParse(code: String) =
+          gen.mkTreeOrBlock(newUnitParser(code, "<toolbox>").parseStatsOrPackages())
+        val rxAbstractTypeNobounds = """^type (\w+)(\[[^=]*?\])?$""".r
+        code match {
+          case rxAbstractTypeNobounds(_ *) =>
+            val tdef @ TypeDef(mods, name, tparams, _) = somewhatBrokenParse(code + " <: Dummy")
+            treeCopy.TypeDef(tdef, mods, name, tparams, TypeBoundsTree(EmptyTree, EmptyTree))
+          case _ =>
+            somewhatBrokenParse(code)
+        }
+      }
+    }
+    val errors = reporter.infos.filter(_.severity == g.reporter.ERROR)
+    errors.foreach(error => fail(s"scalac parse error: ${error.msg} at ${error.pos}"))
+    tree
+  }
+
+  private def getParsedMetaTree(code: String): m.Tree = {
+    import scala.meta._
+    code.parse[m.Stat] match {
+      case scala.meta.parsers.Parsed.Success(tree) => tree
+      case scala.meta.parsers.Parsed.Error(pos, message, _) =>
+        fail(s"meta parse error: $pos at $message")
+    }
+  }
+
+  def getConvertedMetaTree(code: String): m.Tree = {
+    object converter extends Converter {
+      lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
+      def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
+    }
+    converter(getParsedScalacTree(code))
+  }
+
   def syntactic(code: String): Unit = {
     test(code.trim) {
-      val parsedScalacTree: g.Tree = {
-        import g._
-        val reporter = new StoreReporter()
-        g.reporter = reporter
-        val tree = {
-          // NOTE: `parseStatsOrPackages` fails to parse abstract type defs without bounds,
-          // so we need to apply a workaround to ensure that we correctly process those.
-          def somewhatBrokenParse(code: String) =
-            gen.mkTreeOrBlock(newUnitParser(code, "<toolbox>").parseStatsOrPackages())
-          val rxAbstractTypeNobounds = """^type (\w+)(\[[^=]*?\])?$""".r
-          code match {
-            case rxAbstractTypeNobounds(_ *) =>
-              val tdef @ TypeDef(mods, name, tparams, _) = somewhatBrokenParse(code + " <: Dummy")
-              treeCopy.TypeDef(tdef, mods, name, tparams, TypeBoundsTree(EmptyTree, EmptyTree))
-            case _ =>
-              somewhatBrokenParse(code)
-          }
-        }
-        val errors = reporter.infos.filter(_.severity == g.reporter.ERROR)
-        errors.foreach(error => fail(s"scalac parse error: ${error.msg} at ${error.pos}"))
-        tree
-      }
-
-      val parsedMetaTree: m.Stat = {
-        import scala.meta._
-        code.parse[m.Stat] match {
-          case scala.meta.parsers.Parsed.Success(tree) => tree
-          case scala.meta.parsers.Parsed.Error(pos, message, _) =>
-            fail(s"meta parse error: $pos at $message")
-        }
-      }
-      val convertedMetaTree: m.Stat = {
-        object converter extends Converter {
-          lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-          def apply(gtree: g.Tree): m.Stat            = gtree.toMtree[m.Stat]
-        }
-        converter(parsedScalacTree)
-      }
-
+      val convertedMetaTree = getConvertedMetaTree(code)
+      val parsedMetaTree    = getConvertedMetaTree(code)
       try {
         checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree)
       } catch {

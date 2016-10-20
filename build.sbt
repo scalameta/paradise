@@ -237,6 +237,7 @@ lazy val testsConverter = project
     sharedSettings,
     usePluginSettings,
     testSettings,
+    libraryDependencies += "com.lihaoyi" %% "geny" % "0.1.0" % "test", // to lazy load 26k files
     exposePaths("testsConverter", Test)
   )
   .dependsOn(testsCommon, plugin)
