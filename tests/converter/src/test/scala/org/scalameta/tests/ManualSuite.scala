@@ -4,7 +4,7 @@ import scala.io.Source
 
 // To manually test the converter against an individual file
 class ManualSuite extends ConverterSuite {
-  override val compilationUnit: Boolean = true
+  override val parseAsCompilationUnit: Boolean = true
 
   def checkUrl(url: String): Unit = {
     val code = Source.fromURL(url)("UTF-8").getLines().mkString("\n")

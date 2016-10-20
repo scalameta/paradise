@@ -11,7 +11,7 @@ import org.scalameta.paradise.converters.Converter
 trait ConverterSuite extends FunSuite {
 
   // If true, parses code as a compilation unit.
-  val compilationUnit = false
+  val parseAsCompilationUnit = false
 
   private lazy val g: Global = {
     def fail(msg: String) = sys.error(s"ReflectToMeta initialization failed: $msg")
@@ -120,7 +120,7 @@ trait ConverterSuite extends FunSuite {
     val reporter = new StoreReporter()
     g.reporter = reporter
     val tree = {
-      if (compilationUnit) {
+      if (parseAsCompilationUnit) {
         val cu     = new g.CompilationUnit(g.newSourceFile(code))
         val parser = new g.syntaxAnalyzer.UnitParser(cu, Nil)
         parser.parse()

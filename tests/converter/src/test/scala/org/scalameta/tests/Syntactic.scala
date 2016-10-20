@@ -189,4 +189,5 @@ class Syntactic extends ConverterSuite {
   """)
   syntactic("def add(a: Int)(implicit z: Int = 0) = a + z")
   syntactic("def f(x: => T) = ???")
+  syntactic("package a.b { }")
 }
