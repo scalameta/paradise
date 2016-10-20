@@ -30,7 +30,7 @@ object LotsOfProjects extends ConverterSuite {
     val counter = new AtomicInteger()
     val results = new java.util.concurrent.CopyOnWriteArrayList[String]()
 
-    files.toArray.par.foreach { file =>
+    files.toArray.foreach { file =>
       val code = file.read
       val n    = counter.incrementAndGet()
       if (n % 1000 == 0) println(s"$n...")
@@ -69,6 +69,6 @@ object LotsOfProjects extends ConverterSuite {
   def main(args: Array[String]): Unit = {
     val results = getResults
     printResults(results)
-    assert(results.count(_ == "Success") > 18300) // baseline
+    assert(results.count(_ == "Success") > 19250) // increment this number as it increases.
   }
 }
