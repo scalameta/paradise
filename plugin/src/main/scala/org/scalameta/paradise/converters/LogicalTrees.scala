@@ -1186,7 +1186,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       }
     }
 
-    val (explicitss, implicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
+    val (implicitss, explicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
     val (bounds, implicits) =
       implicitss.flatten.partition(_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
     tparams.map(tparam => {
