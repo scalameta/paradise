@@ -177,7 +177,10 @@ class Syntactic extends ConverterSuite {
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
 
   // bounds
+  syntactic("class f[T <% A](x: T)")
   syntactic("class f[T: A](x: T)")
+  syntactic("def f[T <% A: B](x: T): Int = x")
+  syntactic("def f[T <% A](x: T): Int = x")
   syntactic("def f[T: A](x: T): Int = x")
   syntactic("def f[T: A :B](x: T): Int = x")
   syntactic("def f[T: A[Int]](x: T): Int = x")
