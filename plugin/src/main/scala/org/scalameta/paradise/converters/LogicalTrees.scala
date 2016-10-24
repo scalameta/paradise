@@ -1166,7 +1166,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           val tyconMatches = tycon match {
             // NOTE: this doesn't handle every possible case (e.g. an Ident binding to renamed import),
             // but it should be good enough for 95% of the situations
-            case g.Select(pre, g.TermName("Function1")) =>
+            case g.Select(pre, g.TypeName("Function1")) =>
               pre.symbol == g.definitions.ScalaPackage
             case tycon: g.RefTree => tycon.symbol == g.definitions.FunctionClass(1)
             case _                => false
@@ -1194,7 +1194,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       }
     }
 
-    val (explicitss, implicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
+    val (implicitss, explicitss) = paramss.partition(_.exists(_.mods.hasFlag(IMPLICIT)))
     val (bounds, implicits) =
       implicitss.flatten.partition(_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
     tparams.map(tparam => {

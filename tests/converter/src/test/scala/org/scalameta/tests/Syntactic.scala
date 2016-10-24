@@ -177,6 +177,15 @@ class Syntactic extends ConverterSuite {
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
 
+  // bounds
+  syntactic("class f[T <% A](x: T)")
+  syntactic("class f[T: A](x: T)")
+  syntactic("def f[T <% A: B](x: T): Int = x")
+  syntactic("def f[T <% A](x: T): Int = x")
+  syntactic("def f[T: A](x: T): Int = x")
+  syntactic("def f[T: A :B](x: T): Int = x")
+  syntactic("def f[T: A[Int]](x: T): Int = x")
+
   // random stuff
   syntactic("case class C()")
   syntactic("object M { override val toString = test5 }")
