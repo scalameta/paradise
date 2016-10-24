@@ -45,6 +45,7 @@ class Syntactic extends ConverterSuite {
   syntactic("a -> b")
   syntactic("if (cond) a else b")
   syntactic("if (cond) return a")
+  syntactic("x.map { case 1 => 2 }")
   syntactic("while (a > 5) { println(a); a++; }")
   syntactic("do { println(a); a++; } while (a > 5)")
   syntactic("return a")
