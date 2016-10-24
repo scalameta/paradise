@@ -123,6 +123,10 @@ trait ToMtree { self: Converter =>
                 val mbody   = lbody.toMtree[m.Term]
                 m.Term.Function(mparams, mbody)
 
+              case l.TermPartialFunction(lcases) =>
+                val mcases = lcases.toMtrees[m.Case]
+                m.Term.PartialFunction(mcases)
+
               case l.TermWhile(lexpr, lbody) =>
                 val mexpr = lexpr.toMtree[m.Term]
                 val mbody = lbody.toMtree[m.Term]

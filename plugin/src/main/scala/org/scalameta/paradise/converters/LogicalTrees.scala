@@ -255,6 +255,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object TermMatch {
     def unapply(tree: g.Match): Option[(g.Tree, List[g.Tree])] = {
+      if (tree.selector.isEmpty) return None
       Some((tree.selector, tree.cases))
     }
   }
@@ -269,6 +270,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TermFunction {
     def unapply(tree: g.Function): Option[(List[l.TermParamDef], g.Tree)] = {
       Some((tree.vparams.map(l.TermParamDef.apply), tree.body))
+    }
+  }
+
+  object TermPartialFunction {
+    def unapply(tree: g.Match): Option[List[g.Tree]] = {
+      if (!tree.selector.isEmpty) return None
+      Some(tree.cases)
     }
   }
 
