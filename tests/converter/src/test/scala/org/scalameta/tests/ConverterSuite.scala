@@ -164,7 +164,7 @@ trait ConverterSuite extends FunSuiteLike {
   def syntactic(code: String): Unit = {
     test(code.trim) {
       val convertedMetaTree = getConvertedMetaTree(code)
-      val parsedMetaTree    = getConvertedMetaTree(code)
+      val parsedMetaTree    = getParsedMetaTree(code)
       try {
         checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree)
       } catch {
