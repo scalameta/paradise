@@ -375,6 +375,13 @@ trait ToMtree { self: Converter =>
                 val mparamss = lparamss.toMtreess[m.Term.Param]
                 m.Ctor.Primary(mmods, mname, mparamss)
 
+              case l.SecondaryCtorDef(lmods, lname, lparamss, lbody) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mname    = m.Ctor.Name("this")
+                val mparamss = lparamss.toMtreess[m.Term.Param]
+                val mbody    = lbody.toMtree[m.Term]
+                m.Ctor.Secondary(mmods, mname, mparamss, mbody)
+
               case l.CtorName(lvalue) =>
                 m.Ctor.Name(lvalue)
               case l.CtorIdent(lname) =>

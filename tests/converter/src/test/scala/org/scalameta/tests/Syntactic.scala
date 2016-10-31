@@ -107,6 +107,8 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case x @ (_: T) => }")
 
   // definitions
+  syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
+  syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
   syntactic("type Age = Int")
   syntactic("type Age")
   syntactic("type Age >: Int <: Any")
