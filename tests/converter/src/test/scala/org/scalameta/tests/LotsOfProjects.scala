@@ -69,6 +69,6 @@ object LotsOfProjects extends ConverterSuite {
   def main(args: Array[String]): Unit = {
     val results = getResults
     printResults(results)
-    assert(results.count(_ == "Success") > 19250) // increment this number as it increases.
+    assert(results.count(_ == "Success") > 23196) // increment this number as it increases.
   }
 }
