@@ -168,7 +168,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object TermApplyInfix {
-    def unapply(tree: g.Tree): Option[(g.Tree, l.TermName, List[g.Tree], List[g.Tree])] = {
+    def unapply(tree: g.Tree): Option[(
+        g.Tree,
+        l.TermName,
+        List[g.Tree],
+        List[g.Tree]
+    )] = {
       tree match {
         case g.treeInfo.Applied(g.Select(lhs, op: g.TermName), targs, List(rhs))
             if op.looksLikeInfix && !op.isRightAssoc =>
@@ -597,7 +602,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object PatExtract {
-    def unapply(tree: g.Tree): Option[(g.Tree, List[g.Tree], List[g.Tree])] = {
+    def unapply(tree: g.Tree): Option[(
+        g.Tree,
+        List[g.Tree],
+        List[g.Tree]
+    )] = {
       if (!patterns(tree)) return None
       if (PatTuple.unapply(tree).isDefined) return None
       val (fun, targs, args) = tree match {
@@ -640,20 +649,33 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   // ============ DECLS ============
 
   object AbstractValDef {
-    def unapply(tree: g.ValDef): Option[(List[l.Modifier], List[l.TermName], g.Tree)] = {
+    def unapply(tree: g.ValDef): Option[(
+        List[l.Modifier],
+        List[l.TermName],
+        g.Tree
+    )] = {
       ???
     }
   }
 
   object AbstractVarDef {
-    def unapply(tree: g.ValDef): Option[(List[l.Modifier], List[l.TermName], g.Tree)] = {
+    def unapply(tree: g.ValDef): Option[(
+        List[l.Modifier],
+        List[l.TermName],
+        g.Tree
+    )] = {
       ???
     }
   }
 
   object AbstractDefDef {
-    def unapply(tree: g.DefDef): Option[
-      (List[l.Modifier], l.TermName, List[l.TypeParamDef], List[List[l.TermParamDef]], g.Tree)] = {
+    def unapply(tree: g.DefDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        List[l.TypeParamDef],
+        List[List[l.TermParamDef]],
+        g.Tree
+    )] = {
       tree match {
         case g.DefDef(mods, _, tparams, paramss, tpt, rhs) if mods.hasFlag(DEFERRED) =>
           require(tpt.nonEmpty && rhs.isEmpty)
@@ -667,8 +689,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object AbstractTypeDef {
-    def unapply(tree: g.TypeDef)
-      : Option[(List[l.Modifier], l.TypeName, List[l.TypeParamDef], g.TypeBoundsTree)] = {
+    def unapply(tree: g.TypeDef): Option[(
+        List[l.Modifier],
+        l.TypeName,
+        List[l.TypeParamDef],
+        g.TypeBoundsTree
+    )] = {
       tree match {
         case g.TypeDef(mods, name, tparams, rhs: g.TypeBoundsTree) if mods.hasFlag(DEFERRED) =>
           val ltparams = mkTparams(tparams, Nil)
@@ -682,7 +708,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   // ============ DEFNS ============
 
   object ValDef {
-    def unapply(tree: g.ValDef): Option[(List[l.Modifier], List[g.Tree], Option[g.Tree], g.Tree)] = {
+    def unapply(tree: g.ValDef): Option[(
+        List[l.Modifier],
+        List[g.Tree],
+        Option[g.Tree],
+        g.Tree
+    )] = {
       tree match {
         case g.ValDef(mods, name, tpt, rhs) if !mods.hasFlag(MUTABLE) =>
           // TODO: support multi-pat valdefs
@@ -696,8 +727,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object VarDef {
-    def unapply(tree: g.ValDef)
-      : Option[(List[l.Modifier], List[g.Tree], Option[g.Tree], Option[g.Tree])] = {
+    def unapply(tree: g.ValDef): Option[(
+        List[l.Modifier],
+        List[g.Tree],
+        Option[g.Tree],
+        Option[g.Tree]
+    )] = {
       tree match {
         case g.ValDef(mods, name, tpt, rhs) if mods.hasFlag(MUTABLE) =>
           val lpats = List(l.PatVarTerm(tree))
@@ -711,12 +746,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object DefDef {
-    def unapply(tree: g.DefDef): Option[(List[l.Modifier],
-                                         l.TermName,
-                                         List[l.TypeParamDef],
-                                         List[List[l.TermParamDef]],
-                                         Option[g.Tree],
-                                         g.Tree)] = {
+    def unapply(tree: g.DefDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        List[l.TypeParamDef],
+        List[List[l.TermParamDef]],
+        Option[g.Tree],
+        g.Tree
+    )] = {
       tree match {
         case g.DefDef(mods, _, tparams, paramss, tpt, rhs)
             if !mods.hasFlag(DEFERRED) &&
@@ -732,19 +769,25 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object MacroDef {
-    def unapply(tree: g.DefDef): Option[(List[l.Modifier],
-                                         l.TermName,
-                                         List[l.TypeParamDef],
-                                         List[List[l.TermParamDef]],
-                                         g.Tree,
-                                         g.Tree)] = {
+    def unapply(tree: g.DefDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        List[l.TypeParamDef],
+        List[List[l.TermParamDef]],
+        g.Tree,
+        g.Tree
+    )] = {
       ???
     }
   }
 
   object TypeDef {
-    def unapply(
-        tree: g.TypeDef): Option[(List[l.Modifier], l.TypeName, List[l.TypeParamDef], g.Tree)] = {
+    def unapply(tree: g.TypeDef): Option[(
+        List[l.Modifier],
+        l.TypeName,
+        List[l.TypeParamDef],
+        g.Tree
+    )] = {
       tree match {
         case g.TypeDef(mods, name, tparams, rhs) if !mods.hasFlag(DEFERRED) =>
           val ltparams = mkTparams(tparams, Nil)
@@ -756,8 +799,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object ClassDef {
-    def unapply(tree: g.ClassDef)
-      : Option[(List[l.Modifier], l.TypeName, List[l.TypeParamDef], g.Tree, l.Template)] = {
+    def unapply(tree: g.ClassDef): Option[(
+        List[l.Modifier],
+        l.TypeName,
+        List[l.TypeParamDef],
+        g.Tree,
+        l.Template
+    )] = {
       tree match {
         case g.ClassDef(mods, _, tparams, templ @ g.Template(_, _, body))
             if !mods.hasFlag(TRAIT) =>
@@ -771,8 +819,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object TraitDef {
-    def unapply(tree: g.ClassDef)
-      : Option[(List[l.Modifier], l.TypeName, List[l.TypeParamDef], g.Tree, l.Template)] = {
+    def unapply(tree: g.ClassDef): Option[(
+        List[l.Modifier],
+        l.TypeName,
+        List[l.TypeParamDef],
+        g.Tree,
+        l.Template
+    )] = {
       tree match {
         case g.ClassDef(mods, _, tparams, templ @ g.Template(_, _, body)) if mods.hasFlag(TRAIT) =>
           val ltparams = mkTparams(tparams, Nil)
@@ -784,7 +837,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object ObjectDef {
-    def unapply(tree: g.ModuleDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
+    def unapply(tree: g.ModuleDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        l.Template
+    )] = {
       tree match {
         case g.ModuleDef(_, name, templ) if name != nme.PACKAGE =>
           Some((l.Modifiers(tree), l.TermName(tree), l.Template(tree)))
@@ -806,7 +863,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object PackageObjectDef {
-    def unapply(tree: g.PackageDef): Option[(List[l.Modifier], l.TermName, l.Template)] = {
+    def unapply(tree: g.PackageDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        l.Template
+    )] = {
       tree match {
         case g.PackageDef(pid, List(g.ModuleDef(_, name, templ))) if name == nme.PACKAGE =>
           ???
@@ -821,8 +882,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   trait CtorDef extends Tree
 
   private object CtorDef {
-    def unapply(tree: g.DefDef)
-      : Option[(List[l.Modifier], l.CtorName, List[List[l.TermParamDef]], List[g.Tree])] = {
+    def unapply(tree: g.DefDef): Option[(
+        List[l.Modifier],
+        l.CtorName,
+        List[List[l.TermParamDef]],
+        List[g.Tree]
+    )] = {
       val g.DefDef(_, _, _, vparamss, _, body)      = tree
       val lname                                     = l.CtorName(tree)
       val lparamss                                  = mkVparamss(tree.vparamss)
@@ -907,8 +972,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         case LowlevelCtor(_, _, _) => true; case _ => false
       }
       object LowlevelCtor {
-        def unapply(
-            tree: g.Tree): Option[(List[List[g.ValDef]], List[g.Tree], List[List[g.Tree]])] =
+        def unapply(tree: g.Tree): Option[(
+            List[List[g.ValDef]],
+            List[g.Tree],
+            List[List[g.Tree]]
+        )] = {
           tree match {
             case g.DefDef(_, nme.MIXIN_CONSTRUCTOR, _, _, _, SyntacticBlock(lvdefs :+ _)) =>
               Some((Nil, lvdefs, Nil))
@@ -922,6 +990,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
             case _ =>
               None
           }
+        }
       }
       val g.Template(parents, self, stats) = template
       val lself                            = l.Self(self)
