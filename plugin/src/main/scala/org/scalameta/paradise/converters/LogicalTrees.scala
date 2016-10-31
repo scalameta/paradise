@@ -220,9 +220,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object TermAscribe {
     def unapply(tree: g.Typed): Option[(g.Tree, g.Tree)] = {
-      if (patterns(tree)) return None
-      if (TermArg.Repeated.unapply(tree).isDefined) return None
-      Some((tree.expr, tree.tpt))
+      tree.tpt match {
+        case EtaExpansion() => None
+        case _ =>
+          if (patterns(tree)) return None
+          if (TermArg.Repeated.unapply(tree).isDefined) return None
+          Some((tree.expr, tree.tpt))
+      }
     }
   }
 
@@ -334,6 +338,24 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         Some(l.Template(tree))
       case _ =>
         None
+    }
+  }
+
+  object EtaExpansion {
+    def unapply(tree: g.Tree): Boolean = tree match {
+      case g.Function(Nil, g.EmptyTree) => true
+      case _                            => false
+    }
+  }
+
+  object TermEta {
+    def unapply(tree: g.Typed): Option[g.Tree] = {
+      tree match {
+        case g.Typed(lexpr, EtaExpansion()) =>
+          Some(lexpr)
+        case _ =>
+          None
+      }
     }
   }
 

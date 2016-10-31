@@ -141,6 +141,10 @@ trait ToMtree { self: Converter =>
                 val mtempl = ltempl.toMtree[m.Template]
                 m.Term.New(mtempl)
 
+              case l.TermEta(lexpr) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                m.Term.Eta(mexpr)
+
               case l.TermArg.Named(lname, lrhs) =>
                 val mname = lname.toMtree[m.Term.Name]
                 val mrhs  = lrhs.toMtree[m.Term.Arg]

@@ -64,6 +64,7 @@ class Syntactic extends ConverterSuite {
   syntactic("new B { val a = 3 }")
   syntactic("new B { def f(x: Int): Int = x*x }")
   syntactic("new B(3) { println(5); def f(x: Int): Int = x*x }")
+  syntactic("function _")
   syntactic("throw new A(4)")
   syntactic("try { throw new A(4) } catch { case _: Throwable => 4 } finally { println(6) }")
   syntactic("try f(4) catch { case _: Throwable => 4 } finally println(6)")
