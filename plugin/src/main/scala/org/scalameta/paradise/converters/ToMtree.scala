@@ -283,6 +283,17 @@ trait ToMtree { self: Converter =>
                 m.Lit(lvalue)
 
               // ============ DECLS ============
+              case l.AbstractValDef(lmods, lpats, ldecltpe) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mpats    = lpats.toMtrees[m.Pat.Var.Term]
+                val mdecltpe = ldecltpe.toMtree[m.Type]
+                m.Decl.Val(mmods, mpats, mdecltpe)
+
+              case l.AbstractVarDef(lmods, lpats, ldecltpe) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mpats    = lpats.toMtrees[m.Pat.Var.Term]
+                val mdecltpe = ldecltpe.toMtree[m.Type]
+                m.Decl.Var(mmods, mpats, mdecltpe)
 
               case l.AbstractDefDef(lmods, lname, ltparams, lparamss, ltpt) =>
                 val mmods    = lmods.toMtrees[m.Mod]

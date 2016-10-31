@@ -651,20 +651,26 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object AbstractValDef {
     def unapply(tree: g.ValDef): Option[(
         List[l.Modifier],
-        List[l.TermName],
+        List[l.PatVarTerm],
         g.Tree
     )] = {
-      ???
+      if (!tree.rhs.isEmpty || tree.mods.hasFlag(MUTABLE)) return None
+      val lpats = List(l.PatVarTerm(tree))
+      Some((l.Modifiers(tree), lpats, tree.tpt))
     }
   }
 
   object AbstractVarDef {
     def unapply(tree: g.ValDef): Option[(
         List[l.Modifier],
-        List[l.TermName],
+        List[l.PatVarTerm],
         g.Tree
     )] = {
-      ???
+      if (!tree.rhs.isEmpty ||
+          !tree.mods.hasFlag(MUTABLE) ||
+          tree.mods.hasFlag(DEFAULTINIT)) return None
+      val lpats = List(l.PatVarTerm(tree))
+      Some((l.Modifiers(tree), lpats, tree.tpt))
     }
   }
 
