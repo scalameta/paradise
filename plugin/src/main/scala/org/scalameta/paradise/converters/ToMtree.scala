@@ -141,6 +141,10 @@ trait ToMtree { self: Converter =>
                 val mtempl = ltempl.toMtree[m.Template]
                 m.Term.New(mtempl)
 
+              case l.TermEta(lexpr) =>
+                val mexpr = lexpr.toMtree[m.Term]
+                m.Term.Eta(mexpr)
+
               case l.TermArg.Named(lname, lrhs) =>
                 val mname = lname.toMtree[m.Term.Name]
                 val mrhs  = lrhs.toMtree[m.Term.Arg]
@@ -283,6 +287,17 @@ trait ToMtree { self: Converter =>
                 m.Lit(lvalue)
 
               // ============ DECLS ============
+              case l.AbstractValDef(lmods, lpats, ldecltpe) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mpats    = lpats.toMtrees[m.Pat.Var.Term]
+                val mdecltpe = ldecltpe.toMtree[m.Type]
+                m.Decl.Val(mmods, mpats, mdecltpe)
+
+              case l.AbstractVarDef(lmods, lpats, ldecltpe) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mpats    = lpats.toMtrees[m.Pat.Var.Term]
+                val mdecltpe = ldecltpe.toMtree[m.Type]
+                m.Decl.Var(mmods, mpats, mdecltpe)
 
               case l.AbstractDefDef(lmods, lname, ltparams, lparamss, ltpt) =>
                 val mmods    = lmods.toMtrees[m.Mod]
@@ -374,6 +389,13 @@ trait ToMtree { self: Converter =>
                 val mname    = m.Ctor.Name("this")
                 val mparamss = lparamss.toMtreess[m.Term.Param]
                 m.Ctor.Primary(mmods, mname, mparamss)
+
+              case l.SecondaryCtorDef(lmods, lname, lparamss, lbody) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mname    = m.Ctor.Name("this")
+                val mparamss = lparamss.toMtreess[m.Term.Param]
+                val mbody    = lbody.toMtree[m.Term]
+                m.Ctor.Secondary(mmods, mname, mparamss, mbody)
 
               case l.CtorName(lvalue) =>
                 m.Ctor.Name(lvalue)

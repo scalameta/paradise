@@ -38,6 +38,7 @@ object LotsOfProjects extends ConverterSuite {
         // Uncomment to investigate a specific error further.
         //          case scala.util.Failure(e: ConvertException)
         //              if e.culprit.getClass.getSimpleName == "EmptyTree$" =>
+        //            println(file.githubUrl)
         //            val culprit = e.culprit.toString.lines.take(1).mkString
         //            e.printStackTrace()
         //            results.add(err2message(e))
@@ -69,6 +70,6 @@ object LotsOfProjects extends ConverterSuite {
   def main(args: Array[String]): Unit = {
     val results = getResults
     printResults(results)
-    assert(results.count(_ == "Success") > 19250) // increment this number as it increases.
+    assert(results.count(_ == "Success") >= 24240) // increment this number as it increases.
   }
 }

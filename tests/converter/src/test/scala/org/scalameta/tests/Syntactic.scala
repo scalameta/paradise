@@ -64,6 +64,7 @@ class Syntactic extends ConverterSuite {
   syntactic("new B { val a = 3 }")
   syntactic("new B { def f(x: Int): Int = x*x }")
   syntactic("new B(3) { println(5); def f(x: Int): Int = x*x }")
+  syntactic("function _")
   syntactic("throw new A(4)")
   syntactic("try { throw new A(4) } catch { case _: Throwable => 4 } finally { println(6) }")
   syntactic("try f(4) catch { case _: Throwable => 4 } finally println(6)")
@@ -106,7 +107,14 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")
 
+  // declarations
+  syntactic("val x: Int")
+  syntactic("var x: Int")
+
   // definitions
+  syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
+  syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
+  syntactic("var x: Int = _")
   syntactic("type Age = Int")
   syntactic("type Age")
   syntactic("type Age >: Int <: Any")
