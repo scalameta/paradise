@@ -380,6 +380,12 @@ trait ToMtree { self: Converter =>
                 val mstats = lstats.toMtrees[m.Stat]
                 m.Pkg(mref, mstats)
 
+              case l.PackageObjectDef(lmods, lname, ltempl) =>
+                val mmods  = lmods.toMtrees[m.Mod]
+                val mname  = lname.toMtree[m.Term.Name]
+                val mtempl = ltempl.toMtree[m.Template]
+                m.Pkg.Object(mmods, mname, mtempl)
+
               // ============ CTORS ============
 
               case l.PrimaryCtorDef(lmods, lname, lparamss) =>
@@ -579,6 +585,8 @@ trait ToMtree { self: Converter =>
             case g.PackageDef(_, _) if classTag[T].runtimeClass == classOf[m.Source] =>
               val mstats = List(gtree.toMtree[m.Pkg])
               m.Source(mstats)
+            case l.PackageObjectDef(_, _, _) =>
+              gtree.toMtree[m.Pkg.Object]
             case g.PackageDef(_, _) =>
               gtree.toMtree[m.Pkg]
             case _ =>
