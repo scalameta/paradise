@@ -22,6 +22,7 @@ trait ToMtree { self: Converter =>
       implicit class XtensionGtreeToMtree(gtree0: g.Tree) {
         def toMtree[T <: m.Tree: ClassTag]: T = {
           wrap[T](gtree0, (gtree, gexpansion) => {
+//            println(g.showRaw(gtree0))
             val mtree = gtree match {
 
               // ============ NAMES ============
@@ -294,6 +295,11 @@ trait ToMtree { self: Converter =>
 
               case l.PatTypeWildcard() =>
                 m.Pat.Type.Wildcard()
+
+              case l.PatTypeAnnotate(ltpe, lannots) =>
+                val mtpe    = ltpe.toMtree[m.Pat.Type]
+                val mannots = lannots.toMtrees[m.Mod.Annot]
+                m.Pat.Type.Annotate(mtpe, mannots)
 
               case l.PatTypeApply(ltpt, largs) =>
                 val mtpt  = ltpt.toMtree[m.Pat.Type]

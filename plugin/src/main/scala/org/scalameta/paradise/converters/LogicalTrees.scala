@@ -560,11 +560,18 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  object TypeAnnotate {
+  object SomeTypeAnnotate {
     def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
       val (ltpe, lannots) = flattenAnnotated(gtree)
       if (!ltpe.isType) return None
       Some((ltpe, lannots.map(Annotation.apply)))
+    }
+  }
+
+  object TypeAnnotate {
+    def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+      if (patterns.contains(gtree)) return None
+      SomeTypeAnnotate.unapply(gtree)
     }
   }
 
@@ -731,6 +738,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         case g.Bind(typeNames.WILDCARD, g.EmptyTree) => true
         case _                                       => false
       }
+    }
+  }
+
+  object PatTypeAnnotate {
+    def unapply(tree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
+      if (!patterns.contains(tree)) return None
+      SomeTypeAnnotate.unapply(tree)
     }
   }
 

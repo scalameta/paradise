@@ -193,6 +193,7 @@ class Syntactic extends ConverterSuite {
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance()]")
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
+  syntactic("x match { case m: Type[Any] @unchecked => m }")
 
   // bounds
   syntactic("class f[T <% A](x: T)")
