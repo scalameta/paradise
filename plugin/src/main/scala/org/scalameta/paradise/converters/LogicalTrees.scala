@@ -75,7 +75,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   // it is necessary to know whether they are used in term context or in pattern context.
   // This set provides an exhaustive list of such subtrees in the converted tree.
   private val patterns: Set[g.Tree] = root.asInstanceOf[g.Tree].childrenPatterns
-  private val termPlaceholders      = mutable.Set.empty[g.Name]
+  // NOTE: For some patterns like `val _ = 2`, we must synthesize g.Ident trees.
+  private val syntheticPatterns = mutable.Set.empty[g.Tree]
+  // NOTE: collects TermName that should become Term.Placeholder. For example,
+  // `function(_ + 1)` is desugared into `function(x$1 => x$1 + 1)`, so x$1
+  // is kept in termPlaceholder when encountering Term.Function.
+  private val termPlaceholders = mutable.Set.empty[g.Name]
 
   // ============ NAMES ============
 
@@ -607,6 +612,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   case class PatVarTerm(name: l.TermName) extends Tree
   object PatVarTerm {
     def apply(tree: g.DefTree): l.PatVarTerm = {
+//      if (tree.name == nme.WILDCARD) return None
       l.PatVarTerm(l.TermName(tree).setType(tree.tpe))
     }
   }
@@ -615,7 +621,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object PatWildcard {
     def unapply(tree: g.Ident): Boolean = {
-      if (!patterns(tree)) return false
+      if (!patterns(tree) && !syntheticPatterns(tree)) return false
       tree.name == nme.WILDCARD
     }
   }
@@ -816,8 +822,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       tree match {
         case g.ValDef(mods, name, tpt, rhs) if !mods.hasFlag(MUTABLE) =>
           // TODO: support multi-pat valdefs
-          val lpats = List(l.PatVarTerm(tree))
-          val ltpt  = if (tpt.nonEmpty) Some(tpt) else None
+          val lpats: List[g.Tree] =
+            if (tree.name == nme.WILDCARD) {
+              val syntheticIdent = g.Ident(tree.name)
+              syntheticPatterns += syntheticIdent
+              List(syntheticIdent)
+            } else List(l.PatVarTerm(tree))
+          val ltpt = if (tpt.nonEmpty) Some(tpt) else None
           Some((l.Modifiers(tree), lpats, ltpt, rhs))
         case _ =>
           None

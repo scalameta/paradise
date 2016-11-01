@@ -1,5 +1,7 @@
 package org.scalameta.tests
 
+class Playground extends ConverterSuite {
+}
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
   // terms
@@ -96,6 +98,7 @@ class Syntactic extends ConverterSuite {
   // syntactic("""s"hello, $world, ${1 + 2}"""")
 
   // patterns
+  syntactic("val _ = a")
   syntactic("a match { case 5 => ; case 6 => }")
   syntactic("a match { case Some(x) => x; case None => y }")
   syntactic("a match { case Some(x) => x; case _ => y }")
