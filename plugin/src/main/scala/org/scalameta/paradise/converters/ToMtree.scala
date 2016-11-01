@@ -247,6 +247,10 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Pat.Var.Term(mname)
 
+              case l.PatVarType(lname) =>
+                val mname = lname.toMtree[m.Type.Name]
+                m.Pat.Var.Type(mname)
+
               case l.PatWildcard() =>
                 m.Pat.Wildcard()
 
@@ -280,6 +284,17 @@ trait ToMtree { self: Converter =>
                 val mlrhs = llhs.toMtree[m.Pat]
                 val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
+
+              case l.PatArgSeqWildcard() =>
+                m.Pat.Arg.SeqWildcard()
+
+              case l.PatTypeWildcard() =>
+                m.Pat.Type.Wildcard()
+
+              case l.PatTypeApply(ltpt, largs) =>
+                val mtpt  = ltpt.toMtree[m.Pat.Type]
+                val margs = largs.toMtrees[m.Pat.Type]
+                m.Pat.Type.Apply(mtpt, margs)
 
               // ============ LITERALS ============
 

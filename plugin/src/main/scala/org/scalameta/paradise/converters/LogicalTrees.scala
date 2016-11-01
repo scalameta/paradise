@@ -446,12 +446,20 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  object TypeApply {
+  // Type.Apply in either pattern or non-pattern case.
+  object SomeTypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (TypeApplyInfix.unapply(tree).isDefined) return None
       if (TypeFunction.unapply(tree).isDefined) return None
       if (TypeTuple.unapply(tree).isDefined) return None
       Some((tree.tpt, tree.args))
+    }
+  }
+
+  object TypeApply {
+    def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
+      if (patterns(tree)) return None
+      SomeTypeApply.unapply(tree)
     }
   }
 
@@ -577,10 +585,28 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  case class PatVarType(name: l.TypeName) extends Tree
+
   object PatWildcard {
     def unapply(tree: g.Ident): Boolean = {
       if (!patterns(tree)) return false
       tree.name == nme.WILDCARD
+    }
+  }
+
+  object PatTypeApply {
+    def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
+      if (!patterns(tree)) return None
+      SomeTypeApply.unapply(tree).map {
+        case (ltpt, gargs) =>
+          val largs = gargs.map {
+            case g.Bind(typeName @ g.TypeName(name), g.EmptyTree)
+                if typeName != typeNames.WILDCARD =>
+              l.PatVarType(l.TypeName(name))
+            case x => x
+          }
+          (tree.tpt, largs)
+      }
     }
   }
 
@@ -653,6 +679,25 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           Some((l.PatVarTerm(tree), rhs))
         case _ =>
           None
+      }
+    }
+  }
+
+  object PatArgSeqWildcard {
+    def unapply(tree: g.Star): Boolean = {
+      tree match {
+        case g.Star(g.Ident(g.termNames.WILDCARD)) => true
+        case _                                     => false
+      }
+    }
+  }
+
+  object PatTypeWildcard {
+    def unapply(tree: g.Bind): Boolean = {
+      if (!patterns(tree)) return false
+      tree match {
+        case g.Bind(typeNames.WILDCARD, g.EmptyTree) => true
+        case _                                       => false
       }
     }
   }
