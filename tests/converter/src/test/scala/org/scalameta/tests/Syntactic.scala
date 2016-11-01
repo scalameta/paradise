@@ -106,6 +106,8 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case (x, y) => }")
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")
+  syntactic("a match { case c: Class[_] => c }")
+  syntactic("a match { case c: Class[T] => c }")
 
   // declarations
   syntactic("val x: Int")
