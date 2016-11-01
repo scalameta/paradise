@@ -33,7 +33,11 @@ trait Trees { self: ReflectToolkit =>
                     case g.Typed(ident, tpat) =>
                       patterns += ident
                       patterns += tree
+                      traverse(tpat)
                     case g.Apply(_, args) =>
+                      patterns += tree
+                      args.foreach(traverse)
+                    case g.AppliedTypeTree(tpt, args) =>
                       patterns += tree
                       args.foreach(traverse)
                     case _ =>
