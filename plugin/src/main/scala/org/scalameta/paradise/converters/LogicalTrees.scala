@@ -683,6 +683,15 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object PatArgSeqWildcard {
+    def unapply(tree: g.Star): Boolean = {
+      tree match {
+        case g.Star(g.Ident(g.termNames.WILDCARD)) => true
+        case _                                     => false
+      }
+    }
+  }
+
   object PatTypeWildcard {
     def unapply(tree: g.Bind): Boolean = {
       if (!patterns(tree)) return false

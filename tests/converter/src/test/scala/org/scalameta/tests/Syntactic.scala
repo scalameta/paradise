@@ -103,6 +103,7 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case Some(x: Int) | Some(x: String) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | Some(x: Boolean) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | x: Boolean => x; case _ => y }")
+  syntactic("x match { case List(head, _*) => x }")
   syntactic("a match { case (x, y) => }")
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")

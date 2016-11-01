@@ -285,6 +285,9 @@ trait ToMtree { self: Converter =>
                 val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
 
+              case l.PatArgSeqWildcard() =>
+                m.Pat.Arg.SeqWildcard()
+
               case l.PatTypeWildcard() =>
                 m.Pat.Type.Wildcard()
 
