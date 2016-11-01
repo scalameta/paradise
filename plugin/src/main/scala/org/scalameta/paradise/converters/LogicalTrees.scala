@@ -1025,9 +1025,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       extends CtorDef
 
   object SecondaryCtorDef {
+    def replaceInitWithCtorName(tree: g.Tree): g.Tree = tree match {
+      case g.Ident(nme.CONSTRUCTOR) => l.CtorName("this")
+      case g.Apply(fun, args)       => g.Apply(replaceInitWithCtorName(fun), args)
+      case _                        => tree
+    }
     def apply(tree: g.DefDef): l.SecondaryCtorDef = {
-      val CtorDef(lmods, lname, lparamss, g.Apply(Ident(nme.CONSTRUCTOR), args) :: _) = tree
-      val lbody                                                                       = g.Apply(l.CtorName("this"), args)
+      val CtorDef(lmods, lname, lparamss, gbody :: _) = tree
+      val lbody                                       = replaceInitWithCtorName(gbody)
       SecondaryCtorDef(lmods, lname, lparamss, lbody)
     }
   }

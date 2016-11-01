@@ -117,6 +117,7 @@ class Syntactic extends ConverterSuite {
   // definitions
   syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
   syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
+  syntactic("class Y(x: Int) { def this() = this()(1) }")
   syntactic("var x: Int = _")
   syntactic("type Age = Int")
   syntactic("type Age")
