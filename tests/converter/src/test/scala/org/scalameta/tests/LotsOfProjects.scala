@@ -36,12 +36,13 @@ object LotsOfProjects extends ConverterSuite {
       if (n % 1000 == 0) println(s"$n...")
       Try(getConvertedMetaTree(code)) match {
         // Uncomment to investigate a specific error further.
-        //          case scala.util.Failure(e: ConvertException)
-        //              if e.culprit.getClass.getSimpleName == "EmptyTree$" =>
-        //            println(file.githubUrl)
-        //            val culprit = e.culprit.toString.lines.take(1).mkString
-        //            e.printStackTrace()
-        //            results.add(err2message(e))
+                  case scala.util.Failure(e: ConvertException)
+                      if e.getMessage.startsWith("unexpected") =>
+                    println(file.githubUrl)
+                    val culprit = e.culprit.toString.lines.take(1).mkString
+                    e.printStackTrace()
+                    ???
+                    results.add(err2message(e))
         case scala.util.Failure(e) =>
           results.add(err2message(e))
         case _ =>

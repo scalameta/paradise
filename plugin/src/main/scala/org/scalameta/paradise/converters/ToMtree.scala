@@ -23,6 +23,7 @@ trait ToMtree { self: Converter =>
         def toMtree[T <: m.Tree: ClassTag]: T = {
           wrap[T](gtree0, (gtree, gexpansion) => {
             val mtree = gtree match {
+
               // ============ NAMES ============
 
               case l.AnonymousName() =>
@@ -136,6 +137,9 @@ trait ToMtree { self: Converter =>
                 val mbody = lbody.toMtree[m.Term]
                 val mexpr = lexpr.toMtree[m.Term]
                 m.Term.Do(mbody, mexpr)
+
+              case l.TermPlaceholder() =>
+                m.Term.Placeholder()
 
               case l.TermNew(ltempl) =>
                 val mtempl = ltempl.toMtree[m.Template]
@@ -553,7 +557,8 @@ trait ToMtree { self: Converter =>
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion)   = (gtree0, g.EmptyTree)
-          val convertedTree         = converter(gtree, gexpansion)
+          val desugared             = l.Desugared.unapply(gtree).getOrElse(gtree)
+          val convertedTree         = converter(desugared, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree     = maybeTypecheckedMtree
           if (classTag[T].runtimeClass.isAssignableFrom(maybeIndexedMtree.getClass)) {

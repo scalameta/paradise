@@ -75,6 +75,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   // it is necessary to know whether they are used in term context or in pattern context.
   // This set provides an exhaustive list of such subtrees in the converted tree.
   private val patterns: Set[g.Tree] = root.asInstanceOf[g.Tree].childrenPatterns
+  private val termPlaceholders      = mutable.Set.empty[g.Name]
 
   // ============ NAMES ============
 
@@ -109,6 +110,21 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object Desugared {
+    def unapply(tree: g.Tree): Option[g.Tree] = {
+      tree match {
+        case g.Function(vparams, body)
+            if vparams.forall(x =>
+              x.mods.hasFlag(SYNTHETIC) &&
+                x.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)) =>
+          termPlaceholders ++= vparams.map(_.name)
+          Some(body)
+        case _ =>
+          None
+      }
+    }
+  }
+
   // ============ TERMS ============
 
   object TermThis {
@@ -133,15 +149,17 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TermName {
     def apply(tree: g.NameTree): l.TermName = {
       require(
-        tree.name.isTermName && tree.name != nme.WILDCARD && tree.name != nme.CONSTRUCTOR && debug(
-          tree,
-          showRaw(tree)))
+        tree.name.isTermName &&
+          tree.name != nme.WILDCARD &&
+          tree.name != nme.CONSTRUCTOR &&
+          debug(tree, showRaw(tree)))
       new l.TermName(tree.displayName).setType(tree.tpe)
     }
   }
 
   object TermIdent {
     def unapply(tree: g.Ident): Option[l.TermName] = {
+      if (termPlaceholders.contains(tree.name)) return None
       val g.Ident(name) = tree
       if (name.isTypeName || tree.name == nme.WILDCARD) return None
       Some(l.TermName(tree.displayName).setType(tree.tpe))
@@ -319,6 +337,10 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object TermPlaceholder {
+    def unapply(tree: g.Ident): Boolean = termPlaceholders.contains(tree.name)
+  }
+
   object TermNew {
     def unapply(tree: g.Tree): Option[l.Template] = tree match {
       case g.Apply(g.Select(g.New(tpt), nme.CONSTRUCTOR), args) =>
@@ -378,7 +400,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   trait TermParamName extends Name
 
   case class TermParamDef(mods: List[l.Modifier],
-                          name: l.TermName,
+                          name: TermParamName,
                           tpt: Option[g.Tree],
                           default: Option[g.Tree])
       extends Tree
@@ -388,7 +410,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       val g.ValDef(_, _, tpt, default) = tree
       val ltpt                         = if (tpt.nonEmpty) Some(tpt) else None
       val ldefault                     = if (default.nonEmpty) Some(default) else None
-      TermParamDef(l.Modifiers(tree), l.TermName(tree), ltpt, ldefault)
+      val lname =
+        if (tree.name.startsWith(nme.FRESH_TERM_NAME_PREFIX) ||
+            tree.name == nme.WILDCARD) l.AnonymousName()
+        else l.TermName(tree)
+      TermParamDef(l.Modifiers(tree), lname, ltpt, ldefault)
     }
   }
 
