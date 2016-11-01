@@ -1,6 +1,7 @@
 package org.scalameta.tests
 
 class Playground extends ConverterSuite {
+  syntactic("x match {case a: A with B => x}")
 }
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
@@ -138,6 +139,7 @@ class Syntactic extends ConverterSuite {
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
+  syntactic("def f: (=> T) => T = 2")
 
   // types
   syntactic("val a: A with B = ???")

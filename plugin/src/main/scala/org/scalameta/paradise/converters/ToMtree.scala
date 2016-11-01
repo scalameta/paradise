@@ -205,7 +205,7 @@ trait ToMtree { self: Converter =>
                 m.Type.ApplyInfix(mlhs, mop, mrhs)
 
               case l.TypeFunction(lparams, lres) =>
-                val mparams = lparams.toMtrees[m.Type]
+                val mparams = lparams.toMtrees[m.Type.Arg]
                 val mres    = lres.toMtree[m.Type]
                 m.Type.Function(mparams, mres)
 
