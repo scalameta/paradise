@@ -22,7 +22,9 @@ trait ToMtree { self: Converter =>
       implicit class XtensionGtreeToMtree(gtree0: g.Tree) {
         def toMtree[T <: m.Tree: ClassTag]: T = {
           wrap[T](gtree0, (gtree, gexpansion) => {
+//            println(g.showRaw(gtree0))
             val mtree = gtree match {
+
               // ============ NAMES ============
 
               case l.AnonymousName() =>
@@ -137,6 +139,9 @@ trait ToMtree { self: Converter =>
                 val mexpr = lexpr.toMtree[m.Term]
                 m.Term.Do(mbody, mexpr)
 
+              case l.TermPlaceholder() =>
+                m.Term.Placeholder()
+
               case l.TermNew(ltempl) =>
                 val mtempl = ltempl.toMtree[m.Template]
                 m.Term.New(mtempl)
@@ -247,6 +252,10 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Pat.Var.Term(mname)
 
+              case l.PatVarType(lname) =>
+                val mname = lname.toMtree[m.Type.Name]
+                m.Pat.Var.Type(mname)
+
               case l.PatWildcard() =>
                 m.Pat.Wildcard()
 
@@ -280,6 +289,22 @@ trait ToMtree { self: Converter =>
                 val mlrhs = llhs.toMtree[m.Pat]
                 val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
+
+              case l.PatArgSeqWildcard() =>
+                m.Pat.Arg.SeqWildcard()
+
+              case l.PatTypeWildcard() =>
+                m.Pat.Type.Wildcard()
+
+              case l.PatTypeAnnotate(ltpe, lannots) =>
+                val mtpe    = ltpe.toMtree[m.Pat.Type]
+                val mannots = lannots.toMtrees[m.Mod.Annot]
+                m.Pat.Type.Annotate(mtpe, mannots)
+
+              case l.PatTypeApply(ltpt, largs) =>
+                val mtpt  = ltpt.toMtree[m.Pat.Type]
+                val margs = largs.toMtrees[m.Pat.Type]
+                m.Pat.Type.Apply(mtpt, margs)
 
               // ============ LITERALS ============
 
@@ -538,7 +563,8 @@ trait ToMtree { self: Converter =>
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion)   = (gtree0, g.EmptyTree)
-          val convertedTree         = converter(gtree, gexpansion)
+          val desugared             = l.Desugared.unapply(gtree).getOrElse(gtree)
+          val convertedTree         = converter(desugared, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree     = maybeTypecheckedMtree
           if (classTag[T].runtimeClass.isAssignableFrom(maybeIndexedMtree.getClass)) {

@@ -1,5 +1,7 @@
 package org.scalameta.tests
 
+class Playground extends ConverterSuite {
+}
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
   // terms
@@ -64,6 +66,8 @@ class Syntactic extends ConverterSuite {
   syntactic("new B { val a = 3 }")
   syntactic("new B { def f(x: Int): Int = x*x }")
   syntactic("new B(3) { println(5); def f(x: Int): Int = x*x }")
+  syntactic("a.foreach(_ => bar())")
+  syntactic("a.foreach(_ + _)")
   syntactic("function _")
   syntactic("throw new A(4)")
   syntactic("try { throw new A(4) } catch { case _: Throwable => 4 } finally { println(6) }")
@@ -94,6 +98,7 @@ class Syntactic extends ConverterSuite {
   // syntactic("""s"hello, $world, ${1 + 2}"""")
 
   // patterns
+  syntactic("val _ = a")
   syntactic("a match { case 5 => ; case 6 => }")
   syntactic("a match { case Some(x) => x; case None => y }")
   syntactic("a match { case Some(x) => x; case _ => y }")
@@ -103,9 +108,12 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case Some(x: Int) | Some(x: String) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | Some(x: Boolean) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | x: Boolean => x; case _ => y }")
+  syntactic("x match { case List(head, _*) => x }")
   syntactic("a match { case (x, y) => }")
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")
+  syntactic("a match { case c: Class[_] => c }")
+  syntactic("a match { case c: Class[T] => c }")
 
   // declarations
   syntactic("val x: Int")
@@ -114,6 +122,7 @@ class Syntactic extends ConverterSuite {
   // definitions
   syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
   syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
+  syntactic("class Y(x: Int) { def this() = this()(1) }")
   syntactic("var x: Int = _")
   syntactic("type Age = Int")
   syntactic("type Age")
@@ -184,6 +193,7 @@ class Syntactic extends ConverterSuite {
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance()]")
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
+  syntactic("x match { case m: Type[Any] @unchecked => m }")
 
   // bounds
   syntactic("class f[T <% A](x: T)")
