@@ -197,6 +197,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         List[g.Tree],
         List[g.Tree]
     )] = {
+      if (patterns(tree)) return None
       tree match {
         case g.treeInfo.Applied(g.Select(lhs, op: g.TermName), targs, List(rhs))
             if op.looksLikeInfix && !op.isRightAssoc =>

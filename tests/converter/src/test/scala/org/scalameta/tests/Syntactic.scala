@@ -1,7 +1,6 @@
 package org.scalameta.tests
 
 class Playground extends ConverterSuite {
-//   syntactic("val (a, b) = c")
 }
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
@@ -115,6 +114,7 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case x @ (_: T) => }")
   syntactic("a match { case c: Class[_] => c }")
   syntactic("a match { case c: Class[T] => c }")
+  syntactic("x match { case http.`*`(q) => q }")
   // TODO: https://github.com/scalameta/paradise/issues/113
   // syntactic("val (a, b) = c")
   // syntactic("val (c, matSink: (Int, String)) = (a, b)")
