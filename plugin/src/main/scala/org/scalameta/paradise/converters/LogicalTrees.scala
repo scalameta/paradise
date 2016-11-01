@@ -516,6 +516,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object TypeTuple {
     def unapply(tree: g.AppliedTypeTree): Option[List[g.Tree]] = {
+      if (patterns(tree)) return None
       val g.AppliedTypeTree(tpt, args) = tree
       if (!tpt.toString.startsWith("scala.Tuple") || args.length <= 1) return None
       Some(args)
