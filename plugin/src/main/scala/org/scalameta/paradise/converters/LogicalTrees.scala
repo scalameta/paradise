@@ -881,12 +881,39 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   // ============ PKGS ============
 
+  object PackageObject {
+    def unapply(tree: g.Tree): Option[List[g.Tree]] = tree match {
+      case g.ModuleDef(_,
+                       nme.PACKAGE,
+                       g.Template(
+                         _,
+                         _,
+                         g.DefDef(_,
+                                  nme.CONSTRUCTOR,
+                                  Nil,
+                                  List(Nil),
+                                  _,
+                                  g.Block(
+                                    List(g.pendingSuperCall),
+                                    g.Literal(g.Constant(()))
+                                  )) :: stats
+                       )) =>
+        Some(stats)
+      case _ => None
+    }
+  }
+
   object PackageDef {
     def unapply(tree: g.PackageDef): Option[(g.Tree, List[g.Tree])] = {
       require(tree.pid.name != nme.EMPTY_PACKAGE_NAME)
-      val lpid   = tree.pid
-      val lstats = toplevelStats(tree.stats)
-      Some((lpid, lstats))
+      tree.stats match {
+        case PackageObject(_) :: _ =>
+          None
+        case _ =>
+          val lpid   = tree.pid
+          val lstats = tree.stats
+          Some((lpid, lstats))
+      }
     }
   }
 
@@ -896,11 +923,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         l.TermName,
         l.Template
     )] = {
-      tree match {
-        case g.PackageDef(pid, List(g.ModuleDef(_, name, templ))) if name == nme.PACKAGE =>
-          ???
-        case _ =>
-          None
+      tree.stats match {
+        case PackageObject(lstats) :: Nil =>
+          val lself = l.Self(l.AnonymousName(), g.TypeTree())
+          Some((l.Modifiers(tree), l.TermName(tree), l.Template(Nil, Nil, lself, Some(lstats))))
+        case _ => None
       }
     }
   }
@@ -1322,10 +1349,6 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     val limplicits   = implicits.filter(!_.name.startsWith(nme.EVIDENCE_PARAM_PREFIX))
     val lparamss     = if (limplicits.nonEmpty) explicitss :+ limplicits else explicitss
     lparamss.map(_.map(l.TermParamDef.apply))
-  }
-
-  private def toplevelStats(stats: List[g.Tree]): List[g.Tree] = {
-    stats
   }
 
   private def templateStats(stats: List[g.Tree]): List[g.Tree] = {

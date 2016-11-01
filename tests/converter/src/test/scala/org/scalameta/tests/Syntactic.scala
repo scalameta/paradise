@@ -194,6 +194,10 @@ class Syntactic extends ConverterSuite {
   syntactic("def f[T: A :B](x: T): Int = x")
   syntactic("def f[T: A[Int]](x: T): Int = x")
 
+  // pkg
+  syntactic("package object a { val x = 1 }")
+  syntactic("package a.b { }")
+
   // random stuff
   syntactic("case class C()")
   syntactic("object M { override val toString = test5 }")
@@ -206,5 +210,4 @@ class Syntactic extends ConverterSuite {
   """)
   syntactic("def add(a: Int)(implicit z: Int = 0) = a + z")
   syntactic("def f(x: => T) = ???")
-  syntactic("package a.b { }")
 }
