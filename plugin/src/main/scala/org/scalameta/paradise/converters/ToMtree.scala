@@ -307,6 +307,11 @@ trait ToMtree { self: Converter =>
                 val margs = largs.toMtrees[m.Pat.Type]
                 m.Pat.Type.Apply(mtpt, margs)
 
+              case l.PatTypeWith(llhs, lrhs) =>
+                val mlhs = llhs.toMtree[m.Pat.Type]
+                val mrhs = lrhs.toMtree[m.Pat.Type]
+                m.Pat.Type.With(mlhs, mrhs)
+
               // ============ LITERALS ============
 
               case l.Literal(lvalue) =>

@@ -524,7 +524,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  object TypeWith {
+  object SomeTypeWith {
     def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
       case tree @ g.CompoundTypeTree(g.Template(parents0, _, Nil)) =>
         val parents = parents0.filter(_.toString != "scala.AnyRef")
@@ -537,6 +537,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         }
       case _ =>
         None
+    }
+  }
+
+  object TypeWith {
+    def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
+      if (patterns.contains(tree)) return None
+      SomeTypeWith.unapply(tree)
     }
   }
 
@@ -621,7 +628,6 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   case class PatVarTerm(name: l.TermName) extends Tree
   object PatVarTerm {
     def apply(tree: g.DefTree): l.PatVarTerm = {
-//      if (tree.name == nme.WILDCARD) return None
       l.PatVarTerm(l.TermName(tree).setType(tree.tpe))
     }
   }
@@ -648,6 +654,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           }
           (tree.tpt, largs)
       }
+    }
+  }
+
+  object PatTypeWith {
+    def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
+      if (!patterns.contains(tree)) return None
+      SomeTypeWith.unapply(tree)
     }
   }
 

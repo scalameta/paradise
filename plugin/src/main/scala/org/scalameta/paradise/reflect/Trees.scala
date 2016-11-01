@@ -34,6 +34,9 @@ trait Trees { self: ReflectToolkit =>
                       patterns += tree
                       traverse(annot)
                       traverse(arg)
+                    case g.CompoundTypeTree(templ) =>
+                      patterns += tree
+                      traverse(templ)
                     case g.Typed(ident, tpat) =>
                       patterns += ident
                       patterns += tree
