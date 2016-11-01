@@ -1,6 +1,5 @@
 package org.scalameta.tests
 
-class Playground extends ConverterSuite {}
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
 class Syntactic extends ConverterSuite {
   // terms

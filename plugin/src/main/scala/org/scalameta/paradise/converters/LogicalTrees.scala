@@ -115,9 +115,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  object Desugared {
+  object UnDesugar {
     def unapply(tree: g.Tree): Option[g.Tree] = {
       tree match {
+        // before: function((x$1, x$2) => x$1 + x$2)
+        // after:  function(_ + _)
         case g.Function(vparams, body)
             if vparams.forall(x =>
               x.mods.hasFlag(SYNTHETIC) &&
@@ -478,7 +480,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  // Type.Apply in either pattern or non-pattern case.
+  // Type.Apply in either pattern or non-pattern position.
   object SomeTypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (TypeApplyInfix.unapply(tree).isDefined) return None
@@ -524,6 +526,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  // Type.With in either pattern or non-pattern position.
   object SomeTypeWith {
     def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
       case tree @ g.CompoundTypeTree(g.Template(parents0, _, Nil)) =>
@@ -569,6 +572,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  // Type.Annotate in either pattern or non-pattern position.
   object SomeTypeAnnotate {
     def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
       val (ltpe, lannots) = flattenAnnotated(gtree)

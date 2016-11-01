@@ -22,10 +22,7 @@ trait ToMtree { self: Converter =>
       implicit class XtensionGtreeToMtree(gtree0: g.Tree) {
         def toMtree[T <: m.Tree: ClassTag]: T = {
           wrap[T](gtree0, (gtree, gexpansion) => {
-//            println(gtree0)
-//            println(g.showRaw(gtree0))
             val mtree = gtree match {
-
               // ============ NAMES ============
 
               case l.AnonymousName() =>
@@ -569,8 +566,8 @@ trait ToMtree { self: Converter =>
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion)   = (gtree0, g.EmptyTree)
-          val desugared             = l.Desugared.unapply(gtree).getOrElse(gtree)
-          val convertedTree         = converter(desugared, gexpansion)
+          val undesugaredTree       = l.UnDesugar.unapply(gtree).getOrElse(gtree)
+          val convertedTree         = converter(undesugaredTree, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree     = maybeTypecheckedMtree
           if (classTag[T].runtimeClass.isAssignableFrom(maybeIndexedMtree.getClass)) {
