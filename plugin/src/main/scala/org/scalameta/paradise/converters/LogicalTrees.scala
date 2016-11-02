@@ -185,8 +185,35 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object TermOrPatInterpolate {
+    def unapply(tree: g.Tree): Option[(l.TermName, List[g.Tree], List[g.Tree])] = {
+      // scalac desugars bb"a $c" into StringContext("a ", "").bb(c). To detect
+      // if the desugaring happened, we make sure that the tree start position
+      // starts with the prefix ("bb" from example) followed by double quote character.
+      def positionMatchesInterpolation(prefix: Array[Char]): Boolean = {
+        val chars =
+          tree.pos.source.content.slice(tree.pos.start, tree.pos.start + prefix.length + 1)
+        chars.startsWith(prefix) && chars.lastOption.contains('"')
+      }
+      tree match {
+        case g.Apply(g.Select(g.Apply(g.Ident(g.TermName("StringContext")), parts), prefix), args)
+            if positionMatchesInterpolation(prefix.toChars) =>
+          Some((l.TermName(prefix.displayName), parts, args))
+        case _ => None
+      }
+    }
+  }
+
+  object TermInterpolate {
+    def unapply(tree: g.Apply): Option[(l.TermName, List[g.Tree], List[g.Tree])] = {
+      if (patterns(tree)) return None
+      TermOrPatInterpolate.unapply(tree)
+    }
+  }
+
   object TermApply {
     def unapply(tree: g.Apply): Option[(g.Tree, List[g.Tree])] = {
+      if (TermInterpolate.unapply(tree).isDefined) return None
       if (patterns(tree)) return None
       if (TermNew.unapply(tree).isDefined) return None
       if (TermTuple.unapply(tree).isDefined) return None
@@ -726,6 +753,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     )] = {
       if (!patterns(tree)) return None
       if (PatTuple.unapply(tree).isDefined) return None
+      if (TermOrPatInterpolate.unapply(tree).isDefined) return None
       val (fun, targs, args) = tree match {
         case g.Apply(g.TypeApply(fun, targs), args) => (fun, targs, args)
         case g.Apply(fun, args)                     => (fun, Nil, args)
@@ -735,6 +763,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         case _                                                    => return None
       }
       Some((fun, targs, args))
+    }
+  }
+
+  object PatInterpolate {
+    def unapply(tree: g.Apply): Option[(l.TermName, List[g.Tree], List[g.Tree])] = {
+      if (!patterns(tree)) return None
+      TermOrPatInterpolate.unapply(tree)
     }
   }
 
