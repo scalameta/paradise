@@ -315,13 +315,13 @@ trait ToMtree { self: Converter =>
                 m.Lit(lvalue)
 
               // ============ DECLS ============
-              case l.AbstractValDef(lmods, lpats, ldecltpe) =>
+              case l.DeclVal(lmods, lpats, ldecltpe) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mpats    = lpats.toMtrees[m.Pat.Var.Term]
                 val mdecltpe = ldecltpe.toMtree[m.Type]
                 m.Decl.Val(mmods, mpats, mdecltpe)
 
-              case l.AbstractVarDef(lmods, lpats, ldecltpe) =>
+              case l.DeclVar(lmods, lpats, ldecltpe) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mpats    = lpats.toMtrees[m.Pat.Var.Term]
                 val mdecltpe = ldecltpe.toMtree[m.Type]
@@ -344,14 +344,14 @@ trait ToMtree { self: Converter =>
 
               // ============ DEFNS ============
 
-              case l.ValDef(lmods, lpats, ltpt, lrhs) =>
+              case l.DefnVal(lmods, lpats, ltpt, lrhs) =>
                 val mmods = lmods.toMtrees[m.Mod]
                 val mpats = lpats.toMtrees[m.Pat]
                 val mtpt  = ltpt.toMtreeopt[m.Type]
                 val mrhs  = lrhs.toMtree[m.Term]
                 m.Defn.Val(mmods, mpats, mtpt, mrhs)
 
-              case l.VarDef(lmods, lpats, ltpt, lrhs) =>
+              case l.DefnVar(lmods, lpats, ltpt, lrhs) =>
                 val mmods = lmods.toMtrees[m.Mod]
                 val mpats = lpats.toMtrees[m.Pat]
                 val mtpt  = ltpt.toMtreeopt[m.Type]
@@ -614,6 +614,8 @@ trait ToMtree { self: Converter =>
             case g.PackageDef(_, _) if classTag[T].runtimeClass == classOf[m.Source] =>
               val mstats = List(gtree.toMtree[m.Pkg])
               m.Source(mstats)
+            case t: g.ValDef =>
+              l.undoValDefDesugarings(List(t)).head.toMtree[T]
             case l.PackageObjectDef(_, _, _) =>
               gtree.toMtree[m.Pkg.Object]
             case g.PackageDef(_, _) =>

@@ -118,15 +118,10 @@ class Syntactic extends ConverterSuite {
   // syntactic("val (a, b) = c")
   // syntactic("val (c, matSink: (Int, String)) = (a, b)")
 
-  // declarations
-  syntactic("val x: Int")
-  syntactic("var x: Int")
-
   // definitions
   syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
   syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
   syntactic("class Y(x: Int) { def this() = this()(1) }")
-  syntactic("var x: Int = _")
   syntactic("type Age = Int")
   syntactic("type Age")
   syntactic("type Age >: Int <: Any")
@@ -138,6 +133,46 @@ class Syntactic extends ConverterSuite {
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
   syntactic("def f: (=> T) => T = 2")
+
+  // val/var patterns
+  syntactic("""object a { @foo val Foo(a) = 2 }""")
+  syntactic("""object a { @foo val Foo(a, Bar(b)) = 2 }""")
+  syntactic("""object a { val Foo() = 2 }""")
+  syntactic("""object a { val a: Int }""")
+  syntactic("""object a { var a: Int }""")
+  syntactic("""x match { case Foo(a) => a }""")
+  syntactic("""{ @foo val Foo(a) = 2 }""")
+  syntactic("""{ @foo val Foo(a, Bar(b)) = 2 }""")
+  syntactic("""{ val Foo() = 2 }""")
+  syntactic("""{ val Foo(_, a) = 2 }""")
+  syntactic("""{ val Foo(a): Int = 2 }""")
+  syntactic("""{ val Foo(a: Int) = 2 }""")
+  syntactic("""{ val Foo(a: Int, b: Bar) = 2 }""")
+  syntactic("lazy val Foo() = 2")
+  syntactic("lazy val Foo(x): Int = 2")
+  syntactic("lazy val Foo(x: Int) = 2")
+  syntactic("lazy val x: Int = 2")
+  syntactic("object a { lazy val Foo(a) = 2} ")
+  syntactic("object a { private val Foo(a) = 2} ")
+  syntactic("object a { val Foo(a) = 2} ")
+  syntactic("object a { val x: Int }")
+  syntactic("object a { var x: Int }")
+  syntactic("val Foo() = 2")
+  syntactic("val Foo(x): Int = 2")
+  syntactic("val Foo(x: Int) = 2")
+  syntactic("val x: Int = 2")
+  syntactic("var x: Int = 2")
+  syntactic("var x: Int = _")
+  syntactic("{ @foo val Foo(a: Int, b), Foo(c, d): String = 2 }")
+  syntactic("{ @foo var Foo(a: Int, b), Foo(c, d): String = 2 }")
+  syntactic("{ lazy val x, y = 2 }")
+  syntactic("{ val Foo(a), y = 2 }")
+  syntactic("{ val Foo(a, b) = 2 }")
+  syntactic("{ val _, a = 2 }")
+  syntactic("{ val a, b = 2; val c = 2 }")
+  syntactic("{ val x, y = 2 }")
+  //  syntactic("{ val Foo(), y = 2 }") // Can't find position of Foo(): https://github.com/scalameta/paradise/issues/116
+  //  syntactic("""{ @foo val Foo(_) = 2 }""") // annot disappears https://github.com/scalameta/paradise/issues/115
 
   // types
   syntactic("val a: A with B = ???")
