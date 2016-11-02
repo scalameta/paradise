@@ -77,10 +77,6 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   private val patterns: Set[g.Tree] = root.asInstanceOf[g.Tree].childrenPatterns
   // NOTE: For some patterns like `val _ = 2`, we must synthesize g.Ident trees.
   private val syntheticPatterns = mutable.Set.empty[g.Tree]
-  // NOTE: collects TermName that should become Term.Placeholder. For example,
-  // `function(_ + 1)` is desugared into `function(x$1 => x$1 + 1)`, so x$1
-  // is kept in termPlaceholder when encountering Term.Function.
-  private val termPlaceholders = mutable.Set.empty[g.Name]
 
   // ============ NAMES ============
 
@@ -115,7 +111,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  object UnDesugar {
+  object UndoDesugaring {
     def unapply(tree: g.Tree): Option[g.Tree] = {
       tree match {
         // before: function((x$1, x$2) => x$1 + x$2)
@@ -124,7 +120,6 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
             if vparams.forall(x =>
               x.mods.hasFlag(SYNTHETIC) &&
                 x.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)) =>
-          termPlaceholders ++= vparams.map(_.name)
           Some(body)
         case _ =>
           None
@@ -166,7 +161,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object TermIdent {
     def unapply(tree: g.Ident): Option[l.TermName] = {
-      if (termPlaceholders.contains(tree.name)) return None
+      if (tree.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)) return None
       val g.Ident(name) = tree
       if (name.isTypeName || tree.name == nme.WILDCARD) return None
       Some(l.TermName(tree.displayName).setType(tree.tpe))
@@ -346,7 +341,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   }
 
   object TermPlaceholder {
-    def unapply(tree: g.Ident): Boolean = termPlaceholders.contains(tree.name)
+    def unapply(tree: g.Ident): Boolean = tree.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)
   }
 
   object TermNew {
@@ -408,7 +403,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   trait TermParamName extends Name
 
   case class TermParamDef(mods: List[l.Modifier],
-                          name: TermParamName,
+                          name: l.TermParamName,
                           tpt: Option[g.Tree],
                           default: Option[g.Tree])
       extends Tree
@@ -480,8 +475,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  // Type.Apply in either pattern or non-pattern position.
-  object SomeTypeApply {
+  object TypeOrPatTypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (TypeApplyInfix.unapply(tree).isDefined) return None
       if (TypeFunction.unapply(tree).isDefined) return None
@@ -493,7 +487,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (patterns(tree)) return None
-      SomeTypeApply.unapply(tree)
+      TypeOrPatTypeApply.unapply(tree)
     }
   }
 
@@ -526,8 +520,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  // Type.With in either pattern or non-pattern position.
-  object SomeTypeWith {
+  object TypeOrPatTypeWith {
     def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = tree match {
       case tree @ g.CompoundTypeTree(g.Template(parents0, _, Nil)) =>
         val parents = parents0.filter(_.toString != "scala.AnyRef")
@@ -546,7 +539,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TypeWith {
     def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
       if (patterns.contains(tree)) return None
-      SomeTypeWith.unapply(tree)
+      TypeOrPatTypeWith.unapply(tree)
     }
   }
 
@@ -572,8 +565,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
-  // Type.Annotate in either pattern or non-pattern position.
-  object SomeTypeAnnotate {
+  object TypeOrPatTypeAnnotate {
     def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
       val (ltpe, lannots) = flattenAnnotated(gtree)
       if (!ltpe.isType) return None
@@ -584,7 +576,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TypeAnnotate {
     def unapply(gtree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
       if (patterns.contains(gtree)) return None
-      SomeTypeAnnotate.unapply(gtree)
+      TypeOrPatTypeAnnotate.unapply(gtree)
     }
   }
 
@@ -648,7 +640,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object PatTypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (!patterns(tree)) return None
-      SomeTypeApply.unapply(tree).map {
+      TypeOrPatTypeApply.unapply(tree).map {
         case (ltpt, gargs) =>
           val largs = gargs.map {
             case g.Bind(typeName @ g.TypeName(name), g.EmptyTree)
@@ -664,7 +656,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object PatTypeWith {
     def unapply(tree: g.Tree): Option[(g.Tree, g.Tree)] = {
       if (!patterns.contains(tree)) return None
-      SomeTypeWith.unapply(tree)
+      TypeOrPatTypeWith.unapply(tree)
     }
   }
 
@@ -763,7 +755,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object PatTypeAnnotate {
     def unapply(tree: g.Annotated): Option[(g.Tree, List[l.Annotation])] = {
       if (!patterns.contains(tree)) return None
-      SomeTypeAnnotate.unapply(tree)
+      TypeOrPatTypeAnnotate.unapply(tree)
     }
   }
 

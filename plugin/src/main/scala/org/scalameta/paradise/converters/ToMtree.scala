@@ -566,7 +566,7 @@ trait ToMtree { self: Converter =>
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion)   = (gtree0, g.EmptyTree)
-          val undesugaredTree       = l.UnDesugar.unapply(gtree).getOrElse(gtree)
+          val undesugaredTree       = l.UndoDesugaring.unapply(gtree).getOrElse(gtree)
           val convertedTree         = converter(undesugaredTree, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree     = maybeTypecheckedMtree
