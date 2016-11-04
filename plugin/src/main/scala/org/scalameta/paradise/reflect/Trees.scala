@@ -30,10 +30,21 @@ trait Trees { self: ReflectToolkit =>
                     case g.Alternative(alts) =>
                       patterns += tree
                       alts.foreach(traverse)
+                    case g.Annotated(annot, arg) =>
+                      patterns += tree
+                      traverse(annot)
+                      traverse(arg)
+                    case g.CompoundTypeTree(templ) =>
+                      patterns += tree
+                      traverse(templ)
                     case g.Typed(ident, tpat) =>
                       patterns += ident
                       patterns += tree
+                      traverse(tpat)
                     case g.Apply(_, args) =>
+                      patterns += tree
+                      args.foreach(traverse)
+                    case g.AppliedTypeTree(tpt, args) =>
                       patterns += tree
                       args.foreach(traverse)
                     case _ =>

@@ -137,6 +137,9 @@ trait ToMtree { self: Converter =>
                 val mexpr = lexpr.toMtree[m.Term]
                 m.Term.Do(mbody, mexpr)
 
+              case l.TermPlaceholder() =>
+                m.Term.Placeholder()
+
               case l.TermNew(ltempl) =>
                 val mtempl = ltempl.toMtree[m.Template]
                 m.Term.New(mtempl)
@@ -199,7 +202,7 @@ trait ToMtree { self: Converter =>
                 m.Type.ApplyInfix(mlhs, mop, mrhs)
 
               case l.TypeFunction(lparams, lres) =>
-                val mparams = lparams.toMtrees[m.Type]
+                val mparams = lparams.toMtrees[m.Type.Arg]
                 val mres    = lres.toMtree[m.Type]
                 m.Type.Function(mparams, mres)
 
@@ -247,6 +250,10 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Pat.Var.Term(mname)
 
+              case l.PatVarType(lname) =>
+                val mname = lname.toMtree[m.Type.Name]
+                m.Pat.Var.Type(mname)
+
               case l.PatWildcard() =>
                 m.Pat.Wildcard()
 
@@ -281,19 +288,40 @@ trait ToMtree { self: Converter =>
                 val mrhs  = lrhs.toMtree[m.Pat.Type]
                 m.Pat.Typed(mlrhs, mrhs)
 
+              case l.PatArgSeqWildcard() =>
+                m.Pat.Arg.SeqWildcard()
+
+              case l.PatTypeWildcard() =>
+                m.Pat.Type.Wildcard()
+
+              case l.PatTypeAnnotate(ltpe, lannots) =>
+                val mtpe    = ltpe.toMtree[m.Pat.Type]
+                val mannots = lannots.toMtrees[m.Mod.Annot]
+                m.Pat.Type.Annotate(mtpe, mannots)
+
+              case l.PatTypeApply(ltpt, largs) =>
+                val mtpt  = ltpt.toMtree[m.Pat.Type]
+                val margs = largs.toMtrees[m.Pat.Type]
+                m.Pat.Type.Apply(mtpt, margs)
+
+              case l.PatTypeWith(llhs, lrhs) =>
+                val mlhs = llhs.toMtree[m.Pat.Type]
+                val mrhs = lrhs.toMtree[m.Pat.Type]
+                m.Pat.Type.With(mlhs, mrhs)
+
               // ============ LITERALS ============
 
               case l.Literal(lvalue) =>
                 m.Lit(lvalue)
 
               // ============ DECLS ============
-              case l.AbstractValDef(lmods, lpats, ldecltpe) =>
+              case l.DeclVal(lmods, lpats, ldecltpe) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mpats    = lpats.toMtrees[m.Pat.Var.Term]
                 val mdecltpe = ldecltpe.toMtree[m.Type]
                 m.Decl.Val(mmods, mpats, mdecltpe)
 
-              case l.AbstractVarDef(lmods, lpats, ldecltpe) =>
+              case l.DeclVar(lmods, lpats, ldecltpe) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mpats    = lpats.toMtrees[m.Pat.Var.Term]
                 val mdecltpe = ldecltpe.toMtree[m.Type]
@@ -316,14 +344,14 @@ trait ToMtree { self: Converter =>
 
               // ============ DEFNS ============
 
-              case l.ValDef(lmods, lpats, ltpt, lrhs) =>
+              case l.DefnVal(lmods, lpats, ltpt, lrhs) =>
                 val mmods = lmods.toMtrees[m.Mod]
                 val mpats = lpats.toMtrees[m.Pat]
                 val mtpt  = ltpt.toMtreeopt[m.Type]
                 val mrhs  = lrhs.toMtree[m.Term]
                 m.Defn.Val(mmods, mpats, mtpt, mrhs)
 
-              case l.VarDef(lmods, lpats, ltpt, lrhs) =>
+              case l.DefnVar(lmods, lpats, ltpt, lrhs) =>
                 val mmods = lmods.toMtrees[m.Mod]
                 val mpats = lpats.toMtrees[m.Pat]
                 val mtpt  = ltpt.toMtreeopt[m.Type]
@@ -538,7 +566,8 @@ trait ToMtree { self: Converter =>
         if (!isDuplicate) backtrace = gtree0 +: backtrace
         try {
           val (gtree, gexpansion)   = (gtree0, g.EmptyTree)
-          val convertedTree         = converter(gtree, gexpansion)
+          val undesugaredTree       = l.UndoDesugaring.unapply(gtree).getOrElse(gtree)
+          val convertedTree         = converter(undesugaredTree, gexpansion)
           val maybeTypecheckedMtree = convertedTree
           val maybeIndexedMtree     = maybeTypecheckedMtree
           if (classTag[T].runtimeClass.isAssignableFrom(maybeIndexedMtree.getClass)) {

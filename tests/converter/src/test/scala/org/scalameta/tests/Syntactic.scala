@@ -64,6 +64,8 @@ class Syntactic extends ConverterSuite {
   syntactic("new B { val a = 3 }")
   syntactic("new B { def f(x: Int): Int = x*x }")
   syntactic("new B(3) { println(5); def f(x: Int): Int = x*x }")
+  syntactic("a.foreach(_ => bar())")
+  syntactic("a.foreach(_ + _)")
   syntactic("function _")
   syntactic("throw new A(4)")
   syntactic("try { throw new A(4) } catch { case _: Throwable => 4 } finally { println(6) }")
@@ -94,6 +96,7 @@ class Syntactic extends ConverterSuite {
   // syntactic("""s"hello, $world, ${1 + 2}"""")
 
   // patterns
+  syntactic("val _ = a")
   syntactic("a match { case 5 => ; case 6 => }")
   syntactic("a match { case Some(x) => x; case None => y }")
   syntactic("a match { case Some(x) => x; case _ => y }")
@@ -103,18 +106,22 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case Some(x: Int) | Some(x: String) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | Some(x: Boolean) => x; case _ => y }")
   syntactic("a match { case Some(x: Int) | Some(x: String) | x: Boolean => x; case _ => y }")
+  syntactic("x match { case List(head, _*) => x }")
   syntactic("a match { case (x, y) => }")
   syntactic("a match { case x @ _ => }")
   syntactic("a match { case x @ (_: T) => }")
-
-  // declarations
-  syntactic("val x: Int")
-  syntactic("var x: Int")
+  syntactic("a match { case c: Class[_] => c }")
+  syntactic("a match { case c: Class[T] => c }")
+  syntactic("x match { case http.`*`(q) => q }")
+  syntactic("x match { case a: A with B => x }")
+  // TODO: https://github.com/scalameta/paradise/issues/113
+  // syntactic("val (a, b) = c")
+  // syntactic("val (c, matSink: (Int, String)) = (a, b)")
 
   // definitions
   syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
   syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
-  syntactic("var x: Int = _")
+  syntactic("class Y(x: Int) { def this() = this()(1) }")
   syntactic("type Age = Int")
   syntactic("type Age")
   syntactic("type Age >: Int <: Any")
@@ -125,6 +132,49 @@ class Syntactic extends ConverterSuite {
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
+  syntactic("def f: (=> T) => T = 2")
+
+  // val/var patterns
+  syntactic("""object a { @foo val Foo(a) = 2 }""")
+  syntactic("""object a { @foo val Foo(a, Bar(b)) = 2 }""")
+  syntactic("""object a { val Foo() = 2 }""")
+  syntactic("""object a { val a: Int }""")
+  syntactic("""object a { var a: Int }""")
+  syntactic("""x match { case Foo(a) => a }""")
+  syntactic("""{ @foo val Foo(a) = 2 }""")
+  syntactic("""{ @foo val Foo(a, Bar(b)) = 2 }""")
+  syntactic("""{ val Foo() = 2 }""")
+  syntactic("""{ val Foo(_, a) = 2 }""")
+  syntactic("""{ val Foo(a): Int = 2 }""")
+  syntactic("""{ val Foo(a: Int) = 2 }""")
+  syntactic("""{ val Foo(a: Int, b: Bar) = 2 }""")
+  syntactic("lazy val Foo() = 2")
+  syntactic("lazy val Foo(x): Int = 2")
+  syntactic("lazy val Foo(x: Int) = 2")
+  syntactic("lazy val x: Int = 2")
+  syntactic("object a { lazy val Foo(a) = 2} ")
+  syntactic("object a { private val Foo(a) = 2} ")
+  syntactic("object a { val Foo(a) = 2} ")
+  syntactic("object a { val x: Int }")
+  syntactic("object a { var x: Int }")
+  syntactic("val Foo() = 2")
+  syntactic("val Foo(x): Int = 2")
+  syntactic("val Foo(x: Int) = 2")
+  syntactic("val x: Int = 2")
+  syntactic("var x: Int = 2")
+  syntactic("var x: Int = _")
+  syntactic("{ lazy val x, y = 2 }")
+  syntactic("{ val Foo(a), y = 2 }")
+  syntactic("{ val Foo(a, b) = 2 }")
+  syntactic("{ val _, a = 2 }")
+  syntactic("{ val a, b = 2; val c = 2 }")
+  syntactic("{ val x, y = 2 }")
+  syntactic("val sched = new { var time = start } with T { def x = 2 }")
+  syntactic("type NewClient = T => { val client: Iface }")
+  //  syntactic("{ val Foo(), y = 2 }") // Can't find position of Foo(): https://github.com/scalameta/paradise/issues/116
+  //  syntactic("""{ @foo val Foo(_) = 2 }""") // annot disappears https://github.com/scalameta/paradise/issues/115
+  //  syntactic("{ @foo val Foo(a: Int, b), Foo(c, d): String = 2 }")
+  //  syntactic("{ @foo var Foo(a: Int, b), Foo(c, d): String = 2 }")
 
   // types
   syntactic("val a: A with B = ???")
@@ -184,6 +234,7 @@ class Syntactic extends ConverterSuite {
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance()]")
   syntactic("trait Foo[-T] extends Comparator[T @uncheckedVariance() @annot(4)]")
   syntactic("trait Function0[@specialized(Unit, Int, Double) T]")
+  syntactic("x match { case m: Type[Any] @unchecked => m }")
 
   // bounds
   syntactic("class f[T <% A](x: T)")
