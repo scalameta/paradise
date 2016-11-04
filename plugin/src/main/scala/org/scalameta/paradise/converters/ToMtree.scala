@@ -53,6 +53,12 @@ trait ToMtree { self: Converter =>
                 val mname = lname.toMtree[m.Term.Name]
                 m.Term.Select(mpre, mname)
 
+              case l.TermInterpolate(lprefix, lparts, largs) =>
+                val mprefix = lprefix.toMtree[m.Term.Name]
+                val mparts  = lparts.toMtrees[m.Lit]
+                val margs   = largs.toMtrees[m.Term]
+                m.Term.Interpolate(mprefix, mparts, margs)
+
               case l.TermApply(lfun, largs) =>
                 val mfun  = lfun.toMtree[m.Term]
                 val margs = largs.toMtrees[m.Term.Arg]
@@ -282,6 +288,12 @@ trait ToMtree { self: Converter =>
                 val mtargs = ltargs.toMtrees[m.Pat.Type]
                 val margs  = largs.toMtrees[m.Pat.Arg]
                 m.Pat.Extract(mref, mtargs, margs)
+
+              case l.PatInterpolate(lprefix, lparts, largs) =>
+                val mprefix = lprefix.toMtree[m.Term.Name]
+                val mparts  = lparts.toMtrees[m.Lit]
+                val margs   = largs.toMtrees[m.Pat]
+                m.Pat.Interpolate(mprefix, mparts, margs)
 
               case l.PatTyped(llhs, lrhs) =>
                 val mlrhs = llhs.toMtree[m.Pat]

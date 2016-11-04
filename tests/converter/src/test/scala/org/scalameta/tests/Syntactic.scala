@@ -73,6 +73,7 @@ class Syntactic extends ConverterSuite {
   syntactic("try f(4) catch { case _: Throwable => 4 }")
   syntactic("try f(4) finally println(6)")
   syntactic("try {} finally println(6)")
+  syntactic(""" StringContext("", "", "").bb(c, c) """)
   // TODO: https://github.com/scalameta/paradise/issues/75
   // syntactic("try foo catch bar")
   // TODO: https://github.com/scalameta/paradise/issues/74
@@ -114,6 +115,7 @@ class Syntactic extends ConverterSuite {
   syntactic("a match { case c: Class[T] => c }")
   syntactic("x match { case http.`*`(q) => q }")
   syntactic("x match { case a: A with B => x }")
+  syntactic("""x match { case q"A($a)" => a } """)
   // TODO: https://github.com/scalameta/paradise/issues/113
   // syntactic("val (a, b) = c")
   // syntactic("val (c, matSink: (Int, String)) = (a, b)")
