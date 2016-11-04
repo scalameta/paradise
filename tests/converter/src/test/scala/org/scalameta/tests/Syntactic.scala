@@ -163,8 +163,6 @@ class Syntactic extends ConverterSuite {
   syntactic("val x: Int = 2")
   syntactic("var x: Int = 2")
   syntactic("var x: Int = _")
-  syntactic("{ @foo val Foo(a: Int, b), Foo(c, d): String = 2 }")
-  syntactic("{ @foo var Foo(a: Int, b), Foo(c, d): String = 2 }")
   syntactic("{ lazy val x, y = 2 }")
   syntactic("{ val Foo(a), y = 2 }")
   syntactic("{ val Foo(a, b) = 2 }")
@@ -175,6 +173,8 @@ class Syntactic extends ConverterSuite {
   syntactic("type NewClient = T => { val client: Iface }")
   //  syntactic("{ val Foo(), y = 2 }") // Can't find position of Foo(): https://github.com/scalameta/paradise/issues/116
   //  syntactic("""{ @foo val Foo(_) = 2 }""") // annot disappears https://github.com/scalameta/paradise/issues/115
+  //  syntactic("{ @foo val Foo(a: Int, b), Foo(c, d): String = 2 }")
+  //  syntactic("{ @foo var Foo(a: Int, b), Foo(c, d): String = 2 }")
 
   // types
   syntactic("val a: A with B = ???")

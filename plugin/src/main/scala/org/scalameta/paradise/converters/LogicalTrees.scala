@@ -1544,14 +1544,19 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   // Transforms g.ValDef into l.ValOrValDef. See l.ValOrVarDef for more explanations.
   def undoValDefDesugarings(stats: Seq[g.Tree]): Seq[g.Tree] = {
-    val toCollapse             = mutable.Set.empty[g.Tree]
-    val valDefPatternPositions = mutable.Map.empty[g.Tree, Position]
-    def addPosition(valDefPattern: g.Tree, mods: g.Modifiers): Unit = {
+    val toCollapse         = mutable.Set.empty[g.Tree]
+    val valDefFingerprints = mutable.Map.empty[g.Tree, (Position, String)]
+    def addFingerprint(valDefPattern: g.Tree, mods: g.Modifiers, rhs: g.Tree): Unit = {
       mods.positions.headOption.foreach {
         case (_, pos) =>
-          valDefPatternPositions += (valDefPattern -> pos)
+          valDefFingerprints += (valDefPattern -> (pos, rhs.toString()))
       }
     }
+
+    def fingerprintsMatch(pat1: g.Tree, pat2: g.Tree): Boolean = {
+      valDefFingerprints.get(pat1).exists(valDefFingerprints.get(pat2).contains)
+    }
+
     val allValOrValDefs: Seq[g.Tree] = stats.zipWithIndex.collect {
       // case: val Foo(a, b) = rhs
       case (origin @ g.ValDef(syntheticMods, name, _, ValDesugaredPattern(pat, rhs, tpt)), i)
@@ -1561,7 +1566,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           case UnitConstant()                                  => true
           case _                                               => false
         }
-        addPosition(pat, syntheticMods)
+        addFingerprint(pat, syntheticMods, rhs)
         toCollapse ++= statsToRemove
         val mods: g.Modifiers = statsToRemove.headOption match {
           case Some(g.ValDef(mods, _, _, _)) => mods
@@ -1571,7 +1576,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       // case: val Foo(a) = rhs
       case (origin @ g.ValDef(mods, name, _, ValDesugaredPattern(pat, rhs, tpt)), i)
           if !toCollapse(origin) =>
-        addPosition(pat, mods)
+        addFingerprint(pat, mods, rhs)
         stats.drop(i + 1).headOption match {
           case Some(remove @ UnitConstant()) => toCollapse += remove
           case _                             =>
@@ -1582,7 +1587,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         val pat: g.Tree =
           if (name == nme.WILDCARD) l.ValPatWildcard
           else l.PatVarTerm(origin)
-        addPosition(pat, mods)
+        addFingerprint(pat, mods, rhs)
         l.ValOrVarDefs(origin, List(pat), Some(tpt), rhs)
       case (t, _) if !t.isEmpty && !toCollapse(t) =>
         t
@@ -1591,17 +1596,15 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     // Example: val a, b = 2 is two statements in `allValOrValDefs` but only one statement
     // in collapsedValOrVarDefs.
     val collapsedValOrVarDefs = allValOrValDefs.zipWithIndex.collect {
-      case (v @ ValOrVarDefs(pat1), i) if !toCollapse(v) =>
+      case (v1 @ ValOrVarDefs(pat1), i) if !toCollapse(v1) =>
         val toMerge = allValOrValDefs.drop(i + 1).takeWhile {
-          case ValOrVarDefs(pat2)
-              if valDefPatternPositions.get(pat1) == valDefPatternPositions.get(pat2) =>
-            true
-          case l.UnitConstant() => true
-          case _                => false
+          case ValOrVarDefs(pat2) if fingerprintsMatch(pat1, pat2) => true
+          case l.UnitConstant()                                    => true
+          case _                                                   => false
         }
         toCollapse ++= toMerge
         val newPatterns = toMerge.collect { case v2: l.ValOrVarDefs => v2.pats }.flatten
-        v match {
+        v1 match {
           case t: l.DefnVal => t.copy(pats = t.pats ++ newPatterns)
           case t: l.DeclVal => t.copy(pats = t.pats ++ newPatterns)
           case t: l.DefnVar => t.copy(pats = t.pats ++ newPatterns)
