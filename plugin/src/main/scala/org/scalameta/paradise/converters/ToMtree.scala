@@ -379,6 +379,15 @@ trait ToMtree { self: Converter =>
                 val mrhs     = lrhs.toMtree[m.Term]
                 m.Defn.Def(mmods, mname, mtparams, mparamss, mtpt, mrhs)
 
+              case l.MacroDef(lmods, lname, ltparams, lparamss, ltpt, lrhs) =>
+                val mmods    = lmods.toMtrees[m.Mod]
+                val mname    = lname.toMtree[m.Term.Name]
+                val mtparams = ltparams.toMtrees[m.Type.Param]
+                val mparamss = lparamss.toMtreess[m.Term.Param]
+                val mtpt     = ltpt.toMtreeopt[m.Type]
+                val mrhs     = lrhs.toMtree[m.Term]
+                m.Defn.Macro(mmods, mname, mtparams, mparamss, mtpt, mrhs)
+
               case l.TypeDef(lmods, lname, ltparams, lbody) =>
                 val mmods    = lmods.toMtrees[m.Mod]
                 val mname    = lname.toMtree[m.Type.Name]
