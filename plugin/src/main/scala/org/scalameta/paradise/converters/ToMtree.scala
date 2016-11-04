@@ -614,8 +614,6 @@ trait ToMtree { self: Converter =>
             case g.PackageDef(_, _) if classTag[T].runtimeClass == classOf[m.Source] =>
               val mstats = List(gtree.toMtree[m.Pkg])
               m.Source(mstats)
-            case t: g.ValDef =>
-              l.undoValDefDesugarings(List(t)).head.toMtree[T]
             case l.PackageObjectDef(_, _, _) =>
               gtree.toMtree[m.Pkg.Object]
             case g.PackageDef(_, _) =>

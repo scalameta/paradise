@@ -171,6 +171,8 @@ class Syntactic extends ConverterSuite {
   syntactic("{ val _, a = 2 }")
   syntactic("{ val a, b = 2; val c = 2 }")
   syntactic("{ val x, y = 2 }")
+  syntactic("val sched = new { var time = start } with T { def x = 2 }")
+  syntactic("type NewClient = T => { val client: Iface }")
   //  syntactic("{ val Foo(), y = 2 }") // Can't find position of Foo(): https://github.com/scalameta/paradise/issues/116
   //  syntactic("""{ @foo val Foo(_) = 2 }""") // annot disappears https://github.com/scalameta/paradise/issues/115
 

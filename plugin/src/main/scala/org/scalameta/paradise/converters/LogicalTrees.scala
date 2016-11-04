@@ -127,6 +127,8 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
               x.mods.hasFlag(SYNTHETIC) &&
                 x.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)) =>
           Some(body)
+        case t: g.ValDef =>
+          Some(l.undoValDefDesugarings(List(t)).head)
         case _ =>
           None
       }
