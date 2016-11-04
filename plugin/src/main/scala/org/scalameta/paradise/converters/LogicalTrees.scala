@@ -109,6 +109,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  // Ideally, this logic should move closer where it's used, in the same fashion
+  // as other desugaring are handled by the converter. However, we make an exception
+  // for cases when the destination meta tree type is unknown. For example, in
+  //   before: foo((x$1, x$2) => x$1 + x$2)
+  //   after:  foo(_ + _)
+  // the argument to `foo` is undesugared from a g.Function to an m.Term.ApplyInfix.
+  // the argument could have been any subtype of m.Term, which are a few dozen cases,
+  // so we handle the case once here for all subtypes of m.Term.
   object UndoDesugaring {
     def unapply(tree: g.Tree): Option[g.Tree] = {
       tree match {
@@ -628,11 +636,9 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   case class PatVarType(name: l.TypeName) extends Tree
 
-  // NOTE. for "val _ = 2", the wildcard the wildcard is a TreeName,
-  // which needs to stored in some Tree that communicates that it's a pattern.
-  // We can't host the wildcard termname in a synthetic g.Ident because the
-  // synthetic g.Ident would not be part of `patterns`. Instead, we introduce
-  // ValPatWildcard.
+  // NOTE. in "val _ = 2", the wildcard is actually an identifier `_`.
+  // However, l.TermName requires the name to be non-wildcard so we special case
+  // this (very rare) pattern in it's own case object.
   case object ValPatWildcard extends Tree
 
   object PatWildcard {
@@ -783,7 +789,52 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   // ============ DECLS ============
 
-  // See DeclVal and DeclVar above.
+  // We introduce 4 logical trees {Defn,Decl}{Val,Var} to map from g.ValDef.
+  // g.ValDef has a single TermName on the left-hand side while the meta
+  // trees support a list of patterns on the left-hand side. Example,
+  // Before:
+  //   @foo val Foo(a, b), Foo(c, d) = 2
+  // Desugared:
+  //  {
+  //    <synthetic> <artifact> private[this] val x$1 = 2: @scala.unchecked match {
+  //      case Foo((a @ _), (b @ _)) => scala.Tuple2(a, b)
+  //    };
+  //    @new foo() val a = x$1._1;
+  //    @new foo() val b = x$1._2;
+  //    <synthetic> <artifact> private[this] val x$2 = 2: @scala.unchecked match {
+  //      case Foo((c @ _), (d @ _)) => scala.Tuple2(c, d)
+  //    };
+  //    @new foo() val c = x$2._1;
+  //    @new foo() val d = x$2._2;
+  //    ()
+  //  }
+  sealed abstract class ValOrVarDefs(val pats: List[g.Tree]) extends Tree
+
+  object ValOrVarDefs {
+    // the pattern list is non-empty
+    def unapply(tree: ValOrVarDefs): Option[g.Tree] = Some(tree.pats.head)
+
+    def apply(tree: g.ValDef, pat: List[g.Tree], tpt: Option[Tree], rhs: g.Tree): l.ValOrVarDefs = {
+      val ltpt  = tpt.filterNot(_.isEmpty)
+      val lmods = l.Modifiers(tree)
+      tree match {
+        case g.ValDef(mods, _, _, g.EmptyTree) if mods.hasAllFlags(DEFERRED | MUTABLE) =>
+          l.DeclVar(lmods, pat, ltpt.get)
+        case g.ValDef(mods, _, _, _) if mods.hasFlag(MUTABLE) =>
+          val lrhs = if (rhs.isEmpty && mods.hasFlag(DEFAULTINIT)) None else Some(rhs)
+          l.DefnVar(lmods, pat, ltpt, lrhs)
+        case g.ValDef(mods, _, _, g.EmptyTree) =>
+          l.DeclVal(lmods, pat, ltpt.get)
+        case g.ValDef(_, _, _, _) =>
+          l.DefnVal(lmods, pat, ltpt, rhs)
+      }
+    }
+  }
+
+  case class DeclVal(mods: List[l.Modifier], override val pats: List[g.Tree], tpt: g.Tree)
+      extends ValOrVarDefs(pats)
+  case class DeclVar(mods: List[l.Modifier], override val pats: List[g.Tree], tpt: g.Tree)
+      extends ValOrVarDefs(pats)
 
   object AbstractDefDef {
     def unapply(tree: g.DefDef): Option[(
@@ -824,63 +875,17 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   // ============ DEFNS ============
 
-  // We introduce 4 logical trees {Defn,Decl}{Val,Var} to map from g.ValDef.
-  // g.ValDef has a single TermName on the left-hand side while the meta
-  // trees support a list of patterns on the left-hand side. Example,
-  // Before:
-  //   @foo val Foo(a, b), Foo(c, d) = 2
-  // Desugared:
-  //  {
-  //    <synthetic> <artifact> private[this] val x$1 = 2: @scala.unchecked match {
-  //      case Foo((a @ _), (b @ _)) => scala.Tuple2(a, b)
-  //    };
-  //    @new foo() val a = x$1._1;
-  //    @new foo() val b = x$1._2;
-  //    <synthetic> <artifact> private[this] val x$2 = 2: @scala.unchecked match {
-  //      case Foo((c @ _), (d @ _)) => scala.Tuple2(c, d)
-  //    };
-  //    @new foo() val c = x$2._1;
-  //    @new foo() val d = x$2._2;
-  //    ()
-  //  }
-  sealed abstract class ValOrValDef(val pat: List[g.Tree]) extends Tree
-
-  object ValOrValDef {
-
-    // the pattern list is non-empty
-    def unapply(tree: ValOrValDef): Option[g.Tree] = Some(tree.pat.head)
-
-    def apply(tree: g.ValDef, pat: List[g.Tree], tpt: Option[Tree], rhs: g.Tree): l.ValOrValDef = {
-      val ltpt  = tpt.filterNot(_.isEmpty)
-      val lmods = l.Modifiers(tree)
-      tree match {
-        case g.ValDef(mods, _, _, g.EmptyTree) if mods.hasAllFlags(DEFERRED | MUTABLE) =>
-          l.DeclVar(lmods, pat, ltpt.get)
-        case g.ValDef(mods, _, _, _) if mods.hasFlag(MUTABLE) =>
-          val lrhs = if (rhs.isEmpty && mods.hasFlag(DEFAULTINIT)) None else Some(rhs)
-          l.DefnVar(lmods, pat, ltpt, lrhs)
-        case g.ValDef(mods, _, _, g.EmptyTree) =>
-          l.DeclVal(lmods, pat, ltpt.get)
-        case g.ValDef(_, _, _, _) =>
-          l.DefnVal(lmods, pat, ltpt, rhs)
-      }
-    }
-  }
-
   case class DefnVal(mods: List[l.Modifier],
-                     override val pat: List[g.Tree],
+                     override val pats: List[g.Tree],
                      tpt: Option[g.Tree],
                      rhs: g.Tree)
-      extends ValOrValDef(pat)
+      extends ValOrVarDefs(pats)
+
   case class DefnVar(mods: List[l.Modifier],
-                     override val pat: List[g.Tree],
+                     override val pats: List[g.Tree],
                      tpt: Option[g.Tree],
                      rhs: Option[g.Tree])
-      extends ValOrValDef(pat)
-  case class DeclVal(mods: List[l.Modifier], override val pat: List[g.Tree], tpt: g.Tree)
-      extends ValOrValDef(pat)
-  case class DeclVar(mods: List[l.Modifier], override val pat: List[g.Tree], tpt: g.Tree)
-      extends ValOrValDef(pat)
+      extends ValOrVarDefs(pats)
 
   object DefDef {
     def unapply(tree: g.DefDef): Option[(
@@ -1560,7 +1565,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           case Some(g.ValDef(mods, _, _, _)) => mods
           case _                             => g.Modifiers()
         }
-        l.ValOrValDef(origin.copy(mods = mods | syntheticMods.flags), List(pat), tpt, rhs)
+        l.ValOrVarDefs(origin.copy(mods = mods | syntheticMods.flags), List(pat), tpt, rhs)
       // case: val Foo(a) = rhs
       case (origin @ g.ValDef(mods, name, _, ValDesugaredPattern(pat, rhs, tpt)), i)
           if !toCollapse(origin) =>
@@ -1569,14 +1574,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
           case Some(remove @ UnitConstant()) => toCollapse += remove
           case _                             =>
         }
-        l.ValOrValDef(origin, List(pat), tpt, rhs)
+        l.ValOrVarDefs(origin, List(pat), tpt, rhs)
       // case: val a = rhs
       case (origin @ g.ValDef(mods, name, tpt, rhs), _) if !toCollapse(origin) =>
         val pat: g.Tree =
           if (name == nme.WILDCARD) l.ValPatWildcard
           else l.PatVarTerm(origin)
         addPosition(pat, mods)
-        l.ValOrValDef(origin, List(pat), Some(tpt), rhs)
+        l.ValOrVarDefs(origin, List(pat), Some(tpt), rhs)
       case (t, _) if !t.isEmpty && !toCollapse(t) =>
         t
     }
@@ -1584,21 +1589,21 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     // Example: val a, b = 2 is two statements in `allValOrValDefs` but only one statement
     // in collapsedValOrVarDefs.
     val collapsedValOrVarDefs = allValOrValDefs.zipWithIndex.collect {
-      case (v @ ValOrValDef(pat1), i) if !toCollapse(v) =>
+      case (v @ ValOrVarDefs(pat1), i) if !toCollapse(v) =>
         val toMerge = allValOrValDefs.drop(i + 1).takeWhile {
-          case ValOrValDef(pat2)
+          case ValOrVarDefs(pat2)
               if valDefPatternPositions.get(pat1) == valDefPatternPositions.get(pat2) =>
             true
           case l.UnitConstant() => true
           case _                => false
         }
         toCollapse ++= toMerge
-        val newPatterns = toMerge.collect { case v2: l.ValOrValDef => v2.pat }.flatten
+        val newPatterns = toMerge.collect { case v2: l.ValOrVarDefs => v2.pats }.flatten
         v match {
-          case t: l.DefnVal => t.copy(pat = t.pat ++ newPatterns)
-          case t: l.DeclVal => t.copy(pat = t.pat ++ newPatterns)
-          case t: l.DefnVar => t.copy(pat = t.pat ++ newPatterns)
-          case t: l.DeclVar => t.copy(pat = t.pat ++ newPatterns)
+          case t: l.DefnVal => t.copy(pats = t.pats ++ newPatterns)
+          case t: l.DeclVal => t.copy(pats = t.pats ++ newPatterns)
+          case t: l.DefnVar => t.copy(pats = t.pats ++ newPatterns)
+          case t: l.DeclVar => t.copy(pats = t.pats ++ newPatterns)
         }
       case (t, _) if !toCollapse(t) => t
     }
