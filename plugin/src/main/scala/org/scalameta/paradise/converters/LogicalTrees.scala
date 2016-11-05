@@ -924,7 +924,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
                      rhs: Option[g.Tree])
       extends ValOrVarDefs(pats)
 
-  object DefDef {
+  object DefOrMacroDef {
     def unapply(tree: g.DefDef): Option[(
         List[l.Modifier],
         l.TermName,
@@ -947,16 +947,31 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object DefDef {
+    def unapply(tree: g.DefDef): Option[(
+        List[l.Modifier],
+        l.TermName,
+        List[l.TypeParamDef],
+        List[List[l.TermParamDef]],
+        Option[g.Tree],
+        g.Tree
+    )] = {
+      if (tree.mods.hasFlag(MACRO)) return None
+      DefOrMacroDef.unapply(tree)
+    }
+  }
+
   object MacroDef {
     def unapply(tree: g.DefDef): Option[(
         List[l.Modifier],
         l.TermName,
         List[l.TypeParamDef],
         List[List[l.TermParamDef]],
-        g.Tree,
+        Option[g.Tree],
         g.Tree
     )] = {
-      ???
+      if (!tree.mods.hasFlag(MACRO)) return None
+      l.DefOrMacroDef.unapply(tree)
     }
   }
 

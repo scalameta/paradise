@@ -135,6 +135,7 @@ class Syntactic extends ConverterSuite {
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M = Int }")
   syntactic("type Container[T] <: List[T] with Set[T] { def isEmpty: Boolean; type M <: Int }")
   syntactic("def f: (=> T) => T = 2")
+  syntactic("def foo = macro x")
 
   // val/var patterns
   syntactic("""object a { @foo val Foo(a) = 2 }""")
