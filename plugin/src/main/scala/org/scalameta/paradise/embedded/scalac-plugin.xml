@@ -1,4 +1,4 @@
 <plugin>
-  <name>meta-paradise-plugin</name>
+  <name>macro-paradise-plugin</name>
   <classname>org.scalameta.paradise.Plugin</classname>
 </plugin>
