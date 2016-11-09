@@ -155,12 +155,16 @@ trait ConverterSuite extends FunSuiteLike {
     tree
   }
 
+  var packageCount = 0 // hack to isolate each test case in its own package namespace.
   private def getTypedScalacTree(code: String): g.Tree = {
     import g._
-    val unit = new CompilationUnit(newSourceFile(code, "<ReflectToMeta>"))
+    packageCount += 1
+    val packageName = s"p$packageCount"
+    val packagedCode = s"package $packageName { $code }"
+    val unit         = new CompilationUnit(newSourceFile(packagedCode, "<ReflectToMeta>"))
 
-    val run = g.currentRun
-    val phases = List(run.parserPhase, run.namerPhase, run.typerPhase)
+    val run      = g.currentRun
+    val phases   = List(run.parserPhase, run.namerPhase, run.typerPhase)
     val reporter = new StoreReporter()
     g.reporter = reporter
 
@@ -172,7 +176,10 @@ trait ConverterSuite extends FunSuiteLike {
       errors.foreach(error => fail(s"scalac ${phase.name} error: ${error.msg} at ${error.pos}"))
     })
 
-    unit.body
+    unit.body match {
+      case g.PackageDef(g.Ident(g.TermName(`packageName`)), stat :: Nil) => stat
+      case body                                                          => body
+    }
   }
 
   private def getParsedMetaTree(code: String): m.Tree = {

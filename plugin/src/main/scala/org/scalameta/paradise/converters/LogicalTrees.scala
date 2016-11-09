@@ -939,8 +939,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
               !nme.isConstructorName(tree.name) =>
           val ltparams = mkTparams(tparams, paramss)
           val lparamss = mkVparamss(paramss)
-          val ltpt     = if (tpt.nonEmpty) Some(tpt) else None
-          Some((l.Modifiers(tree), l.TermName(tree), ltparams, lparamss, ltpt, rhs))
+          val lname    = l.TermName(tree)
+          val ltpt = tpt match {
+            case l.TypeTree(tp)     => lname.setType(tp); None
+            case tpt if tpt.isEmpty => None
+            case tpt                => Some(tpt)
+          }
+          Some((l.Modifiers(tree), lname, ltparams, lparamss, ltpt, rhs))
         case _ =>
           None
       }
@@ -1115,8 +1120,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       val g.Block(binit, UnitConstant())       = body
       val lstats = binit.dropWhile {
         case g.pendingSuperCall => true
-        case _: DefnVal         => true
-        case _                  => false
+        case g.Apply(g.Select(
+                       g.Super(g.This(g.TypeName(_)), typeNames.EMPTY),
+                       termNames.CONSTRUCTOR
+                     ),
+                     Nil) =>
+          true
+        case _: ValOrVarDefs => true
+        case _               => false
       }
       Some((l.Modifiers(tree), lname, lparamss, lstats))
     }
