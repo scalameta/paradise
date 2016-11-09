@@ -159,7 +159,7 @@ trait ConverterSuite extends FunSuiteLike {
   private def getTypedScalacTree(code: String): g.Tree = {
     import g._
     packageCount += 1
-    val packageName = s"p$packageCount"
+    val packageName  = s"p$packageCount"
     val packagedCode = s"package $packageName { $code }"
     val unit         = new CompilationUnit(newSourceFile(packagedCode, "<ReflectToMeta>"))
 
