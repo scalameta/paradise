@@ -30,6 +30,11 @@ trait ConverterSuite extends FunSuiteLike {
     g
   }
 
+  private object converter extends Converter {
+    lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
+    def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
+  }
+
   case class MismatchException(details: String) extends Exception
   private def checkMismatchesModuloDesugarings(parsed: m.Tree, converted: m.Tree): Unit = {
     import scala.meta._
@@ -117,12 +122,17 @@ trait ConverterSuite extends FunSuiteLike {
 
   private def getParsedScalacTree(code: String): g.Tree = {
     import g._
+
+    val run = g.currentRun
+    g.phase = run.parserPhase
+    g.globalPhase = run.parserPhase
     val reporter = new StoreReporter()
     g.reporter = reporter
+
     val tree = {
       if (parseAsCompilationUnit) {
-        val cu     = new g.CompilationUnit(g.newSourceFile(code))
-        val parser = new g.syntaxAnalyzer.UnitParser(cu, Nil)
+        val cu     = new CompilationUnit(newSourceFile(code))
+        val parser = new syntaxAnalyzer.UnitParser(cu, Nil)
         parser.parse()
       } else {
         // NOTE: `parseStatsOrPackages` fails to parse abstract type defs without bounds,
@@ -139,9 +149,30 @@ trait ConverterSuite extends FunSuiteLike {
         }
       }
     }
+
     val errors = reporter.infos.filter(_.severity == g.reporter.ERROR)
     errors.foreach(error => fail(s"scalac parse error: ${error.msg} at ${error.pos}"))
     tree
+  }
+
+  private def getTypedScalacTree(code: String): g.Tree = {
+    import g._
+    val unit = new CompilationUnit(newSourceFile(code, "<ReflectToMeta>"))
+
+    val run = g.currentRun
+    val phases = List(run.parserPhase, run.namerPhase, run.typerPhase)
+    val reporter = new StoreReporter()
+    g.reporter = reporter
+
+    phases.foreach(phase => {
+      g.phase = phase
+      g.globalPhase = phase
+      phase.asInstanceOf[GlobalPhase].apply(unit)
+      val errors = reporter.infos.filter(_.severity == reporter.ERROR)
+      errors.foreach(error => fail(s"scalac ${phase.name} error: ${error.msg} at ${error.pos}"))
+    })
+
+    unit.body
   }
 
   private def getParsedMetaTree(code: String): m.Tree = {
@@ -153,17 +184,17 @@ trait ConverterSuite extends FunSuiteLike {
     }
   }
 
-  def getConvertedMetaTree(code: String): m.Tree = {
-    object converter extends Converter {
-      lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-      def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
-    }
+  def getUnattributedConvertedMetaTree(code: String): m.Tree = {
     converter(getParsedScalacTree(code))
   }
 
-  def syntactic(code: String): Unit = {
+  def getAttributedConvertedMetaTree(code: String): m.Tree = {
+    converter(getTypedScalacTree(code))
+  }
+
+  private def test(code: String, converter: String => m.Tree): Unit = {
     test(code.trim) {
-      val convertedMetaTree = getConvertedMetaTree(code)
+      val convertedMetaTree = converter(code)
       val parsedMetaTree    = getParsedMetaTree(code)
       try {
         checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree)
@@ -179,5 +210,22 @@ trait ConverterSuite extends FunSuiteLike {
           fail(s"$header\n$fullDetails")
       }
     }
+  }
+
+  // TODO: Merge syntactic and semantic into one method in the future.
+  // Our current goal is to achieve perfect conversion,
+  // i.e. to have the result of syntactic conversion
+  // structurally equal to the result of semantic conversion.
+
+  def syntactic(code: String): Unit = {
+    test(code, getUnattributedConvertedMetaTree _)
+  }
+
+  // TODO: Allow stats as inputs to `semantic`.
+  // If we can't parse code as a compilation unit,
+  // we should be able to just wrap it in a dummy class and convert that.
+
+  def semantic(code: String): Unit = {
+    test(code, getAttributedConvertedMetaTree _)
   }
 }
