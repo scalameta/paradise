@@ -254,7 +254,11 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
 
   object TermApplyType {
     def unapply(tree: g.TypeApply): Option[(g.Tree, List[g.Tree])] = {
-      Some((tree.fun, tree.args))
+      val largs = tree.args.map {
+        case typTree: g.TypeTree if typTree.original == null => l.TypeName(typTree.toString())
+        case x                                               => x
+      }
+      Some((tree.fun, largs))
     }
   }
 
@@ -448,8 +452,12 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object TermParamDef {
     def apply(tree: g.ValDef): l.TermParamDef = {
       val g.ValDef(_, _, tpt, default) = tree
-      val ltpt                         = if (tpt.nonEmpty) Some(tpt) else None
-      val ldefault                     = if (default.nonEmpty) Some(default) else None
+      val ltpt = tpt match {
+        case _ if tpt.isEmpty => None
+        case tpt: g.TypeTree  => Some(tpt.original)
+        case _                => Some(tpt)
+      }
+      val ldefault = if (default.nonEmpty) Some(default) else None
       val lname =
         if (tree.name.startsWith(nme.FRESH_TERM_NAME_PREFIX) ||
             tree.name == nme.WILDCARD) l.AnonymousName()
