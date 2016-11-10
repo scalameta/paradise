@@ -12,7 +12,7 @@ class ManualSuite extends ConverterSuite {
   }
   def check(code: String): Unit = {
     test(code.lines.filter(_.nonEmpty).take(1).mkString) {
-      getConvertedMetaTree(code)
+      getUnattributedConvertedMetaTree(code)
     }
   }
   // For example github raw url

@@ -6,6 +6,8 @@ import scala.collection.{immutable, mutable}
 import scala.tools.nsc.Global
 import scala.reflect.internal.{Flags, HasFlags}
 import scala.reflect.internal.Flags._
+import scala.util.matching.Regex
+
 import org.scalameta.invariants._
 import org.scalameta.unreachable
 import org.scalameta.adt._
@@ -852,7 +854,15 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     def unapply(tree: ValOrVarDefs): Option[g.Tree] = Some(tree.pats.head)
 
     def apply(tree: g.ValDef, pat: List[g.Tree], tpt: Option[Tree], rhs: g.Tree): l.ValOrVarDefs = {
-      val ltpt  = tpt.filterNot(_.isEmpty)
+      val ltpt: Option[Tree] = tpt match {
+        case Some(tpt @ g.TypeTree()) =>
+          if (!tpt.isEmpty) pat.foreach(_.setType(tpt.tpe))
+          None
+        case None =>
+          None
+        case Some(tp) =>
+          Some(tp)
+      }
       val lmods = l.Modifiers(tree)
       tree match {
         case g.ValDef(mods, _, _, g.EmptyTree) if mods.hasAllFlags(DEFERRED | MUTABLE) =>
@@ -939,8 +949,13 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
               !nme.isConstructorName(tree.name) =>
           val ltparams = mkTparams(tparams, paramss)
           val lparamss = mkVparamss(paramss)
-          val ltpt     = if (tpt.nonEmpty) Some(tpt) else None
-          Some((l.Modifiers(tree), l.TermName(tree), ltparams, lparamss, ltpt, rhs))
+          val lname    = l.TermName(tree)
+          val ltpt = tpt match {
+            case l.TypeTree(tp)     => lname.setType(tp); None
+            case tpt if tpt.isEmpty => None
+            case tpt                => Some(tpt)
+          }
+          Some((l.Modifiers(tree), lname, ltparams, lparamss, ltpt, rhs))
         case _ =>
           None
       }
@@ -1115,8 +1130,14 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
       val g.Block(binit, UnitConstant())       = body
       val lstats = binit.dropWhile {
         case g.pendingSuperCall => true
-        case _: DefnVal         => true
-        case _                  => false
+        case g.Apply(g.Select(
+                       g.Super(g.This(g.TypeName(_)), typeNames.EMPTY),
+                       termNames.CONSTRUCTOR
+                     ),
+                     Nil) =>
+          true
+        case _: ValOrVarDefs => true
+        case _               => false
       }
       Some((l.Modifiers(tree), lname, lparamss, lstats))
     }
@@ -1592,6 +1613,32 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     undoValDefDesugarings(stats).toList
   }
 
+  object PrivateMod {
+    def unapply(mods: List[l.Modifier]): Option[l.Modifier] = mods.find {
+      case l.Private(_) => true
+      case _            => false
+    }
+  }
+
+  // Returns true if defdef is an accessor def for a val/var. Example: <accessor> def x = C.this.`x `
+  def isSyntheticAccessorDef(name: String, defdef: g.DefDef): Boolean = {
+    val withSpace = s"$name "
+    defdef match {
+      case g.DefDef(mods,
+                    g.TermName(`name`),
+                    _,
+                    _,
+                    _,
+                    g.Select(g.This(g.TypeName(_)), g.TermName(`withSpace`)))
+          if mods.hasFlag(ACCESSOR) =>
+        true
+      case _ => false
+    }
+  }
+
+  // Used for "val x" that scalac desugars into val "x "; def x = this."x " after typer
+  val NameWithSpace: Regex = "(.*) ".r
+
   // Transforms g.ValDef into l.ValOrValDef. See l.ValOrVarDef for more explanations.
   def undoValDefDesugarings(stats: Seq[g.Tree]): Seq[g.Tree] = {
     val toCollapse         = mutable.Set.empty[g.Tree]
@@ -1646,6 +1693,39 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     // Example: val a, b = 2 is two statements in `allValOrValDefs` but only one statement
     // in collapsedValOrVarDefs.
     val collapsedValOrVarDefs = allValOrValDefs.zipWithIndex.collect {
+      // Remove synthetic getter for private[this] val
+      case (v @ DefnVal(PrivateMod(privThis),
+                        List(l.PatVarTerm(l.TermName(NameWithSpace(name)))),
+                        _,
+                        _),
+            i) if !toCollapse(v) =>
+        allValOrValDefs.drop(i + 1).headOption.foreach {
+          case toRemove: g.DefDef if isSyntheticAccessorDef(name, toRemove) =>
+            toCollapse += toRemove
+          case _ =>
+        }
+        val newMods = v.mods.filterNot(_ == privThis)
+        val newPats = List(l.PatVarTerm(l.TermName(name)))
+        v.copy(mods = newMods, pats = newPats)
+      // Remove synthetic getter + setter for private[this] var
+      case (v @ DefnVar(PrivateMod(privThis),
+                        List(l.PatVarTerm(l.TermName(NameWithSpace(name)))),
+                        _,
+                        _),
+            i) if !toCollapse(v) =>
+        val setterName = name + "_$eq"
+        allValOrValDefs.slice(i + 1, i + 3).foreach {
+          // <accessor> def x_=(x$1: T) = x = x$1
+          case toRemove @ g.DefDef(_, g.TermName(`setterName`), _, _, _, _)
+              if toRemove.mods.hasFlag(ACCESSOR) =>
+            toCollapse += toRemove
+          case toRemove: g.DefDef if isSyntheticAccessorDef(name, toRemove) =>
+            toCollapse += toRemove
+          case _ =>
+        }
+        val newMods = v.mods.filterNot(_ == privThis)
+        val newPats = List(l.PatVarTerm(l.TermName(name)))
+        v.copy(mods = newMods, pats = newPats)
       case (v1 @ ValOrVarDefs(pat1), i) if !toCollapse(v1) =>
         val toMerge = allValOrValDefs.drop(i + 1).takeWhile {
           case ValOrVarDefs(pat2) if fingerprintsMatch(pat1, pat2) => true
