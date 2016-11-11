@@ -36,7 +36,9 @@ trait ConverterSuite extends FunSuiteLike {
   }
 
   case class MismatchException(details: String) extends Exception
-  private def checkMismatchesModuloDesugarings(parsed: m.Tree, converted: m.Tree): Unit = {
+  private def checkMismatchesModuloDesugarings(parsed: m.Tree,
+                                               converted: m.Tree,
+                                               isSemantic: Boolean): Unit = {
     import scala.meta._
     def loop(x: Any, y: Any): Boolean = {
       val ok = (x, y) match {
@@ -95,6 +97,8 @@ trait ConverterSuite extends FunSuiteLike {
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
                 case (importee"$xfrom => $xto", importee"$yfrom") =>
                   loop(xfrom, yfrom) && xfrom.value == xto.value
+                // plain names are fully qualified after typer.
+                case (name1: Name, notName) if isSemantic && !notName.is[Name] => true
                 // TODO: Account for `import x, y` being desugared to `import x; import y`.
                 // This is not an easy fix, because we need to process both blocks and templates in a non-trivial way.
                 // I'm leaving this for future work though, because I think this is gonna be a pretty rare occurrence in tests.
@@ -114,8 +118,13 @@ trait ConverterSuite extends FunSuiteLike {
         case _ =>
           x == y
       }
-      if (!ok) throw MismatchException(s"$x != $y")
-      else true
+      if (!ok) {
+        val structure = (x, y) match {
+          case (t1: Tree, t2: Tree) => s". Diff:\n${t1.structure}\n${t2.structure}\n"
+          case _                    => ""
+        }
+        throw MismatchException(s"$x != $y$structure")
+      } else true
     }
     loop(parsed, converted)
   }
@@ -199,12 +208,12 @@ trait ConverterSuite extends FunSuiteLike {
     converter(getTypedScalacTree(code))
   }
 
-  private def test(code: String, converter: String => m.Tree): Unit = {
+  private def test(code: String, converter: String => m.Tree, isSemantic: Boolean): Unit = {
     test(code.trim) {
       val convertedMetaTree = converter(code)
       val parsedMetaTree    = getParsedMetaTree(code)
       try {
-        checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree)
+        checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree, isSemantic)
       } catch {
         case MismatchException(details) =>
           val header = s"scala -> meta converter error\n$details"
@@ -225,7 +234,7 @@ trait ConverterSuite extends FunSuiteLike {
   // structurally equal to the result of semantic conversion.
 
   def syntactic(code: String): Unit = {
-    test(code, getUnattributedConvertedMetaTree _)
+    test(code, getUnattributedConvertedMetaTree _, isSemantic = false)
   }
 
   // TODO: Allow stats as inputs to `semantic`.
@@ -233,6 +242,6 @@ trait ConverterSuite extends FunSuiteLike {
   // we should be able to just wrap it in a dummy class and convert that.
 
   def semantic(code: String): Unit = {
-    test(code, getAttributedConvertedMetaTree _)
+    test(code, getAttributedConvertedMetaTree _, isSemantic = true)
   }
 }
