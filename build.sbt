@@ -252,7 +252,7 @@ def parsePullRequestFromCommitMessage: Option[String] = {
   } yield pr
 }
 
-/** Replaces -SNAPSHOT with latest pull request number, if it exists.j */
+/** Replaces -SNAPSHOT with latest pull request number, if it exists. */
 def latestPullRequestVersion(): Option[String] = {
   for {
     _ <- sys.env.get("BINTRAY_API_KEY")
