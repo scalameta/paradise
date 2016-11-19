@@ -179,6 +179,11 @@ class Syntactic extends ConverterSuite {
   //  syntactic("{ @foo val Foo(a: Int, b), Foo(c, d): String = 2 }")
   //  syntactic("{ @foo var Foo(a: Int, b), Foo(c, d): String = 2 }")
 
+  // ctors
+  syntactic("new (Foo => Bar)")
+  syntactic("new (Foo.Bar)")
+  syntactic("new (Foo#Bar)")
+
   // types
   syntactic("val a: A with B = ???")
   syntactic("val a: A { def x: Int } = ???")
