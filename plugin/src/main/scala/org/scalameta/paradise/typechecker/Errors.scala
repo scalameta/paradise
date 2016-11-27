@@ -78,6 +78,9 @@ trait Errors { self: AnalyzerPlugins =>
         "another possibility is that you try to use macro annotation in the same compilation run that defines it)"
     }
 
+    def MacroAnnotationTargMismatch(ann: Symbol, expected: List[Symbol], actual: List[Tree]) =
+      s"wrong number of type arguments for ${ann.name.decodedName}, should be ${expected.length}"
+
     def MacroAnnotationOnlyDefinitionError(ann: Tree) =
       issueNormalTypeError(ann, "macro annotations can only be put on definitions")
 
