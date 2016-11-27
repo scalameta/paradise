@@ -1130,9 +1130,43 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   object PrimaryCtorDef {
     def apply(tree: g.ClassDef): l.PrimaryCtorDef = {
       val CtorDef(mods, name, paramss, stats) = tree.primaryCtor
+      // NOTE. scala.reflect desugars `class X(x: Int)(val y: Int)(var x: String)` into
+      // class X extends scala.AnyRef {
+      // <paramaccessor> private[this] val x: Int = _;
+      // <paramaccessor> val y: Int = _;
+      // <paramaccessor> var z: String = _;
+      //   def <init>(x: Int)(y: Int)(z: String) = {
+      //     super.<init>();
+      //     ()
+      //   }
+      // }
+      // The curried structure of the primary constructor is extracted from the <init>
+      // constructor, but the parameters to <init> are missing `val`/`var` modifiers.
+      // paramAccessorMods extracts the `val`/`var` modifiers from the
+      // <paramaccessor> statements inside the class body.
+      val paramAccessorMods: Map[String, List[l.Modifier]] = tree.impl.body.collect {
+        case t @ g.ValDef(gmods, g.TermName(gname), _, _) if gmods.hasFlag(PARAMACCESSOR) =>
+          // gmods.positions is non-empty if the user explicitly typed redundant
+          // modifiers such as `private[this]`.
+          val noExplicitModifiers: Boolean = gmods.positions.isEmpty
+          val extraMods: List[l.Modifier] =
+            if (noExplicitModifiers) Nil
+            else {
+              val valOrValModifier: l.Modifier =
+                if (gmods.hasFlag(MUTABLE)) l.VarParam()
+                else l.ValParam()
+              l.Modifiers(t) :+ valOrValModifier
+            }
+          gname -> extraMods
+      }.toMap
       val lparamss = paramss match {
         case List(List()) if !tree.mods.hasFlag(CASE) => Nil
-        case paramss                                  => paramss
+        case paramss                                  =>
+          // consolidate paramAccessorMods with <init> constructor parameters.
+          paramss.map(_.map { param =>
+            val newMods = paramAccessorMods.getOrElse(param.name.displayName, Nil)
+            param.copy(mods = param.mods ++ newMods)
+          })
       }
       require(stats.isEmpty)
       PrimaryCtorDef(mods, name, lparamss)
