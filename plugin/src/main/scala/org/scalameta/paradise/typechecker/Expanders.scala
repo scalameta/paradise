@@ -86,22 +86,37 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
                                  expandees: List[Tree]): Option[List[Tree]] = {
       def expand(): Option[Tree] = {
         try {
-          val metaPrefix    = annotationTree.toMtree[m.Term.New]
-          val metaExpandees = expandees.map(_.toMtree[m.Stat])
-          val metaArgs = List(
-            // NOTE: Inline defs implementing macro annotations don't have arguments apart from the annottee.
-            // Type arguments and value arguments of macro annotations are passed in the prefix.
-            // See the discussion at https://github.com/scalameta/paradise/issues/11 for more details.
-            metaPrefix,
-            metaExpandees match {
+          val metaArgs = {
+            val prefixArg = annotationTree.toMtree[m.Term.New]
+            val targsArgs = {
+              val Apply(Select(New(tpt), nme.CONSTRUCTOR), _) = annotationTree
+              val expectedTargs                               = annotationSym.typeParams
+              val actualTargs = tpt match {
+                case AppliedTypeTree(_, targs) => targs
+                case _                         => Nil
+              }
+              if (expectedTargs.length != actualTargs.length) {
+                val message =
+                  MacroAnnotationTargMismatch(annotationSym, expectedTargs, actualTargs)
+                issueNormalTypeError(annotationTree, message)(namer.context)
+                throw MacroExpansionException
+              }
+              actualTargs.map(_.toMtree[m.Type])
+            }
+            val vargssArgs = {
+              // NOTE: Value arguments of macro annotations are passed in the prefix.
+              // See the discussion at https://github.com/scalameta/paradise/issues/11 for more details.
+              Nil
+            }
+            val expandeesArg = expandees.map(_.toMtree[m.Stat]) match {
               case Nil =>
                 abort(
                   "Something unexpected happened. Please report to https://github.com/scalameta/paradise/issues.")
               case tree :: Nil      => tree
               case list @ _ :: tail => m.Term.Block(list.asInstanceOf[Seq[m.Stat]])
             }
-          )
-
+            List(prefixArg) ++ targsArgs ++ vargssArgs ++ List(expandeesArg)
+          }
           val classloader = {
             val m_findMacroClassLoader =
               analyzer.getClass.getMethods().find(_.getName == "findMacroClassLoader").get

@@ -54,7 +54,7 @@ trait Compilers { self: AnalyzerPlugins =>
         val apply        = clazz.info.member(nme.apply)
         def paramssOk    = mmap(apply.paramss)(_.info) == List(List(AnyTpe))
         def retOk        = apply.info.finalResultType == AnyTpe
-        def tparamsOk    = clazz.typeParams.isEmpty
+        def tparamsOk    = apply.typeParams.isEmpty
         def everythingOk = paramssOk && retOk && tparamsOk
         if (!everythingOk) NewMacroAnnotationShapeError(clazz)
       }

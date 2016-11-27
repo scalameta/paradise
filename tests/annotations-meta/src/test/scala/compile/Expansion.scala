@@ -223,4 +223,9 @@ class Expansion extends FunSuite {
       val a: String = "abc"
     }
   }
+
+  test("Type parameters are supported") {
+    @tparam[Int]
+    class Foo
+  }
 }

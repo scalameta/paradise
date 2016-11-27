@@ -127,9 +127,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
     // }
     private def translateNestedInlineDefs(tree: Tree): List[Tree] = {
       tree match {
-        case stat @ ClassDef(mods, name, tparams, templ @ Template(parents, self, stats)) =>
+        case stat @ ClassDef(mods, name, ctparams, templ @ Template(parents, self, stats)) =>
           val xstats1 = stats.map {
-            case stat @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
+            case stat @ DefDef(mods, name, mtparams, vparamss, tpt, rhs) =>
               def isInline(tpt: Tree) =
                 MetaInlineClass != NoSymbol && tpt.tpe != null && tpt.tpe.typeSymbol == MetaInlineClass
               val inlines = mods.annotations.collect {
@@ -176,11 +176,14 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                     }
                   })
                 val signatureMethod = atPos(stat.pos.focus)(
-                  DefDef(mods, name, tparams, vparamss, tpt, Ident(Predef_???)))
+                  DefDef(mods, name, mtparams, vparamss, tpt, Ident(Predef_???)))
                 val implMethod = atPos(stat.pos.focus)({
                   val implVprefixss = List(List(mkImplPrefix))
-                  val implVtparamss =
+                  val implVtparamss = {
+                    val tparams = mtparams ++ ctparams.filter(ctparam =>
+                        !mtparams.exists(_.name == ctparam.name))
                     if (tparams.nonEmpty) List(tparams.map(mkImplVtparam)) else Nil
+                  }
                   val implVparamss = implVprefixss ++ implVtparamss ++ mmap(vparamss)(mkImplVparam)
                   val implTpt      = mkImplTpt(tpt)
                   val implBody     = mkImplBody(rhs)
@@ -196,7 +199,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
           val (stats1, impls1) = xstats1.unzip
           if (impls1.exists(_.nonEmpty)) {
             val stat1 = atPos(stat.pos)(
-              ClassDef(mods, name, tparams, atPos(templ.pos)(Template(parents, self, stats1))))
+              ClassDef(mods, name, ctparams, atPos(templ.pos)(Template(parents, self, stats1))))
             val implmstats = {
               val syntheticCtor = atPos(stat.pos.focus)(
                 DefDef(Modifiers(),
