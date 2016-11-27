@@ -121,6 +121,15 @@ class Syntactic extends ConverterSuite {
   // syntactic("val (c, matSink: (Int, String)) = (a, b)")
 
   // definitions
+  syntactic("case class X(val x: Int)")
+  syntactic("case class X(x: Int)")
+  syntactic("case class X(private[this] val x: Int)")
+  syntactic("class X(private[this] val x: Int)")
+  syntactic("class X(protected[bar] val x: Int)")
+  syntactic("class X(val x: Int)")
+  syntactic("class X(var x: Int)")
+  syntactic("class X(x: Int)")
+  syntactic("class X(x: Int)(val y: Int)(var z: String)")
   syntactic("class Y(x: Int) { def this() = this(1); val x = 2 }")
   syntactic("class Y(x: Int) { def this() = this(1); def this(y: String) = this(y.length) }")
   syntactic("class Y(x: Int) { def this() = this()(1) }")
