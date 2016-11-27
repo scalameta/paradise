@@ -123,6 +123,7 @@ class Syntactic extends ConverterSuite {
   // definitions
   syntactic("case class X(val x: Int)")
   syntactic("case class X(x: Int)")
+  syntactic("case class X(private[this] val x: Int)")
   syntactic("class X(private[this] val x: Int)")
   syntactic("class X(protected[bar] val x: Int)")
   syntactic("class X(val x: Int)")
