@@ -1,7 +1,27 @@
 package org.scalameta.tests
 
 class X extends ConverterSuite {
-  scalafix("class C { implicit val x = 43 }")
+//  scalafix("class C { implicit val x = 43 }", "")
+  scalafix(
+    """|package b {
+       |  class A[T](a: T)
+       |  class B {
+       |    implicit val a = new A(42)
+       |    implicit val b = List(1)
+       |    implicit val c = Map(1 -> (3, "string"), 2 -> "1")
+       |  }
+       |}
+           """.stripMargin,
+    """|
+       |package b {
+       |  class A[T](a: T)
+       |  class B {
+       |    implicit val a: p0.b.A[Int] = new A(42)
+       |    implicit val b: List[Int] = List(1)
+       |    implicit val c: scala.collection.immutable.Map[Int,java.io.Serializable] = Map(1 -> (3, "string"), 2 -> "1")
+       |  }
+       |}""".stripMargin
+  )
 }
 
 class Semantic extends ConverterSuite {

@@ -39,7 +39,7 @@ trait ConverterSuite extends FunSuiteLike {
 
   private object fixer extends Scalafixer {
     lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-    def apply(gtree: g.Tree): m.Tree            = gtree.fix
+    def apply(unit: g.CompilationUnit): m.Tree  = unit.fix
   }
 
   case class MismatchException(details: String) extends Exception
@@ -90,15 +90,15 @@ trait ConverterSuite extends FunSuiteLike {
                   true
                 case (q"{ $xstat }", q"$ystat") =>
                   loop(xstat, ystat)
-                case (ctor"$xctor(...${ Seq() })", ctor"$yctor(...${ Seq(Seq()) })") =>
+                case (ctor"$xctor(...${Seq()})", ctor"$yctor(...${Seq(Seq())})") =>
                   loop(xctor, yctor)
-                case (ctor"$xctor(...${ Seq(Seq()) })", ctor"$yctor(...${ Seq() })") =>
+                case (ctor"$xctor(...${Seq(Seq())})", ctor"$yctor(...${Seq()})") =>
                   loop(xctor, yctor)
                 case (p"$xpat @ _", p"$ypat") =>
                   loop(xpat, ypat)
                 case (p"$xlhs @ (_: $xtpe)", p"$ylhs: $ytpe") =>
                   loop(xlhs, ylhs) && loop(xtpe, ytpe)
-                case (t"${ Some(xtpe) } {}", t"$ytpe") =>
+                case (t"${Some(xtpe)} {}", t"$ytpe") =>
                   loop(xtpe, ytpe)
                 case (t"$xop[$xlhs, $xrhs]", t"$ylhs $yop $yrhs") =>
                   loop(xlhs, ylhs) && loop(xop, yop) && loop(xrhs, yrhs)
@@ -172,11 +172,15 @@ trait ConverterSuite extends FunSuiteLike {
   }
 
   var packageCount = 0 // hack to isolate each test case in its own package namespace.
-  private def getTypedScalacTree(code: String): g.Tree = {
-    import g._
-    packageCount += 1
+  def wrap(code: String): String = {
     val packageName  = s"p$packageCount"
     val packagedCode = s"package $packageName { $code }"
+    packagedCode
+  }
+
+  private def getTypedCompilationUnit(code: String): g.CompilationUnit = {
+    import g._
+    val packagedCode = wrap(code)
     val unit         = new CompilationUnit(newSourceFile(packagedCode, "<ReflectToMeta>"))
 
     val run      = g.currentRun
@@ -191,11 +195,16 @@ trait ConverterSuite extends FunSuiteLike {
       val errors = reporter.infos.filter(_.severity == reporter.ERROR)
       errors.foreach(error => fail(s"scalac ${phase.name} error: ${error.msg} at ${error.pos}"))
     })
+    unit
+  }
 
-    unit.body match {
-      case g.PackageDef(g.Ident(g.TermName(`packageName`)), stat :: Nil) => stat
-      case body                                                          => body
-    }
+  private def getTypedScalacTree(code: String): g.Tree = {
+    unwrapPackage(unwrapPackage(getTypedCompilationUnit(code).body))
+  }
+
+  private def unwrapPackage(gtree: g.Tree): g.Tree = gtree match {
+    case g.PackageDef(g.Ident(g.TermName(_)), stat :: Nil) => stat
+    case body                                              => body
   }
 
   private def getParsedMetaTree(code: String): m.Tree = {
@@ -212,7 +221,7 @@ trait ConverterSuite extends FunSuiteLike {
   }
 
   def getFixedTree(code: String): m.Tree = {
-    fixer(getTypedScalacTree(code))
+    fixer(getTypedCompilationUnit(code))
   }
 
   def getAttributedConvertedMetaTree(code: String): m.Tree = {
@@ -220,9 +229,14 @@ trait ConverterSuite extends FunSuiteLike {
   }
 
   private def test(code: String, converter: String => m.Tree, isSemantic: Boolean): Unit = {
-    test(code.trim) {
-      val convertedMetaTree = converter(code)
-      val parsedMetaTree    = getParsedMetaTree(code)
+    packageCount += 1
+    val convertedMetaTree = converter(code)
+    val parsedMetaTree    = getParsedMetaTree(code)
+    test(convertedMetaTree, parsedMetaTree, isSemantic)
+  }
+
+  private def test(convertedMetaTree: m.Tree, parsedMetaTree: m.Tree, isSemantic: Boolean): Unit = {
+    test(parsedMetaTree.syntax) {
       try {
         checkMismatchesModuloDesugarings(parsedMetaTree, convertedMetaTree, isSemantic)
       } catch {
@@ -256,7 +270,7 @@ trait ConverterSuite extends FunSuiteLike {
     test(code, getAttributedConvertedMetaTree _, isSemantic = true)
   }
 
-  def scalafix(code: String): Unit = {
-    test(code, getFixedTree _, isSemantic = true)
+  def scalafix(original: String, expected: String): Unit = {
+    test(getFixedTree(original), getParsedMetaTree(wrap(expected)), isSemantic = false)
   }
 }

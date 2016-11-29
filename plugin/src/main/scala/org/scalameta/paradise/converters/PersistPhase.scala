@@ -65,7 +65,7 @@ trait ScalafixPhase extends ReflectToolkit with Scalafixer {
       override def name = "scalafix"
       override def run(): Unit = {
         global.currentRun.units.foreach(unit => {
-          println(unit.body.fix)
+          println(unit.fix)
 //          unit.body.metadata("scalameta") = unit.body.toMtree[Source]
         })
       }
