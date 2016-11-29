@@ -39,7 +39,7 @@ trait ConverterSuite extends FunSuiteLike {
 
   private object fixer extends Scalafixer {
     lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-    def apply(unit: g.CompilationUnit): m.Tree  = unit.fix
+    def apply(unit: g.CompilationUnit): m.Tree  = getParsedMetaTree(unit.fix)
   }
 
   case class MismatchException(details: String) extends Exception
@@ -270,6 +270,10 @@ trait ConverterSuite extends FunSuiteLike {
     test(code, getAttributedConvertedMetaTree _, isSemantic = true)
   }
 
+
+  def skip(original: String, expected: String): Unit = {
+    ignore(original){}
+  }
   def scalafix(original: String, expected: String): Unit = {
     test(getFixedTree(original), getParsedMetaTree(wrap(expected)), isSemantic = false)
   }

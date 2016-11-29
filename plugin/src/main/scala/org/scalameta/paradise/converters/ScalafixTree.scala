@@ -7,7 +7,7 @@ import scala.{meta => m}
 trait ScalafixTree { self: Scalafixer =>
 
   protected implicit class XtensionGtreeToFixedMtree(compilationUnit: g.CompilationUnit) {
-    def fix: m.Tree = self.fix(compilationUnit)
+    def fix: String = self.fix(compilationUnit)
   }
 
   def offsetToType(gtree: g.Tree): mutable.Map[Int, m.Type] = {
@@ -15,7 +15,6 @@ trait ScalafixTree { self: Scalafixer =>
     def foreach(gtree: g.Tree): Unit = {
       gtree match {
         case g.ValDef(_, _, tpt, _) if tpt.nonEmpty =>
-//          import scala.meta._
           import scala.meta.Parsed
           m.dialects.Scala211(tpt.toString()).parse[m.Type] match {
             case Parsed.Success(ast) =>
@@ -30,10 +29,10 @@ trait ScalafixTree { self: Scalafixer =>
     builder
   }
 
-  def fix(unit: g.CompilationUnit): m.Tree = {
+  def fix(unit: g.CompilationUnit): String = {
     val gtree = unit.body
     val o2t   = offsetToType(gtree)
-    val mtree = {
+    val fixeddTree = {
       import scala.meta._
       val t = gtree.pos.source.content.parse[m.Source].get
       val patches: Seq[Patch] = t.collect {
@@ -46,12 +45,9 @@ trait ScalafixTree { self: Scalafixer =>
             }
             .toSeq
       }.flatten
-      println("PATHSE: " + patches)
-      val m.Source(Seq(pgk)) = Patch.apply(t.tokens, patches).parse[Source].get
-      pgk
+      Patch.apply(t.tokens, patches)
     }
-    println("MTREE: " + mtree)
-    mtree
+    fixeddTree
   }
 
 }

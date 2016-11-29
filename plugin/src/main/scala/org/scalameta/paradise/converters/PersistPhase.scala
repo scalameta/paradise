@@ -7,6 +7,9 @@ import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
 
+import java.nio.file.Files
+import java.nio.file.Paths
+
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait PersistPhase extends ReflectToolkit with Converter {
@@ -64,9 +67,10 @@ trait ScalafixPhase extends ReflectToolkit with Scalafixer {
     override def newPhase(prev: Phase): Phase = new Phase(prev) {
       override def name = "scalafix"
       override def run(): Unit = {
+        println("HELLO FROM COMPILER!")
         global.currentRun.units.foreach(unit => {
-          println(unit.fix)
-//          unit.body.metadata("scalameta") = unit.body.toMtree[Source]
+          val fixedTree = unit.fix
+          Files.write(Paths.get(unit.source.path), fixedTree.getBytes("UTF-8"))
         })
       }
     }
