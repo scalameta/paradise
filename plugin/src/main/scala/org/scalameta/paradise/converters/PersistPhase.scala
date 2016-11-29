@@ -1,9 +1,12 @@
 package org.scalameta.paradise
 package converters
 
+import scala.{meta => m}
 import scala.meta._
+import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
+
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait PersistPhase extends ReflectToolkit with Converter {
@@ -42,6 +45,28 @@ trait PersistPhase extends ReflectToolkit with Converter {
             println(s"computing scala.meta tree for ${unit.source.file.path}")
           unit.body.metadata("scalameta") = unit.body.toMtree[Source]
           ensureBCodeBackend() // NOTE: actual persistence is delayed until bytecode emission
+        })
+      }
+    }
+  }
+}
+
+trait ScalafixPhase extends ReflectToolkit with Scalafixer {
+  object ScalafixComponent extends NscPluginComponent {
+    lazy val global: ScalafixPhase.this.global.type = ScalafixPhase.this.global
+    import global._
+
+    override val runsAfter      = List("typer")
+    override val runsRightAfter = None
+    override val phaseName      = "scalafix"
+    override def description    = "run scalafix rewrites"
+
+    override def newPhase(prev: Phase): Phase = new Phase(prev) {
+      override def name = "scalafix"
+      override def run(): Unit = {
+        global.currentRun.units.foreach(unit => {
+          println(unit.body.fix)
+//          unit.body.metadata("scalameta") = unit.body.toMtree[Source]
         })
       }
     }

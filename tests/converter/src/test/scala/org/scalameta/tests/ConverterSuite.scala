@@ -3,10 +3,12 @@ package org.scalameta.tests
 import scala.collection.immutable.Seq
 import scala.{meta => m}
 import scala.tools.cmd.CommandLineParser
-import scala.tools.nsc.{Global, CompilerCommand, Settings}
+import scala.tools.nsc.{CompilerCommand, Global, Settings}
 import scala.tools.nsc.reporters.StoreReporter
+
 import org.scalatest._
 import org.scalameta.paradise.converters.Converter
+import org.scalameta.paradise.converters.Scalafixer
 
 trait ConverterSuite extends FunSuiteLike {
 
@@ -33,6 +35,11 @@ trait ConverterSuite extends FunSuiteLike {
   private object converter extends Converter {
     lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
     def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
+  }
+
+  private object fixer extends Scalafixer {
+    lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
+    def apply(gtree: g.Tree): m.Tree            = gtree.fix
   }
 
   case class MismatchException(details: String) extends Exception
@@ -204,6 +211,10 @@ trait ConverterSuite extends FunSuiteLike {
     converter(getParsedScalacTree(code))
   }
 
+  def getFixedTree(code: String): m.Tree = {
+    fixer(getTypedScalacTree(code))
+  }
+
   def getAttributedConvertedMetaTree(code: String): m.Tree = {
     converter(getTypedScalacTree(code))
   }
@@ -243,5 +254,9 @@ trait ConverterSuite extends FunSuiteLike {
 
   def semantic(code: String): Unit = {
     test(code, getAttributedConvertedMetaTree _, isSemantic = true)
+  }
+
+  def scalafix(code: String): Unit = {
+    test(code, getFixedTree _, isSemantic = true)
   }
 }

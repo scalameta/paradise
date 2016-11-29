@@ -1,5 +1,9 @@
 package org.scalameta.tests
 
+class X extends ConverterSuite {
+  scalafix("class C { implicit val x = 43 }")
+}
+
 class Semantic extends ConverterSuite {
   semantic("class C { def x = 42 }")
   semantic("class C { val x = 43 }")
