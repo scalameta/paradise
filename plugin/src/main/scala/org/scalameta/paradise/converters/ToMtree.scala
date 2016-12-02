@@ -196,6 +196,10 @@ trait ToMtree { self: Converter =>
                 val mtpe = ltpe.toMtree[m.Type]
                 m.Type.Arg.ByName(mtpe)
 
+              case l.TypeArgRepeated(ltpe) =>
+                val mtpe = ltpe.toMtree[m.Type]
+                m.Type.Arg.Repeated(mtpe)
+
               case l.TypeApply(ltpt, largs) =>
                 val mtpt  = ltpt.toMtree[m.Type]
                 val margs = largs.toMtrees[m.Type]

@@ -510,6 +510,15 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
     }
   }
 
+  object TypeArgRepeated {
+    def unapply(tree: g.AppliedTypeTree): Option[g.Tree] = {
+      tree match {
+        case TypeApply(TypeSelect(_, TypeName("<repeated>")), Seq(tpe)) => Some(tpe)
+        case _                                                          => None
+      }
+    }
+  }
+
   object TypeOrPatTypeApply {
     def unapply(tree: g.AppliedTypeTree): Option[(g.Tree, List[g.Tree])] = {
       if (TypeApplyInfix.unapply(tree).isDefined) return None
