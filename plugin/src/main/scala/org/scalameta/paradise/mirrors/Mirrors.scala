@@ -42,8 +42,7 @@ trait Mirrors extends ReflectToolkit with Converter {
       }.asInstanceOf[m.Type]
 
       val stripImportedPrefix: m.Type => m.Type = _.transform {
-        case prefix @ m.Type.Select(_, name)
-            if ctx.inScope.contains(prefix.syntax) =>
+        case prefix @ m.Type.Select(_, name) if ctx.inScope.contains(prefix.syntax) =>
           name
       }.asInstanceOf[m.Type]
 
@@ -74,8 +73,8 @@ trait Mirrors extends ReflectToolkit with Converter {
     def evaluate(ctx: SemanticContext, gtree: g.Tree): SemanticContext = {
       gtree match {
         case g.ValDef(_, _, tpt, _) if tpt.nonEmpty => add(tpt, ctx)
-        case g.DefDef(_, _, _, _, tpt, _) => add(tpt, ctx)
-        case _ =>
+        case g.DefDef(_, _, _, _, tpt, _)           => add(tpt, ctx)
+        case _                                      =>
       }
       gtree match {
         case g.PackageDef(pid, _) =>
@@ -104,10 +103,9 @@ trait Mirrors extends ReflectToolkit with Converter {
     builder
   }
 
-  private def collect[T](gtree: g.Tree)(
-      pf: PartialFunction[g.Tree, T]): Seq[T] = {
+  private def collect[T](gtree: g.Tree)(pf: PartialFunction[g.Tree, T]): Seq[T] = {
     val builder = Seq.newBuilder[T]
-    val f = pf.lift
+    val f       = pf.lift
     def iter(gtree: g.Tree): Unit = {
       f(gtree).foreach(builder += _)
       gtree match {
@@ -124,7 +122,7 @@ trait Mirrors extends ReflectToolkit with Converter {
   implicit object mirror extends m.Mirror {
     def tpe(member: m.Member): m.Completed[m.Type] = apiBoundary {
       val m.inputs.Input.File(file, _) = member.pos.input
-      val unit = global.currentRun.units.find(_.source.file.file == file).get
+      val unit                         = global.currentRun.units.find(_.source.file.file == file).get
 
       val offsets = offsetToType(unit.body)
       member match {

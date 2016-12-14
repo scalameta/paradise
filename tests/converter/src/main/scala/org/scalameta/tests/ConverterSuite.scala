@@ -132,17 +132,18 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     // NOTE: `parseStatsOrPackages` fails to parse abstract type defs without bounds,
     // so we need to apply a workaround to ensure that we correctly process those.
     val rxAbstractTypeNobounds = """^type (\w+)(\[[^=]*?\])?$""".r
-    val needsParseWorkaround = rxAbstractTypeNobounds.unapplySeq(code).isDefined
-    val code1 = if (!needsParseWorkaround) code else code + " <: Dummy"
+    val needsParseWorkaround   = rxAbstractTypeNobounds.unapplySeq(code).isDefined
+    val code1                  = if (!needsParseWorkaround) code else code + " <: Dummy"
 
     val javaFile = File.createTempFile("paradise", ".scala")
-    val writer = new PrintWriter(javaFile)
-    try writer.write(code1) finally writer.close()
+    val writer   = new PrintWriter(javaFile)
+    try writer.write(code1)
+    finally writer.close()
 
-    val run = new g.Run
+    val run          = new g.Run
     val abstractFile = AbstractFile.getFile(javaFile)
-    val sourceFile = g.getSourceFile(abstractFile)
-    val unit = new g.CompilationUnit(sourceFile)
+    val sourceFile   = g.getSourceFile(abstractFile)
+    val unit         = new g.CompilationUnit(sourceFile)
     run.compileUnits(List(unit), run.phaseNamed("terminal"))
 
     g.phase = run.parserPhase
@@ -176,7 +177,7 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     import g._
     val (run, unit) = createRunFromSnippet(code)
 
-    val phases = List(run.parserPhase, run.namerPhase, run.typerPhase)
+    val phases   = List(run.parserPhase, run.namerPhase, run.typerPhase)
     val reporter = new StoreReporter()
     g.reporter = reporter
 
@@ -245,9 +246,9 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     def tpe(name: String): String = {
       val members = mtree.collect { case m: m.Member if m.name.syntax == name => m }
       members match {
-        case Nil => sys.error(s"member $name not found")
+        case Nil                       => sys.error(s"member $name not found")
         case (result: m.Member) :: Nil => mirror.tpe(result).get.syntax
-        case _ => sys.error(s"member $name is ambiguous")
+        case _                         => sys.error(s"member $name is ambiguous")
       }
     }
   }
@@ -261,7 +262,7 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
           hasRun = true
           test(c.code)(body(c))
         case _ =>
-          // do nothing
+        // do nothing
       }
     }
 
@@ -271,7 +272,7 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
           if (hasRun) return
           test(c.code)(())
         case _ =>
-          // do nothing
+        // do nothing
       }
     }
   }
