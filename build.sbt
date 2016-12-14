@@ -1,6 +1,6 @@
 lazy val ScalaVersions  = Seq("2.11.8")
-lazy val MetaVersion    = "1.4.0"
-lazy val LibraryVersion = "3.0.0-SNAPSHOT"
+lazy val MetaVersion    = "2.0.0.564"
+lazy val LibraryVersion = "4.0.0-SNAPSHOT"
 lazy val isSnapshot     = LibraryVersion.endsWith("SNAPSHOT")
 lazy val PRVersion      = latestPullRequestVersion()
 
