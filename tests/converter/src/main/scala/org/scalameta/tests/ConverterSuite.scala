@@ -7,7 +7,6 @@ import scala.reflect.io._
 import scala.tools.cmd.CommandLineParser
 import scala.tools.nsc.{Global, CompilerCommand, Settings}
 import scala.tools.nsc.reporters.StoreReporter
-import scala.util.control.NonFatal
 import org.scalatest._
 import org.scalameta.paradise.converters.Converter
 import org.scalameta.paradise.mirrors.Mirrors
@@ -24,11 +23,12 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     val options           = "-cp " + classpath + " -Xplugin:" + pluginpath + ":" + classpath + " -Xplugin-require:macroparadise"
     val args              = CommandLineParser.tokenize(options)
     val emptySettings     = new Settings(error => fail(s"couldn't apply settings because $error"))
-    val reporter          = new StoreReporter()
-    val command           = new CompilerCommand(args, emptySettings)
-    val settings          = command.settings
-    val g                 = new Global(settings, reporter)
-    val run               = new g.Run
+    emptySettings.Yrangepos.value = true
+    val reporter = new StoreReporter()
+    val command  = new CompilerCommand(args, emptySettings)
+    val settings = command.settings
+    val g        = new Global(settings, reporter)
+    val run      = new g.Run
     g.phase = run.parserPhase
     g.globalPhase = run.parserPhase
     g
@@ -240,43 +240,29 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
   // If we can't parse code as a compilation unit,
   // we should be able to just wrap it in a dummy class and convert that.
 
-  case class Context(code: String, gtree: g.Tree, mtree: m.Tree, mirror: m.Mirror) {
+  case class Context(gtree: g.Tree, mtree: m.Tree, mirror: m.Mirror) {
+    private def unique(p: PartialFunction[m.Tree, Boolean]): m.Tree = {
+      val trees = mtree.collect { case tree: m.Tree if p.isDefinedAt(tree) && p(tree) => tree }
+      trees match {
+        case Nil           => sys.error("search failed")
+        case result :: Nil => result
+        case _             => sys.error("search ambiguous")
+      }
+    }
+
     def tpe(name: String): String = {
-      val members = mtree.collect { case m: m.Member if m.name.syntax == name => m }
-      members match {
-        case Nil                       => sys.error(s"member $name not found")
-        case (result: m.Member) :: Nil => mirror.tpe(result).get.syntax
-        case _                         => sys.error(s"member $name is ambiguous")
-      }
+      val result = unique { case m: m.Member => m.name.syntax == name }
+      mirror.tpe(result.asInstanceOf[m.Member]).get.syntax
+    }
+
+    def desugar(code: String): String = {
+      val result = unique { case tree => tree.syntax == code }
+      mirror.desugar(result).get.syntax
     }
   }
 
-  case class SemanticTest(c: Option[Context]) {
-    private var hasRun = false
-
-    def apply(body: Context => Unit): Unit = {
-      c match {
-        case Some(c) =>
-          hasRun = true
-          test(c.code)(body(c))
-        case _ =>
-        // do nothing
-      }
-    }
-
-    override protected def finalize: Unit = {
-      c match {
-        case Some(c) =>
-          if (hasRun) return
-          test(c.code)(())
-        case _ =>
-        // do nothing
-      }
-    }
-  }
-
-  def semantic(code: String): SemanticTest = {
-    val c = try {
+  def semantic(code: String)(body: Context => Unit): Unit = {
+    test(code) {
       val gtree = getTypedScalacTree(code)
       val mtree = {
         // TODO: also use getAttributedConvertedMetaTree?
@@ -286,12 +272,7 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
         else jfile.parse[m.Stat].get
       }
       val mirror = this.mirror
-      Some(Context(code, gtree, mtree, mirror))
-    } catch {
-      case NonFatal(ex) =>
-        test(code)(throw ex)
-        None
+      body(Context(gtree, mtree, mirror))
     }
-    SemanticTest(c)
   }
 }

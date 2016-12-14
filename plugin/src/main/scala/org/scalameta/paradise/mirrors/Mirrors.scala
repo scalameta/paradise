@@ -120,11 +120,14 @@ trait Mirrors extends ReflectToolkit with Converter {
   }
 
   implicit object mirror extends m.Mirror {
-    def tpe(member: m.Member): m.Completed[m.Type] = apiBoundary {
-      val m.inputs.Input.File(file, _) = member.pos.input
+    private def enclosingGtree(tree: m.Tree): g.Tree = {
+      val m.inputs.Input.File(file, _) = tree.pos.input
       val unit                         = global.currentRun.units.find(_.source.file.file == file).get
+      unit.body
+    }
 
-      val offsets = offsetToType(unit.body)
+    def tpe(member: m.Member): m.Completed[m.Type] = apiBoundary {
+      val offsets = offsetToType(enclosingGtree(member))
       member match {
         case m.Defn.Val(_, Seq(pat), _, _) =>
           offsets(pat.pos.start.offset)
@@ -135,8 +138,19 @@ trait Mirrors extends ReflectToolkit with Converter {
       }
     }
 
+    // NOTE: requires -Yrangepos
     def desugar(tree: m.Tree): m.Completed[m.Tree] = apiBoundary {
-      ???
+      val result = collect(enclosingGtree(tree)) {
+        case t if t.pos.matches(tree.pos) =>
+          val snippet = m.Input.String(t.toString())
+          val result = tree match {
+            case term: m.Term => Scala211(snippet).parse[m.Term]
+            case tpe: m.Type  => Scala211(snippet).parse[m.Type]
+            case pat: m.Pat   => Scala211(snippet).parse[m.Pat]
+          }
+          result.get
+      }
+      result.head
     }
 
     private def apiBoundary[T](body: => T): m.Completed[T] = {
