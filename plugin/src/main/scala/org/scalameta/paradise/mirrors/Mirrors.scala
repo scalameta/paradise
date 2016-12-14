@@ -138,8 +138,8 @@ trait Mirrors extends ReflectToolkit with Converter {
       }
     }
 
-    // NOTE: requires -Yrangepos
     def desugar(tree: m.Tree): m.Completed[m.Tree] = apiBoundary {
+      assert(g.settings.Yrangepos.value)
       val result = collect(enclosingGtree(tree)) {
         case t if t.pos.matches(tree.pos) =>
           val snippet = m.Input.String(t.toString())
