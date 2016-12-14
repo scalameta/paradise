@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import org.scalameta.paradise.converters.ConvertException
 import org.scalatest.exceptions.TestFailedException
 
-object LotsOfProjects extends ConverterSuite {
+object LotsOfProjects extends ConverterSuite("testsConverter") {
   override val parseAsCompilationUnit: Boolean = true
 
   def err2message(e: Throwable): String = {
@@ -34,7 +34,7 @@ object LotsOfProjects extends ConverterSuite {
       val code = file.read
       val n    = counter.incrementAndGet()
       if (n % 1000 == 0) println(s"$n...")
-      Try(getConvertedMetaTree(code)) match {
+      Try(getUnattributedConvertedMetaTree(code)) match {
         // Uncomment to investigate a specific error further.
         //          case scala.util.Failure(e: ConvertException)
         //              if e.culprit.getClass.getSimpleName == "EmptyTree$" =>

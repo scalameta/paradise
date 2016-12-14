@@ -3,7 +3,7 @@ package org.scalameta.tests
 import scala.io.Source
 
 // To manually test the converter against an individual file
-class ManualSuite extends ConverterSuite {
+class ManualSuite extends ConverterSuite("testsConverter") {
   override val parseAsCompilationUnit: Boolean = true
 
   def checkUrl(url: String): Unit = {
@@ -12,7 +12,7 @@ class ManualSuite extends ConverterSuite {
   }
   def check(code: String): Unit = {
     test(code.lines.filter(_.nonEmpty).take(1).mkString) {
-      getConvertedMetaTree(code)
+      getUnattributedConvertedMetaTree(code)
     }
   }
   // For example github raw url

@@ -1,7 +1,7 @@
 package org.scalameta.tests
 
 // NOTE: a lot of these tests are taken from https://github.com/liufengyun/eden/blob/master/src/test/scala/dotty/eden/UntpdSuite.scala
-class Syntactic extends ConverterSuite {
+class Syntactic extends ConverterSuite("testsConverter") {
   // terms
   syntactic("null")
   syntactic("""println("hello, world")""")

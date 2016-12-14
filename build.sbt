@@ -121,7 +121,8 @@ lazy val root = project
     plugin,
     testsAnnotationsMeta,
     testsAnnotationsReflect,
-    testsConverter
+    testsConverter,
+    testsMirror
   )
 
 // main scala.meta paradise plugin
@@ -236,10 +237,19 @@ lazy val testsConverter = project
   .settings(
     sharedSettings,
     testSettings,
-    libraryDependencies += "com.lihaoyi" %% "geny" % "0.1.0" % "test", // to lazy load 26k files
+    libraryDependencies += "com.lihaoyi" %% "geny" % "0.1.0", // to lazy load 26k files
     exposePaths("testsConverter", Test)
   )
   .dependsOn(testsCommon, plugin)
+
+lazy val testsMirror = project
+  .in(file("tests/mirror"))
+  .settings(
+    sharedSettings,
+    testSettings,
+    exposePaths("testsMirror", Test)
+  )
+  .dependsOn(testsConverter, plugin)
 
 def parsePullRequestFromCommitMessage: Option[String] = {
   import sys.process._
