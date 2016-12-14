@@ -7,6 +7,7 @@ import scala.reflect.io._
 import scala.tools.cmd.CommandLineParser
 import scala.tools.nsc.{Global, CompilerCommand, Settings}
 import scala.tools.nsc.reporters.StoreReporter
+import scala.util.control.NonFatal
 import org.scalatest._
 import org.scalameta.paradise.converters.Converter
 import org.scalameta.paradise.mirrors.Mirrors
@@ -38,10 +39,7 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     def apply(gtree: g.Tree): m.Tree            = gtree.toMtree[m.Tree]
   }
 
-  private object mirrors extends Mirrors {
-    lazy val global: ConverterSuite.this.g.type = ConverterSuite.this.g
-  }
-  lazy val mirror: m.Mirror = mirrors.mirror
+  lazy val mirror: m.Mirror = Mirrors(g).mirror
 
   case class MismatchException(details: String) extends Exception
   private def checkMismatchesModuloDesugarings(parsed: m.Tree, converted: m.Tree): Unit = {
@@ -135,13 +133,13 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
     val needsParseWorkaround   = rxAbstractTypeNobounds.unapplySeq(code).isDefined
     val code1                  = if (!needsParseWorkaround) code else code + " <: Dummy"
 
-    val javaFile = File.createTempFile("paradise", ".scala")
-    val writer   = new PrintWriter(javaFile)
+    val jfile  = File.createTempFile("paradise", ".scala")
+    val writer = new PrintWriter(jfile)
     try writer.write(code1)
     finally writer.close()
 
     val run          = new g.Run
-    val abstractFile = AbstractFile.getFile(javaFile)
+    val abstractFile = AbstractFile.getFile(jfile)
     val sourceFile   = g.getSourceFile(abstractFile)
     val unit         = new g.CompilationUnit(sourceFile)
     run.compileUnits(List(unit), run.phaseNamed("terminal"))
@@ -283,14 +281,14 @@ class ConverterSuite(projectName: String) extends FunSuiteLike {
       val mtree = {
         // TODO: also use getAttributedConvertedMetaTree?
         import scala.meta._
-        val javaFile = g.currentRun.units.next.source.file.file
-        if (parseAsCompilationUnit) javaFile.parse[m.Source].get
-        else javaFile.parse[m.Stat].get
+        val jfile = g.currentRun.units.next.source.file.file
+        if (parseAsCompilationUnit) jfile.parse[m.Source].get
+        else jfile.parse[m.Stat].get
       }
       val mirror = this.mirror
       Some(Context(code, gtree, mtree, mirror))
     } catch {
-      case ex: Exception =>
+      case NonFatal(ex) =>
         test(code)(throw ex)
         None
     }
