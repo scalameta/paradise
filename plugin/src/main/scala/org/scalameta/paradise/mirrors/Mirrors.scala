@@ -120,6 +120,12 @@ trait Mirrors extends ReflectToolkit with Converter {
   }
 
   implicit object mirror extends m.Mirror {
+    if (!g.settings.Yrangepos.value) {
+      val instructions = "Please re-compile with the scalac option -Yrangepos enabled"
+      val explanation  = "This option is necessary for the semantic API to function"
+      sys.error(s"$instructions. $explanation")
+    }
+
     private def enclosingGtree(tree: m.Tree): g.Tree = {
       val m.inputs.Input.File(file, _) = tree.pos.input
       val unit                         = global.currentRun.units.find(_.source.file.file == file).get
@@ -139,7 +145,6 @@ trait Mirrors extends ReflectToolkit with Converter {
     }
 
     def desugar(tree: m.Tree): m.Completed[m.Tree] = apiBoundary {
-      assert(g.settings.Yrangepos.value)
       val result = collect(enclosingGtree(tree)) {
         case t if t.pos.matches(tree.pos) =>
           val snippet = m.Input.String(t.toString())
