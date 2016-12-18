@@ -61,6 +61,7 @@ class Syntactic extends ConverterSuite {
   syntactic("new C#B")
   syntactic("new o.C#B")
   syntactic("new B { }")
+  syntactic("new B() { }")
   syntactic("new B { val a = 3 }")
   syntactic("new B { def f(x: Int): Int = x*x }")
   syntactic("new B(3) { println(5); def f(x: Int): Int = x*x }")
