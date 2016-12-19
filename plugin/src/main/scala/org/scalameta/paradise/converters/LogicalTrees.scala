@@ -1282,15 +1282,10 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         case _ => (Nil, Nil)
       }
       val edefs = evdefs ::: etdefs
-      val lparents = parents.zipWithIndex.map {
-        case (parent, i) =>
-          val applied        = dissectApplied(parent)
-          val syntacticArgss = applied.argss
-          val argss =
-            if (syntacticArgss.isEmpty)
-              List(List()) // todo dveim don't forget semanticArgss later
-            else syntacticArgss
-          l.Parent(argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args)))
+      val lparents = parents.map { parent =>
+        // TODO(dveim) don't forget semanticArgss later
+        val applied = dissectApplied(parent)
+        l.Parent(applied.argss.foldLeft(applied.callee)((curr, args) => g.Apply(curr, args)))
       }
       val lstats = if (userDefinedStats.nonEmpty) Some(templateStats(userDefinedStats)) else None
       l.Template(edefs, lparents, lself, lstats)
