@@ -202,16 +202,18 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
               ClassDef(mods, name, ctparams, atPos(templ.pos)(Template(parents, self, stats1))))
             val implmstats = {
               val syntheticCtor = atPos(stat.pos.focus)(
-                DefDef(Modifiers(),
-                       termNames.CONSTRUCTOR,
-                       List(),
-                       List(List()),
-                       TypeTree(),
-                       Block(List(
-                               Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY),
-                                            termNames.CONSTRUCTOR),
-                                     List())),
-                             Literal(Constant(())))))
+                DefDef(
+                  Modifiers(),
+                  termNames.CONSTRUCTOR,
+                  List(),
+                  List(List()),
+                  TypeTree(),
+                  Block(List(
+                          Apply(Select(Super(This(typeNames.EMPTY), typeNames.EMPTY),
+                                       termNames.CONSTRUCTOR),
+                                List())),
+                        Literal(Constant(())))
+                ))
               syntheticCtor +: impls1.filter(_.nonEmpty)
             }
             val implmdef = atPos(stat.pos.focus)(

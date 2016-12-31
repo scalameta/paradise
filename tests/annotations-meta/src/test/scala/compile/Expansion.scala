@@ -1,4 +1,5 @@
 import org.scalatest.FunSuite
+import scala.annotation.StaticAnnotation
 
 // TODO: DavidDudson: simplify with argument macros
 class Expansion extends FunSuite {
@@ -228,4 +229,15 @@ class Expansion extends FunSuite {
     @tparam[Int]
     class Foo
   }
+}
+
+// Note: We cannot actually wrap this in test()
+// as it cannot be an inner class definition.
+// The best we can do is make sure this compiles
+// TODO: David Dudson -> Make a more elaborate test case
+// eg. A macro that creates a macro that is then used
+// requiring 3 seperate compilation steps
+@identity
+class SomeClass4 extends StaticAnnotation {
+  inline def apply(a: Any): Any = meta(a)
 }
