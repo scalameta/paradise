@@ -1324,6 +1324,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
   case class Private(within: g.Tree)   extends Modifier // TODO: `within: l.QualifierName`
   case class Protected(within: g.Tree) extends Modifier // TODO: `within: l.QualifierName`
   case class Implicit()                extends Modifier
+  case class Inline()                  extends Modifier
   case class Final()                   extends Modifier
   case class Sealed()                  extends Modifier
   case class Override()                extends Modifier
@@ -1378,12 +1379,33 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         syntactically.orElse(semantically)
       }
 
+      object InlineExtractor {
+        def unapply(tree: g.Tree): Option[l.Inline] = tree match {
+          case g.Apply(Select(New(TypeTree(tpt)), _), Nil)
+              if tpt.typeSymbol == rootMirror.staticClass("scala.meta.internal.inline.inline") =>
+            Some(l.Inline())
+          case _ => None
+        }
+      }
+
+      // We have to keep this separate from annots
+      // as we don't want it wrapped in Annotation()
+      val linline: Option[l.Modifier] = {
+        tree.mods.annotations
+          .collect({
+            case InlineExtractor(i) => i
+          })
+          .headOption
+      }
+
       val lannotationMods: List[l.Modifier] = {
-        val trimmedAnnots = tree.mods.annotations.map({
-          case tree @ g.Apply(_: g.Apply, _) => tree
-          case g.Apply(tpt, Nil)             => tpt
-          case annot                         => annot
-        })
+        val trimmedAnnots = tree.mods.annotations
+          .filter(InlineExtractor.unapply(_).isEmpty)
+          .map({
+            case tree @ g.Apply(_: g.Apply, _) => tree
+            case g.Apply(tpt, Nil)             => tpt
+            case annot                         => annot
+          })
         trimmedAnnots.map(Annotation.apply)
       }
 
@@ -1438,7 +1460,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         lmods.toList
       }
 
-      val result = lannotationMods ++ laccessQualifierMods ++ lotherMods ++ lvalVarParamMods
+      val result = linline.toList ++ lannotationMods ++ laccessQualifierMods ++ lotherMods ++ lvalVarParamMods
 
       // NOTE: we can't discern `class C(x: Int)` and `class C(private[this] val x: Int)`
       // so let's err on the side of the more popular option
