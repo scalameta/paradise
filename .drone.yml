@@ -4,7 +4,7 @@ build:
     environment:
       - COURSIER_CACHE=/drone/cache/coursier
     commands:
-      - ./bin/scalafmt --dir /drone/cache/scalafmt --version 0.4.7 --test
+      - ./bin/scalafmt --dir /drone/cache/scalafmt --version 0.5.1 --test
       - ./bin/testAll.sh
   publish:
     image: olafurpg/scalafix:0.0.1
