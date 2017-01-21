@@ -2,8 +2,11 @@ package org.scalameta.paradise
 package typechecker
 
 import org.scalameta.paradise.converters.Converter
+import org.scalameta.paradise.parser.SyntaxAnalyzer
 
-trait Expanders extends Converter { self: AnalyzerPlugins =>
+import scala.meta.dialects.Paradise211
+
+trait Expanders extends Converter { expandersSelf: AnalyzerPlugins =>
 
   import scala.{Seq => _}
   import scala.collection.immutable.Seq
@@ -169,9 +172,11 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
             })
           }
 
-          val stringExpansion = metaExpansion.toString
-          val parser = newUnitParser(
-            new CompilationUnit(newSourceFile(stringExpansion, "<macro>")))
+          val stringExpansion = (Paradise211, metaExpansion).syntax
+          val compiler = new { val global: expandersSelf.global.type = expandersSelf.global }
+          with SyntaxAnalyzer
+          val parser =
+            compiler.newUnitParser(new CompilationUnit(newSourceFile(stringExpansion, "<macro>")))
           Some(gen.mkTreeOrBlock(parser.parseStatsOrPackages()))
         } catch {
           // NOTE: this means an error that has been caught and reported
