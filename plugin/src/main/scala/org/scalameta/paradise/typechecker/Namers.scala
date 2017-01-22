@@ -247,7 +247,8 @@ trait Namers { self: AnalyzerPlugins =>
             reporter.warning(
               tree.pos,
               "it is not recommended to define classes/objects inside of package objects.\n" +
-                "If possible, define " + tree.symbol + " in " + owner.skipPackageObject + " instead.")
+                "If possible, define " + tree.symbol + " in " + owner.skipPackageObject + " instead."
+            )
           }
           // Suggested location only.
           if (mods.isImplicit) {
