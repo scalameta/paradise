@@ -32,13 +32,11 @@ lazy val paradiseRoot = Project(
   test := {
     val runMetaTests = (test in testsAnnotationsMeta in Test).value
     val runReflectTests = (test in testsAnnotationsReflect in Test).value
-    val runConverterTests = (test in testsConverter in Test).value
   }
 ) aggregate (
   plugin,
   testsAnnotationsMeta,
-  testsAnnotationsReflect,
-  testsConverter
+  testsAnnotationsReflect
 )
 
 // main scala.meta paradise plugin
@@ -48,6 +46,7 @@ lazy val plugin = Project(
 ) settings (
   publishableSettings,
   mergeSettings,
+  libraryDependencies += "org.scalameta" % "scalahost" % MetaVersion cross CrossVersion.full,
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
   addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 )
@@ -80,15 +79,6 @@ lazy val testsAnnotationsMeta = Project(
   usePluginSettings,
   exposePaths("testsAnnotationsMeta", Test)
 ) dependsOn (testsCommon)
-
-lazy val testsConverter = Project(
-  id = "testsConverter",
-  base = file("tests/converter")
-) settings (
-  sharedSettings,
-  libraryDependencies += "com.lihaoyi" %% "geny" % "0.1.0" % "test",
-  exposePaths("testsConverter", Test)
-) dependsOn (testsCommon, plugin)
 
 // ==========================================
 // Settings

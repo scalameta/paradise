@@ -11,7 +11,6 @@ trait ReflectToolkit
     with TreeInfo
     with StdAttachments
     with Mirrors
-    with Trees
     with Symbols
     with ReplIntegration
     with Names
