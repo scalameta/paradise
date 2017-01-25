@@ -556,6 +556,8 @@ trait ToMtree { self: Converter =>
                   val mname   = lname.toMtree[m.Name.Indeterminate]
                   val mrename = lrename.toMtree[m.Name.Indeterminate]
                   m.Importee.Rename(mname, mrename)
+                case l.Inline() =>
+                  m.Mod.Inline()
 
                 case l.ImporteeUnimport(lname) =>
                   val mname = lname.toMtree[m.Name.Indeterminate]
