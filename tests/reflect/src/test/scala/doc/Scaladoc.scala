@@ -4,8 +4,9 @@ import scala.io.Source
 import scala.tools.nsc.ScalaDoc
 
 class Scaladoc extends ToolSuite("testsReflect") {
-  val resourceDir = new File(System
-    .getProperty("sbt.paths.testsReflect.test.resources") + File.separatorChar + "doc")
+  val resourceDir = new File(
+    System
+      .getProperty("sbt.paths.testsReflect.test.resources") + File.separatorChar + "doc")
   val testDirs = resourceDir
     .listFiles()
     .filter(_.isDirectory)

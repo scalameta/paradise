@@ -15,70 +15,70 @@ lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
 // ==========================================
 
 lazy val paradiseRoot = Project(
-  id = "paradiseRoot",
-  base = file(".")
-) settings (
-  sharedSettings,
-  packagedArtifacts := Map.empty,
-  aggregate in publish := false,
-  publish := {
+    id = "paradiseRoot",
+    base = file(".")
+  ) settings (
+    sharedSettings,
+    packagedArtifacts := Map.empty,
+    aggregate in publish := false,
+    publish := {
     val publishPlugin = (publish in plugin in Compile).value
   },
-  aggregate in publishSigned := false,
-  publishSigned := {
+    aggregate in publishSigned := false,
+    publishSigned := {
     val publishPlugin = (publishSigned in plugin in Compile).value
   },
-  aggregate in test := false,
-  test := {
-    val runMetaTests = (test in testsMeta in Test).value
+    aggregate in test := false,
+    test := {
+    val runMetaTests    = (test in testsMeta in Test).value
     val runReflectTests = (test in testsReflect in Test).value
   }
-) aggregate (
-  plugin,
-  testsMeta,
-  testsReflect
-)
+  ) aggregate (
+    plugin,
+    testsMeta,
+    testsReflect
+  )
 
 // main scala.meta paradise plugin
 lazy val plugin = Project(
-  id = "paradise",
-  base = file("plugin")
-) settings (
-  publishableSettings,
-  mergeSettings,
-  libraryDependencies += "org.scalameta" % "scalahost" % MetaVersion cross CrossVersion.full,
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-)
+    id = "paradise",
+    base = file("plugin")
+  ) settings (
+    publishableSettings,
+    mergeSettings,
+    libraryDependencies += "org.scalameta"  % "scalahost"      % MetaVersion cross CrossVersion.full,
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  )
 
 lazy val testsCommon = Project(
-  id = "testsCommon",
-  base = file("tests/common")
-) settings (
-  sharedSettings,
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1",
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-)
+    id = "testsCommon",
+    base = file("tests/common")
+  ) settings (
+    sharedSettings,
+    libraryDependencies += "org.scalatest"  %% "scalatest"     % "3.0.1",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+  )
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
 lazy val testsReflect = Project(
-  id = "testsReflect",
-  base = file("tests/reflect")
-) settings (
-  sharedSettings,
-  usePluginSettings,
-  exposePaths("testsReflect", Test)
-) dependsOn (testsCommon)
+    id = "testsReflect",
+    base = file("tests/reflect")
+  ) settings (
+    sharedSettings,
+    usePluginSettings,
+    exposePaths("testsReflect", Test)
+  ) dependsOn (testsCommon)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
 lazy val testsMeta = Project(
-  id = "testsMeta",
-  base = file("tests/meta")
-) settings (
-  sharedSettings,
-  usePluginSettings,
-  exposePaths("testsMeta", Test)
-) dependsOn (testsCommon)
+    id = "testsMeta",
+    base = file("tests/meta")
+  ) settings (
+    sharedSettings,
+    usePluginSettings,
+    exposePaths("testsMeta", Test)
+  ) dependsOn (testsCommon)
 
 // ==========================================
 // Settings
@@ -91,10 +91,9 @@ lazy val sharedSettings = Def.settings(
   organization := "org.scalameta",
   description := "Empowers production Scala compiler with latest macro developments",
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += Resolver.url(
-    "scalameta-bintray",
-    url("https://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
-  libraryDependencies += "org.scalameta"  %% "scalameta" % MetaVersion,
+  resolvers += Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(
+    Resolver.ivyStylePatterns),
+  libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
   scalacOptions ++= Seq("-Xfatal-warnings"),
@@ -110,16 +109,16 @@ lazy val mergeSettings = Def.settings(
   assemblyOption in assembly ~= { _.copy(includeScala = false) },
   Keys.`package` in Compile := {
     val slimJar = (Keys.`package` in Compile).value
-    val fatJar = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
-    val _ = assembly.value
+    val fatJar  = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
+    val _       = assembly.value
     IO.copy(List(fatJar -> slimJar), overwrite = true)
     slimJar
   },
   packagedArtifact in Compile in packageBin := {
-    val temp = (packagedArtifact in Compile in packageBin).value
+    val temp           = (packagedArtifact in Compile in packageBin).value
     val (art, slimJar) = temp
-    val fatJar = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
-    val _ = assembly.value
+    val fatJar         = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
+    val _              = assembly.value
     IO.copy(List(fatJar -> slimJar), overwrite = true)
     (art, slimJar)
   }
@@ -142,21 +141,23 @@ def computePreReleaseVersion(LibrarySeries: String): String = {
   val preReleaseSuffix = {
     import sys.process._
     val stableSha = Try(os.git.stableSha()).toOption
-    val commitSubjects = Try(augmentString(os.shell.check_output("git log -10 --pretty=%s", cwd = ".")).lines.toList).getOrElse(Nil)
+    val commitSubjects =
+      Try(augmentString(os.shell.check_output("git log -10 --pretty=%s", cwd = ".")).lines.toList)
+        .getOrElse(Nil)
     val prNumbers = commitSubjects.map(commitSubject => {
-      val Merge = "Merge pull request #(\\d+).*".r
+      val Merge  = "Merge pull request #(\\d+).*".r
       val Squash = ".*\\(#(\\d+)\\)".r
       commitSubject match {
-        case Merge(prNumber) => Some(prNumber)
+        case Merge(prNumber)  => Some(prNumber)
         case Squash(prNumber) => Some(prNumber)
-        case _ => None
+        case _                => None
       }
     })
     val mostRecentPrNumber = prNumbers.flatMap(_.toList).headOption
     (stableSha, prNumbers, mostRecentPrNumber) match {
       case (Some(_), Some(prNumber) +: _, _) => prNumber
-      case (_, _, Some(prNumber)) => prNumber + "." + System.currentTimeMillis()
-      case _ => "unknown" + "." + System.currentTimeMillis()
+      case (_, _, Some(prNumber))            => prNumber + "." + System.currentTimeMillis()
+      case _                                 => "unknown" + "." + System.currentTimeMillis()
     }
   }
   LibrarySeries + "-" + preReleaseSuffix
@@ -185,8 +186,7 @@ lazy val publishableSettings = Def.settings(
   sharedSettings,
   bintrayOrganization := Some("scalameta"),
   publishArtifact in Compile := true,
-  publishArtifact in Test := false,
-  {
+  publishArtifact in Test := false, {
     val publishingStatus = {
       if (shouldPublishToBintray) "publishing to Bintray"
       else if (shouldPublishToSonatype) "publishing to Sonatype"
@@ -194,19 +194,22 @@ lazy val publishableSettings = Def.settings(
     }
     println(s"[info] Welcome to paradise $LibraryVersion ($publishingStatus)")
     publish in Compile := (Def.taskDyn {
-      if (shouldPublishToBintray) Def.task { publish.value }
-      else if (shouldPublishToSonatype) Def.task { sys.error("Use publish-signed to publish release versions"); () }
-      else Def.task { sys.error("Undefined publishing strategy"); () }
+      if (shouldPublishToBintray)
+        Def.task { publish.value } else if (shouldPublishToSonatype) Def.task {
+        sys.error("Use publish-signed to publish release versions"); ()
+      } else Def.task { sys.error("Undefined publishing strategy"); () }
     }).value
   },
   publishSigned in Compile := (Def.taskDyn {
-    if (shouldPublishToBintray) Def.task { sys.error("Use publish to publish pre-release versions"); () }
-    else if (shouldPublishToSonatype) Def.task { publishSigned.value }
-    else Def.task { sys.error("Undefined publishing strategy"); () }
+    if (shouldPublishToBintray) Def.task {
+      sys.error("Use publish to publish pre-release versions"); ()
+    } else if (shouldPublishToSonatype) Def.task { publishSigned.value } else
+      Def.task { sys.error("Undefined publishing strategy"); () }
   }).value,
   publishTo := {
     if (shouldPublishToBintray) (publishTo in bintray).value
-    else if (shouldPublishToSonatype) Some("releases" at "https://oss.sonatype.org/" + "service/local/staging/deploy/maven2")
+    else if (shouldPublishToSonatype)
+      Some("releases" at "https://oss.sonatype.org/" + "service/local/staging/deploy/maven2")
     else publishTo.value
   },
   credentials ++= {
@@ -214,9 +217,16 @@ lazy val publishableSettings = Def.settings(
       // NOTE: Bintray credentials are automatically loaded by the sbt-bintray plugin
       Nil
     } else if (shouldPublishToSonatype) {
-      os.secret.obtain("sonatype").map({
-        case (username, password) => Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)
-      }).toList
+      os.secret
+        .obtain("sonatype")
+        .map({
+          case (username, password) =>
+            Credentials("Sonatype Nexus Repository Manager",
+                        "oss.sonatype.org",
+                        username,
+                        password)
+        })
+        .toList
     } else Nil
   },
   publishMavenStyle := {
@@ -224,7 +234,9 @@ lazy val publishableSettings = Def.settings(
     else if (shouldPublishToSonatype) true
     else publishMavenStyle.value
   },
-  pomIncludeRepository := { x => false },
+  pomIncludeRepository := { x =>
+    false
+  },
   licenses += "BSD" -> url("https://github.com/scalameta/paradise/blob/master/LICENSE.md"),
   pomExtra := (
     <url>https://github.com/scalameta/paradise</url>
