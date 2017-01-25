@@ -1,4 +1,4 @@
-class Repl extends ReplSuite("testsAnnotationsMeta") {
+class Repl extends ReplSuite("testsMeta") {
   // TODO: testing this would require filtering the classpath
   // so that it doesn't have scala.meta libraries anymore
   //

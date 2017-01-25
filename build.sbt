@@ -30,13 +30,13 @@ lazy val paradiseRoot = Project(
   },
   aggregate in test := false,
   test := {
-    val runMetaTests = (test in testsAnnotationsMeta in Test).value
-    val runReflectTests = (test in testsAnnotationsReflect in Test).value
+    val runMetaTests = (test in testsMeta in Test).value
+    val runReflectTests = (test in testsReflect in Test).value
   }
 ) aggregate (
   plugin,
-  testsAnnotationsMeta,
-  testsAnnotationsReflect
+  testsMeta,
+  testsReflect
 )
 
 // main scala.meta paradise plugin
@@ -61,23 +61,23 @@ lazy val testsCommon = Project(
 )
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
-lazy val testsAnnotationsReflect = Project(
-  id = "testsAnnotationsReflect",
-  base = file("tests/annotations-reflect")
+lazy val testsReflect = Project(
+  id = "testsReflect",
+  base = file("tests/reflect")
 ) settings (
   sharedSettings,
   usePluginSettings,
-  exposePaths("testsAnnotationsReflect", Test)
+  exposePaths("testsReflect", Test)
 ) dependsOn (testsCommon)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
-lazy val testsAnnotationsMeta = Project(
-  id = "testsAnnotationsMeta",
-  base = file("tests/annotations-meta")
+lazy val testsMeta = Project(
+  id = "testsMeta",
+  base = file("tests/meta")
 ) settings (
   sharedSettings,
   usePluginSettings,
-  exposePaths("testsAnnotationsMeta", Test)
+  exposePaths("testsMeta", Test)
 ) dependsOn (testsCommon)
 
 // ==========================================
