@@ -1,4 +1,4 @@
-class Repl extends ReplSuite("testsAnnotationsReflect") {
+class Repl extends ReplSuite("testsReflect") {
   test("precompiled macros expand") {
     assert(repl("""
       |@thingy class Thingy

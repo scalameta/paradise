@@ -2,7 +2,7 @@ import java.io._
 import scala.compat.Platform.EOL
 import scala.tools.nsc._
 
-class Desugaring extends ToolSuite("testsAnnotationsMeta") {
+class Desugaring extends ToolSuite("testsMeta") {
   test("simple transform") {
     val testDir = File.createTempFile("testDir", System.nanoTime.toString)
     if (!testDir.delete) sys.error("fatal error: can't delete " + testDir.getAbsolutePath)

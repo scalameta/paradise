@@ -1,7 +1,6 @@
 package org.scalameta.paradise
 package typechecker
 
-import org.scalameta.paradise.converters.ToMtree
 import org.scalameta.paradise.reflect.ReflectToolkit
 
 trait AnalyzerPlugins
@@ -20,6 +19,7 @@ trait AnalyzerPlugins
   }
   import definitions._
   import paradiseDefinitions._
+  override lazy val g: global.type = global
 
   object AnalyzerPlugin extends NscAnalyzerPlugin {
     override def pluginsTypeSig(tpe: Type, typer: Typer, tree: Tree, pt: Type) = {
