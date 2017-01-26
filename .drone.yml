@@ -1,21 +1,32 @@
+clone:
+  depth: 50
+  tags: true
+  recursive: true
 build:
   tests:
-    image: olafurpg/scalafix:0.0.1
+    image: ensime/ensime:v2.x-cache
+    pull: true
     environment:
       - COURSIER_CACHE=/drone/cache/coursier
     commands:
-      - ./bin/scalafmt --dir /drone/cache/scalafmt --version 0.5.1 --test
-      - ./bin/testAll.sh
+      - ./bin/checkCLA.sh
+      - ./bin/scalafmt --dir /drone/cache/scalafmt --version 0.5.3 --test
+      - sbt -Dsbt.ivy.home=/drone/cache/ivy2 ++$SCALA_VERSION test
   publish:
-    image: olafurpg/scalafix:0.0.1
+    image: ensime/ensime:v2.x-cache
     environment:
+      - SONATYPE_USERNAME=$$SONATYPE_USERNAME
+      - SONATYPE_PASSWORD=$$SONATYPE_PASSWORD
       - BINTRAY_USERNAME=$$BINTRAY_USERNAME
       - BINTRAY_API_KEY=$$BINTRAY_API_KEY
     commands:
       - ./bin/bintray.sh
     when:
-      event: push # merge into master only, not pull requests.
+      event: push
       branch: [master, 4.x]
+matrix:
+  SCALA_VERSION:
+    - 2.11.8
 cache:
   mount:
     - /drone/cache
