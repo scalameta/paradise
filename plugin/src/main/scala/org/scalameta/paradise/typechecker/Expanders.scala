@@ -4,6 +4,7 @@ package typechecker
 import scala.meta.internal.converters.Converter
 import org.scalameta.paradise.parser.SyntaxAnalyzer
 
+import scala.meta.Term
 import scala.meta.dialects.Paradise211
 
 trait Expanders extends Converter { self: AnalyzerPlugins =>
@@ -172,7 +173,11 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
             })
           }
 
-          val stringExpansion = Paradise211(metaExpansion).syntax
+          val stringExpansion = metaExpansion match {
+            case b: Term.Block => Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
+            case a => Paradise211(a).syntax
+          }
+
           val compiler = new { val global: Expanders.this.global.type = Expanders.this.global }
           with SyntaxAnalyzer
           val parser =

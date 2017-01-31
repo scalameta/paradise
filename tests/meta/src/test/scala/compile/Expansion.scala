@@ -229,6 +229,11 @@ class Expansion extends FunSuite {
     @tparam[Int]
     class Foo
   }
+
+  test("Private in block return") {
+    @genLargeNumberOfStats
+    class foo
+  }
 }
 
 // Note: We cannot actually wrap this in test()
