@@ -175,9 +175,9 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                         body
                     }
                   })
-                val signatureMethod = atPos(stat.pos.focus)(
+                val signatureMethod = atPos(stat.pos)(
                   DefDef(mods, name, mtparams, vparamss, tpt, Ident(Predef_???)))
-                val implMethod = atPos(stat.pos.focus)({
+                val implMethod = atPos(stat.pos)({
                   val implVprefixss = List(List(mkImplPrefix))
                   val implVtparamss = {
                     val tparams = mtparams ++ ctparams.filter(ctparam =>
@@ -216,7 +216,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                 ))
               syntheticCtor +: impls1.filter(_.nonEmpty)
             }
-            val implmdef = atPos(stat.pos.focus)(
+            val implmdef = atPos(stat.pos)(
               ModuleDef(NoMods,
                         name.inlineModuleName,
                         Template(List(Ident(TypeName("AnyRef"))), noSelfType, implmstats)))
