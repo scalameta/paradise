@@ -175,7 +175,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
 
           val stringExpansion = metaExpansion match {
             case b: Term.Block => Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
-            case a => Paradise211(a).syntax
+            case a             => Paradise211(a).syntax
           }
 
           val compiler = new { val global: Expanders.this.global.type = Expanders.this.global }
