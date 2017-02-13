@@ -175,8 +175,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                         body
                     }
                   })
-                val signatureMethod = atPos(stat.pos)(
-                  DefDef(mods, name, mtparams, vparamss, tpt, Ident(Predef_???)))
+                val signatureMethod =
+                  atPos(stat.pos)(DefDef(mods, name, mtparams, vparamss, tpt, Ident(Predef_???)))
                 val implMethod = atPos(stat.pos)({
                   val implVprefixss = List(List(mkImplPrefix))
                   val implVtparamss = {
