@@ -20,9 +20,8 @@ lazy val paradiseRoot = Project(
   ) settings (
     sharedSettings,
     commands += Command.command("ci") { state =>
-    ScalaVersions.foldRight(state) {
-      case (v, s) => s"++$v test" :: s
-    }
+    "very test" ::
+      state
   },
     packagedArtifacts := Map.empty,
     aggregate in publish := false,
