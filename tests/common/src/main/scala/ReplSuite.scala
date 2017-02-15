@@ -4,6 +4,8 @@ import scala.compat.Platform.EOL
 import scala.tools.nsc.interpreter._
 import scala.tools.nsc.{Settings, MainGenericRunner}
 
+case class ReplExit(status: Int) extends Exception(s"Repl exited with status $status")
+
 class ReplSuite(project: String) extends ToolSuite(project) with DisableScalaColor {
   private def replViaILoop(code: String): String = {
     val s = new Settings
@@ -26,7 +28,7 @@ class ReplSuite(project: String) extends ToolSuite(project) with DisableScalaCol
     val lines = code.trim.stripMargin.split(EOL)
     val input = lines.mkString(EOL) + EOL
     val (exitCode, output) = runRepl(input, options => {
-      MainGenericRunner.main(options ++ Array("-Xnojline")); sys.exit(0)
+      MainGenericRunner.main(options ++ Array("-Xnojline")); throw ReplExit(0)
     })
     if (exitCode != 0) fail("repl invocation has failed:" + EOL + output)
     val result = {

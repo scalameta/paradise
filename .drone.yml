@@ -12,7 +12,7 @@ build:
       - git log | head -n 20
       - ./bin/checkCLA.sh
       - ./bin/scalafmt --test
-      - sbt -Dsbt.ivy.home=/drone/cache/ivy2 ++$SCALA_VERSION test
+      - sbt -Dsbt.ivy.home=/drone/cache/ivy2 ci
   publish:
     image: ensime/ensime:v2.x-cache
     environment:
@@ -25,9 +25,6 @@ build:
     when:
       event: push
       branch: [master, 4.x]
-matrix:
-  SCALA_VERSION:
-    - 2.11.8
 cache:
   mount:
     - /drone/cache

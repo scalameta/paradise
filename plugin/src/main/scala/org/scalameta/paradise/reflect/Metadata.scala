@@ -49,16 +49,16 @@ trait Metadata { self: ReflectToolkit =>
   }
 
   class Metadata[T: Attachable](carrier: T) {
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
     def toMap: Map[String, Any] =
       carrier.attachments
         .get[java.util.HashMap[String, Any]]
-        .map(_.toMap)
+        .map(_.asScala.toMap)
         .getOrElse(Map[String, Any]())
     def toOption: Option[Map[String, Any]] =
-      carrier.attachments.get[java.util.HashMap[String, Any]].map(_.toMap)
+      carrier.attachments.get[java.util.HashMap[String, Any]].map(_.asScala.toMap)
     def transform(f: Map[String, Any] => Map[String, Any]): Unit =
-      carrier.updateAttachment(new java.util.HashMap[String, Any](mapAsJavaMap(f(toMap))))
+      carrier.updateAttachment(new java.util.HashMap[String, Any](f(toMap).asJava))
     def contains(key: String): Boolean = toMap.contains(key)
     def apply(key: String): Any        = toMap(key)
     def get(key: String): Option[Any]  = toMap.get(key)

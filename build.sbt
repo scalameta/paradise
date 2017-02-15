@@ -5,7 +5,7 @@ import org.scalameta.os
 import PgpKeys._
 
 lazy val ScalaVersion   = "2.11.8"
-lazy val ScalaVersions  = Seq("2.11.8")
+lazy val ScalaVersions  = Seq("2.11.8", "2.12.1")
 lazy val MetaVersion    = "1.6.0-595"
 lazy val LibrarySeries  = "3.0.0"
 lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
@@ -19,6 +19,11 @@ lazy val paradiseRoot = Project(
     base = file(".")
   ) settings (
     sharedSettings,
+    commands += Command.command("ci") { state =>
+    ScalaVersions.foldRight(state) {
+      case (v, s) => s"++$v test" :: s
+    }
+  },
     packagedArtifacts := Map.empty,
     aggregate in publish := false,
     publish := {
@@ -86,6 +91,7 @@ lazy val testsMeta = Project(
 
 lazy val sharedSettings = Def.settings(
   scalaVersion := ScalaVersion,
+  crossScalaVersions := ScalaVersions,
   crossVersion := CrossVersion.full,
   version := LibraryVersion,
   organization := "org.scalameta",
@@ -98,11 +104,19 @@ lazy val sharedSettings = Def.settings(
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
   scalacOptions ++= Seq("-Xfatal-warnings"),
   logBuffered := false,
+  unmanagedSourceDirectories in Compile += {
+    // NOTE: sbt 0.13.8 provides cross-version support for Scala sources
+    // (http://www.scala-sbt.org/0.13/docs/sbt-0.13-Tech-Previews.html#Cross-version+support+for+Scala+sources).
+    // Unfortunately, it only includes directories like "scala_2.11" or "scala_2.12",
+    // not "scala_2.11.8" or "scala_2.12.1" that we need.
+    // That's why we have to work around here.
+    val base = (sourceDirectory in Compile).value
+    base / ("scala-" + scalaVersion.value)
+  },
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered
 )
 
 lazy val mergeSettings = Def.settings(
-  sharedSettings,
   test in assembly := {},
   logLevel in assembly := Level.Error,
   assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
