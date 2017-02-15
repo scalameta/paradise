@@ -103,13 +103,17 @@ lazy val sharedSettings = Def.settings(
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
   scalacOptions ++= Seq("-Xfatal-warnings"),
   logBuffered := false,
+  // NOTE: sbt 0.13.8 provides cross-version support for Scala sources
+  // (http://www.scala-sbt.org/0.13/docs/sbt-0.13-Tech-Previews.html#Cross-version+support+for+Scala+sources).
+  // Unfortunately, it only includes directories like "scala_2.11" or "scala_2.12",
+  // not "scala_2.11.8" or "scala_2.12.1" that we need.
+  // That's why we have to work around here.
   unmanagedSourceDirectories in Compile += {
-    // NOTE: sbt 0.13.8 provides cross-version support for Scala sources
-    // (http://www.scala-sbt.org/0.13/docs/sbt-0.13-Tech-Previews.html#Cross-version+support+for+Scala+sources).
-    // Unfortunately, it only includes directories like "scala_2.11" or "scala_2.12",
-    // not "scala_2.11.8" or "scala_2.12.1" that we need.
-    // That's why we have to work around here.
     val base = (sourceDirectory in Compile).value
+    base / ("scala-" + scalaVersion.value)
+  },
+  unmanagedSourceDirectories in Test += {
+    val base = (sourceDirectory in Test).value
     base / ("scala-" + scalaVersion.value)
   },
   triggeredMessage in ThisBuild := Watched.clearWhenTriggered

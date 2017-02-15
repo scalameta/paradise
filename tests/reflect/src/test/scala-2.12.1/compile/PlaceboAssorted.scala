@@ -20,10 +20,9 @@ class PlaceboAssorted extends FunSuite {
       |type T
       |value bar
       |value bar
-      |method baz
-      |method baz_=
       |variable baz
-      |value bax
+      |variable baz
+      |variable baz
       |lazy value bax
     """.trim.stripMargin)
   }
