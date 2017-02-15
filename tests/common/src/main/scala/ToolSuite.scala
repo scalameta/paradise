@@ -22,6 +22,8 @@ class ToolSuite(project: String) extends FunSuite {
     } catch {
       case SystemExitException(exitCode) =>
         outputStream.close(); (exitCode, outputStorage.toString)
+      case ReplExit(exitCode) =>
+        outputStream.close(); (exitCode, outputStorage.toString)
     } finally System.setSecurityManager(manager)
   }
 
