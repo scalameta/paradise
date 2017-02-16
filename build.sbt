@@ -39,6 +39,7 @@ lazy val paradiseRoot = Project(
   }
   ) aggregate (
     plugin,
+    testsCommon,
     testsMeta,
     testsReflect
   )
