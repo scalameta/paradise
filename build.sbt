@@ -61,6 +61,8 @@ lazy val testsCommon = Project(
     base = file("tests/common")
   ) settings (
     sharedSettings,
+    publish := {},
+    publishSigned := {},
     libraryDependencies += "org.scalatest"  %% "scalatest"     % "3.0.1",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
   )
@@ -72,6 +74,8 @@ lazy val testsReflect = Project(
   ) settings (
     sharedSettings,
     usePluginSettings,
+    publish := {},
+    publishSigned := {},
     exposePaths("testsReflect", Test)
   ) dependsOn (testsCommon)
 
@@ -82,6 +86,8 @@ lazy val testsMeta = Project(
   ) settings (
     sharedSettings,
     usePluginSettings,
+    publish := {},
+    publishSigned := {},
     exposePaths("testsMeta", Test)
   ) dependsOn (testsCommon)
 
