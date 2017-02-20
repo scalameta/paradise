@@ -20,7 +20,7 @@ lazy val paradiseRoot = Project(
   ) settings (
     sharedSettings,
     commands += Command.command("ci") { state =>
-    "very test" ::
+    "very paradiseRoot/test" ::
       state
   },
     packagedArtifacts := Map.empty,
