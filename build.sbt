@@ -103,8 +103,7 @@ lazy val sharedSettings = Def.settings(
   organization := "org.scalameta",
   description := "Empowers production Scala compiler with latest macro developments",
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(
-    Resolver.ivyStylePatterns),
+  resolvers += Resolver.bintrayIvyRepo("scalameta", "maven"),
   libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
