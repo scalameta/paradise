@@ -6,7 +6,7 @@ import PgpKeys._
 
 lazy val ScalaVersion   = "2.11.8"
 lazy val ScalaVersions  = Seq("2.11.8", "2.12.1")
-lazy val MetaVersion    = "1.6.0-595"
+lazy val MetaVersion    = "1.6.0"
 lazy val LibrarySeries  = "3.0.0"
 lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
 
@@ -103,8 +103,7 @@ lazy val sharedSettings = Def.settings(
   organization := "org.scalameta",
   description := "Empowers production Scala compiler with latest macro developments",
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += Resolver.url("scalameta-bintray", url("https://dl.bintray.com/scalameta/maven"))(
-    Resolver.ivyStylePatterns),
+  resolvers += Resolver.bintrayIvyRepo("scalameta", "maven"),
   libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
@@ -129,6 +128,13 @@ lazy val sharedSettings = Def.settings(
 lazy val mergeSettings = Def.settings(
   test in assembly := {},
   logLevel in assembly := Level.Error,
+  assemblyMergeStrategy in assembly := {
+    // conflicts with scalahost plugin
+    case "scalac-plugin.xml" => MergeStrategy.first
+    case x =>
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  },
   assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
   assemblyOption in assembly ~= { _.copy(includeScala = false) },
   Keys.`package` in Compile := {
@@ -265,13 +271,6 @@ lazy val publishableSettings = Def.settings(
   pomExtra := (
     <url>https://github.com/scalameta/paradise</url>
     <inceptionYear>2012</inceptionYear>
-    <licenses>
-      <license>
-        <name>BSD 3-Clause</name>
-        <url>https://github.com/scalameta/paradise/blob/master/LICENSE.md</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
     <scm>
       <url>git://github.com/scalameta/paradise.git</url>
       <connection>scm:git:git://github.com/scalameta/paradise.git</connection>
