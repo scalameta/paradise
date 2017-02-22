@@ -271,13 +271,6 @@ lazy val publishableSettings = Def.settings(
   pomExtra := (
     <url>https://github.com/scalameta/paradise</url>
     <inceptionYear>2012</inceptionYear>
-    <licenses>
-      <license>
-        <name>BSD 3-Clause</name>
-        <url>https://github.com/scalameta/paradise/blob/master/LICENSE.md</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
     <scm>
       <url>git://github.com/scalameta/paradise.git</url>
       <connection>scm:git:git://github.com/scalameta/paradise.git</connection>
