@@ -67,6 +67,15 @@ lazy val plugin = Project(
           case _ => node
         }
       }).transform(node).head
+    },
+    publishArtifact in (Compile, packageSrc) := {
+      // TODO: addCompilerPlugin for ivy repos is kinda broken.
+      // If sbt finds a sources jar for a compiler plugin, it tries to add it to -Xplugin,
+      // leading to nonsensical scalac invocations like `-Xplugin:...-sources.jar -Xplugin:...jar`.
+      // Until this bug is fixed, we work around.
+      if (shouldPublishToBintray) false
+      else if (shouldPublishToSonatype) true
+      else (publishArtifact in (Compile, packageSrc)).value
     }
   )
 
