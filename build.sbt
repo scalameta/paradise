@@ -1,6 +1,8 @@
 // NOTE: much of this build is copy/pasted from scalameta/scalameta
 import java.io._
 import scala.util.Try
+import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
+import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 import PgpKeys._
 
@@ -53,7 +55,19 @@ lazy val plugin = Project(
     mergeSettings,
     libraryDependencies += "org.scalameta"  % "scalahost"      % MetaVersion cross CrossVersion.full,
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    pomPostProcess := { node =>
+      new RuleTransformer(new RewriteRule {
+        private def isScalametaDependency(node: XmlNode): Boolean = {
+          def isArtifactId(node: XmlNode, fn: String => Boolean) = node.label == "artifactId" && fn(node.text)
+          node.label == "dependency" && node.child.exists(child => isArtifactId(child, _.startsWith("scalahost_")))
+        }
+        override def transform(node: XmlNode): XmlNodeSeq = node match {
+          case e: Elem if isScalametaDependency(node) => Comment("scalahost dependency has been merged into paradise via sbt-assembly")
+          case _ => node
+        }
+      }).transform(node).head
+    }
   )
 
 lazy val testsCommon = Project(
