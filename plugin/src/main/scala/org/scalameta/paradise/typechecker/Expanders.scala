@@ -1,7 +1,7 @@
 package org.scalameta.paradise
 package typechecker
 
-import scala.meta.internal.converters.Converter
+import scala.meta.internal.scalahost.converters.Converter
 import org.scalameta.paradise.parser.SyntaxAnalyzer
 
 import scala.meta.Term

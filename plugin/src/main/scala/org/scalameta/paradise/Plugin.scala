@@ -3,7 +3,7 @@ package org.scalameta.paradise
 import scala.tools.nsc.{Global, Phase, SubComponent}
 import scala.tools.nsc.plugins.{Plugin => NscPlugin, PluginComponent => NscPluginComponent}
 import scala.collection.{mutable, immutable}
-import scala.meta.internal.converters.Converter
+import scala.meta.internal.scalahost.converters.Converter
 import org.scalameta.paradise.reflect.ReflectToolkit
 import org.scalameta.paradise.parser.HijackSyntaxAnalyzer
 import org.scalameta.paradise.typechecker.HijackAnalyzer
