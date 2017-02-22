@@ -57,26 +57,29 @@ lazy val plugin = Project(
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     pomPostProcess := { node =>
-      new RuleTransformer(new RewriteRule {
-        private def isScalametaDependency(node: XmlNode): Boolean = {
-          def isArtifactId(node: XmlNode, fn: String => Boolean) = node.label == "artifactId" && fn(node.text)
-          node.label == "dependency" && node.child.exists(child => isArtifactId(child, _.startsWith("scalahost_")))
-        }
-        override def transform(node: XmlNode): XmlNodeSeq = node match {
-          case e: Elem if isScalametaDependency(node) => Comment("scalahost dependency has been merged into paradise via sbt-assembly")
-          case _ => node
-        }
-      }).transform(node).head
-    },
+    new RuleTransformer(new RewriteRule {
+      private def isScalametaDependency(node: XmlNode): Boolean = {
+        def isArtifactId(node: XmlNode, fn: String => Boolean) =
+          node.label == "artifactId" && fn(node.text)
+        node.label == "dependency" && node.child.exists(child =>
+          isArtifactId(child, _.startsWith("scalahost_")))
+      }
+      override def transform(node: XmlNode): XmlNodeSeq = node match {
+        case e: Elem if isScalametaDependency(node) =>
+          Comment("scalahost dependency has been merged into paradise via sbt-assembly")
+        case _ => node
+      }
+    }).transform(node).head
+  },
     publishArtifact in (Compile, packageSrc) := {
-      // TODO: addCompilerPlugin for ivy repos is kinda broken.
-      // If sbt finds a sources jar for a compiler plugin, it tries to add it to -Xplugin,
-      // leading to nonsensical scalac invocations like `-Xplugin:...-sources.jar -Xplugin:...jar`.
-      // Until this bug is fixed, we work around.
-      if (shouldPublishToBintray) false
-      else if (shouldPublishToSonatype) true
-      else (publishArtifact in (Compile, packageSrc)).value
-    }
+    // TODO: addCompilerPlugin for ivy repos is kinda broken.
+    // If sbt finds a sources jar for a compiler plugin, it tries to add it to -Xplugin,
+    // leading to nonsensical scalac invocations like `-Xplugin:...-sources.jar -Xplugin:...jar`.
+    // Until this bug is fixed, we work around.
+    if (shouldPublishToBintray) false
+    else if (shouldPublishToSonatype) true
+    else (publishArtifact in (Compile, packageSrc)).value
+  }
   )
 
 lazy val testsCommon = Project(
@@ -126,9 +129,8 @@ lazy val sharedSettings = Def.settings(
   organization := "org.scalameta",
   description := "Empowers production Scala compiler with latest macro developments",
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += Resolver.url(
-    "scalameta",
-    url("http://dl.bintray.com/scalameta/maven"))(Resolver.ivyStylePatterns),
+  resolvers += Resolver.url("scalameta", url("http://dl.bintray.com/scalameta/maven"))(
+    Resolver.ivyStylePatterns),
   libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
