@@ -182,7 +182,9 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
           with SyntaxAnalyzer
           val parser =
             compiler.newUnitParser(new CompilationUnit(newSourceFile(stringExpansion, "<macro>")))
-          Some(gen.mkTreeOrBlock(parser.parseStatsOrPackages()))
+          val expandedTree = gen.mkTreeOrBlock(parser.parseStatsOrPackages())
+          removeAllRangePositions(expandedTree)
+          Some(expandedTree)
         } catch {
           // NOTE: this means an error that has been caught and reported
           case MacroExpansionException => None

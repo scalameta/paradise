@@ -220,6 +220,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
               ModuleDef(NoMods,
                         name.inlineModuleName,
                         Template(List(Ident(TypeName("AnyRef"))), noSelfType, implmstats)))
+            removeAllRangePositions(stat1)
+            removeAllRangePositions(implmdef)
             List(stat1, implmdef)
           } else {
             List(stat)

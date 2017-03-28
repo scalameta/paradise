@@ -11,6 +11,7 @@ trait ReflectToolkit
     with TreeInfo
     with StdAttachments
     with Mirrors
+    with RemoveRangePositions
     with Symbols
     with ReplIntegration
     with Names

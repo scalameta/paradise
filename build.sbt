@@ -114,6 +114,7 @@ lazy val testsMeta = Project(
     usePluginSettings,
     publish := {},
     publishSigned := {},
+    scalacOptions += "-Yrangepos",
     exposePaths("testsMeta", Test)
   ) dependsOn (testsCommon)
 
