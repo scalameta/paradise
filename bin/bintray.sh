@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-if [[ "$CI_BRANCH" == "master" ]]; then
+if [[ "$DRONE_BRANCH" == "master" ]]; then
   mkdir -p $HOME/.bintray
   cat > $HOME/.bintray/.credentials <<EOF
 realm = Bintray API Realm
