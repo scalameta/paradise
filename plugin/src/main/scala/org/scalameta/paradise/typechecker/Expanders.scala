@@ -33,7 +33,6 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
     import expanderErrorGen._
     import namer.typer.TyperErrorGen._
 
-
     def expandOldAnnotationMacro(original: Tree,
                                  annotationSym: Symbol,
                                  annotationTree: Tree,

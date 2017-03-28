@@ -1,10 +1,15 @@
-clone:
-  depth: 50
-  tags: true
-  recursive: true
-build:
+pipeline:
+  # Fetch folders from distributed cache
+  sftp_cache_restore:
+    image: plugins/sftp-cache
+    restore: true
+    mount:
+      - /drone/.ivy2
+      - /drone/.sbt
+      - /drone/.git
+
   tests:
-    image: ensime/ensime:v2.x-cache
+    image: scalaplatform/scala:0.6
     pull: true
     environment:
       - COURSIER_CACHE=/drone/cache/coursier
@@ -12,19 +17,34 @@ build:
       - git log | head -n 20
       - ./bin/checkCLA.sh
       - ./bin/scalafmt --test
-      - sbt -Dsbt.ivy.home=/drone/cache/ivy2 ci
+      - /usr/bin/sbt ci
+
   publish:
-    image: ensime/ensime:v2.x-cache
-    environment:
-      - SONATYPE_USERNAME=$$SONATYPE_USERNAME
-      - SONATYPE_PASSWORD=$$SONATYPE_PASSWORD
-      - BINTRAY_USERNAME=$$BINTRAY_USERNAME
-      - BINTRAY_API_KEY=$$BINTRAY_API_KEY
+    image: olafurpg/scalafix:0.3.0
     commands:
       - ./bin/bintray.sh
     when:
       event: push
-      branch: [master, 4.x]
-cache:
-  mount:
-    - /drone/cache
+      branch: [master]
+
+  notify:
+    image: drillster/drone-email
+    host: smtp.mailgun.org
+    username: noreply@drone.geirsson.com
+    password: ${MAILGUN_PASSWORD}
+    from: noreply@drone.geirsson.com
+    recipients:
+      - olafurpg@gmail.com
+    when:
+      event: push
+      branch: [master]
+      status: [changed, failure]
+
+  # Save folders in distributed cache
+  sftp_cache_rebuild:
+    image: plugins/sftp-cache
+    rebuild: true
+    mount:
+      - /drone/.ivy2
+      - /drone/.sbt
+      - /drone/.git
