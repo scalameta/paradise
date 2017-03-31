@@ -8,7 +8,7 @@ import PgpKeys._
 
 lazy val ScalaVersion   = "2.11.8"
 lazy val ScalaVersions  = Seq("2.11.8", "2.12.1")
-lazy val MetaVersion    = "1.6.0"
+lazy val MetaVersion    = "1.7.0-487-13087aaf"
 lazy val LibrarySeries  = "3.0.0"
 lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
 
@@ -156,13 +156,6 @@ lazy val sharedSettings = Def.settings(
 lazy val mergeSettings = Def.settings(
   test in assembly := {},
   logLevel in assembly := Level.Error,
-  assemblyMergeStrategy in assembly := {
-    // conflicts with scalahost plugin
-    case "scalac-plugin.xml" => MergeStrategy.first
-    case x =>
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
-  },
   assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
   assemblyOption in assembly ~= { _.copy(includeScala = false) },
   Keys.`package` in Compile := {
