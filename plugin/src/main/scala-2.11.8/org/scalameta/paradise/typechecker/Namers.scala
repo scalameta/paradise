@@ -78,14 +78,14 @@ trait Namers { self: AnalyzerPlugins =>
         case tree @ ClassDef(mods, name, _, _) =>
           val existing = context.scope.lookup(name)
           val isRedefinition = (
-              existing.isType
-                && existing.isTopLevel
-                && context.scope == existing.owner.info.decls
-                && (
-                  currentRun.canRedefine(existing) ||
-                    isExpanded(existing)
-                )
-            )
+            existing.isType
+              && existing.isTopLevel
+              && context.scope == existing.owner.info.decls
+              && (
+                currentRun.canRedefine(existing) ||
+                  isExpanded(existing)
+              )
+          )
           val clazz: Symbol = {
             if (isRedefinition) {
               updatePosFlags(existing, tree.pos, mods.flags)
@@ -423,11 +423,10 @@ trait Namers { self: AnalyzerPlugins =>
 
           // take care of the companion if it's no longer needed
           // we can't do this in companion's completer, because that one isn't guaranteed to ever be called
-          val expandedWithoutCompanion = isExpanded(sym) && attachedExpansion(companion)
-              .map(_.isEmpty)
-              .getOrElse(false)
-          val companionHasReemerged = expandedWithoutCompanion && sym.isTopLevel && !isWeak(
-              companion)
+          val expandedWithoutCompanion =
+            isExpanded(sym) && attachedExpansion(companion).map(_.isEmpty).getOrElse(false)
+          val companionHasReemerged =
+            expandedWithoutCompanion && sym.isTopLevel && !isWeak(companion)
           val notExpandableWeakCompanion = isNotExpandable(sym) && isWeak(companion)
           if ((expandedWithoutCompanion && !companionHasReemerged) || notExpandableWeakCompanion)
             destroy(companion)
