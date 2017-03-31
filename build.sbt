@@ -8,7 +8,7 @@ import PgpKeys._
 
 lazy val ScalaVersion   = "2.11.8"
 lazy val ScalaVersions  = Seq("2.11.8", "2.12.1")
-lazy val MetaVersion    = "1.6.0"
+lazy val MetaVersion    = "1.7.0-487-13087aaf"
 lazy val LibrarySeries  = "3.0.0"
 lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
 
@@ -17,46 +17,46 @@ lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
 // ==========================================
 
 lazy val paradiseRoot = Project(
-    id = "paradiseRoot",
-    base = file(".")
-  ) settings (
-    sharedSettings,
-    commands += Command.command("ci") { state =>
+  id = "paradiseRoot",
+  base = file(".")
+) settings (
+  sharedSettings,
+  commands += Command.command("ci") { state =>
     "very paradiseRoot/test" ::
       state
   },
-    packagedArtifacts := Map.empty,
-    aggregate in publish := false,
-    publish := {
+  packagedArtifacts := Map.empty,
+  aggregate in publish := false,
+  publish := {
     val publishPlugin = (publish in plugin in Compile).value
   },
-    aggregate in publishSigned := false,
-    publishSigned := {
+  aggregate in publishSigned := false,
+  publishSigned := {
     val publishPlugin = (publishSigned in plugin in Compile).value
   },
-    aggregate in test := false,
-    test := {
+  aggregate in test := false,
+  test := {
     val runMetaTests    = (test in testsMeta in Test).value
     val runReflectTests = (test in testsReflect in Test).value
   }
-  ) aggregate (
-    plugin,
-    testsCommon,
-    testsMeta,
-    testsReflect
-  )
+) aggregate (
+  plugin,
+  testsCommon,
+  testsMeta,
+  testsReflect
+)
 
 // main scala.meta paradise plugin
 lazy val plugin = Project(
-    id = "paradise",
-    base = file("plugin")
-  ) settings (
-    publishableSettings,
-    mergeSettings,
-    libraryDependencies += "org.scalameta"  % "scalahost"      % MetaVersion cross CrossVersion.full,
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-    pomPostProcess := { node =>
+  id = "paradise",
+  base = file("plugin")
+) settings (
+  publishableSettings,
+  mergeSettings,
+  libraryDependencies += "org.scalameta"  % "scalahost"      % MetaVersion cross CrossVersion.full,
+  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+  pomPostProcess := { node =>
     new RuleTransformer(new RewriteRule {
       private def isScalametaDependency(node: XmlNode): Boolean = {
         def isArtifactId(node: XmlNode, fn: String => Boolean) =
@@ -71,7 +71,7 @@ lazy val plugin = Project(
       }
     }).transform(node).head
   },
-    publishArtifact in (Compile, packageSrc) := {
+  publishArtifact in (Compile, packageSrc) := {
     // TODO: addCompilerPlugin for ivy repos is kinda broken.
     // If sbt finds a sources jar for a compiler plugin, it tries to add it to -Xplugin,
     // leading to nonsensical scalac invocations like `-Xplugin:...-sources.jar -Xplugin:...jar`.
@@ -80,43 +80,43 @@ lazy val plugin = Project(
     else if (shouldPublishToSonatype) true
     else (publishArtifact in (Compile, packageSrc)).value
   }
-  )
+)
 
 lazy val testsCommon = Project(
-    id = "testsCommon",
-    base = file("tests/common")
-  ) settings (
-    sharedSettings,
-    publish := {},
-    publishSigned := {},
-    libraryDependencies += "org.scalatest"  %% "scalatest"     % "3.0.1",
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-  )
+  id = "testsCommon",
+  base = file("tests/common")
+) settings (
+  sharedSettings,
+  publish := {},
+  publishSigned := {},
+  libraryDependencies += "org.scalatest"  %% "scalatest"     % "3.0.1",
+  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
 lazy val testsReflect = Project(
-    id = "testsReflect",
-    base = file("tests/reflect")
-  ) settings (
-    sharedSettings,
-    usePluginSettings,
-    publish := {},
-    publishSigned := {},
-    exposePaths("testsReflect", Test)
-  ) dependsOn (testsCommon)
+  id = "testsReflect",
+  base = file("tests/reflect")
+) settings (
+  sharedSettings,
+  usePluginSettings,
+  publish := {},
+  publishSigned := {},
+  exposePaths("testsReflect", Test)
+) dependsOn (testsCommon)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
 lazy val testsMeta = Project(
-    id = "testsMeta",
-    base = file("tests/meta")
-  ) settings (
-    sharedSettings,
-    usePluginSettings,
-    publish := {},
-    publishSigned := {},
-    scalacOptions += "-Yrangepos",
-    exposePaths("testsMeta", Test)
-  ) dependsOn (testsCommon)
+  id = "testsMeta",
+  base = file("tests/meta")
+) settings (
+  sharedSettings,
+  usePluginSettings,
+  publish := {},
+  publishSigned := {},
+  scalacOptions += "-Yrangepos",
+  exposePaths("testsMeta", Test)
+) dependsOn (testsCommon)
 
 // ==========================================
 // Settings
@@ -156,13 +156,6 @@ lazy val sharedSettings = Def.settings(
 lazy val mergeSettings = Def.settings(
   test in assembly := {},
   logLevel in assembly := Level.Error,
-  assemblyMergeStrategy in assembly := {
-    // conflicts with scalahost plugin
-    case "scalac-plugin.xml" => MergeStrategy.first
-    case x =>
-      val oldStrategy = (assemblyMergeStrategy in assembly).value
-      oldStrategy(x)
-  },
   assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
   assemblyOption in assembly ~= { _.copy(includeScala = false) },
   Keys.`package` in Compile := {

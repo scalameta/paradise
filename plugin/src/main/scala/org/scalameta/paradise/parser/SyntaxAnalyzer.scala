@@ -181,7 +181,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                   val implVprefixss = List(List(mkImplPrefix))
                   val implVtparamss = {
                     val tparams = mtparams ++ ctparams.filter(ctparam =>
-                        !mtparams.exists(_.name == ctparam.name))
+                      !mtparams.exists(_.name == ctparam.name))
                     if (tparams.nonEmpty) List(tparams.map(mkImplVtparam)) else Nil
                   }
                   val implVparamss = implVprefixss ++ implVtparamss ++ mmap(vparamss)(mkImplVparam)
