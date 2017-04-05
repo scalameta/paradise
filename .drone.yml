@@ -14,7 +14,7 @@ pipeline:
     environment:
       - COURSIER_CACHE=/drone/cache/coursier
     commands:
-      - git log | head -n 20
+      - git fetch --tags && git log | head -n 20
       - ./bin/checkCLA.sh
       - ./bin/scalafmt --test
       - /usr/bin/sbt ci
