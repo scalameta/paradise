@@ -60,7 +60,7 @@ trait Namers { self: AnalyzerPlugins =>
           case _ =>
             tree match {
               case md: DefDef => log("[+symbol] " + sym.debugLocationString)
-              case _          =>
+              case _ =>
             }
         }
         tree.symbol = sym
@@ -111,7 +111,7 @@ trait Namers { self: AnalyzerPlugins =>
           }
           clazz
         case tree @ ModuleDef(mods, name, _) =>
-          var m: Symbol   = context.scope lookupModule name
+          var m: Symbol = context.scope lookupModule name
           val moduleFlags = mods.flags | MODULE
           // TODO: inCurrentScope(m) check that's present in vanilla Namer is omitted here
           // this fixes SI-3772, but may break something else - I didn't have time to look into that
@@ -156,7 +156,7 @@ trait Namers { self: AnalyzerPlugins =>
     // reimplemented to integrate with weakEnsureCompanionObject
     def ensureCompanionObject(cdef: ClassDef,
                               creator: ClassDef => Tree = companionModuleDef(_)): Symbol = {
-      val m              = patchedCompanionSymbolOf(cdef.symbol, context)
+      val m = patchedCompanionSymbolOf(cdef.symbol, context)
       def synthesizeTree = atPos(cdef.pos.focus)(creator(cdef))
       if (m != NoSymbol && currentRun.compiles(m) && !isWeak(m)) m
       else unmarkWeak(enterSyntheticSym(synthesizeTree))
@@ -180,19 +180,19 @@ trait Namers { self: AnalyzerPlugins =>
       // therefore when we actually get to enter the parameters, we shouldn't even bother checking
       // TODO: we don't handle primary ctors that might get spuriously marked as maybe expandees because of primary paramss
       val aprioriNotExpandable = (context.tree, tree) match {
-        case (ClassDef(_, _, _, _), TypeDef(_, _, _, _))                        => true
+        case (ClassDef(_, _, _, _), TypeDef(_, _, _, _)) => true
         case (Template(_, _, _), ValDef(mods, _, _, _)) if mods.isParamAccessor => true
         // vparamss of primary ctors are entered in `enterValueParams`, which doesn't call us
         case (DefDef(_, _, _, _, _, _), TypeDef(_, _, _, _)) => true
         // vparamss of normal methods are also entered in `enterValueParams`, which doesn't call us
         case (TypeDef(_, _, _, _), TypeDef(_, _, _, _)) => true
-        case _                                          => false
+        case _ => false
       }
 
       if (aprioriNotExpandable) finishSymbolNotExpandee(tree)
       else {
         treeInfo.getAnnotationZippers(tree) match {
-          case Nil     => finishSymbolNotExpandee(tree)
+          case Nil => finishSymbolNotExpandee(tree)
           case zippers => finishSymbolMaybeExpandee(tree, zippers)
         }
 
@@ -201,14 +201,14 @@ trait Namers { self: AnalyzerPlugins =>
         // we won't see `object C` in `companion` - we will see NoSymbol
         // that's the limitation of how namer works, but nevertheless it's not a problem for us
         // because if finishing `class C` doesn't set up the things, finishing `object C` will
-        val sym       = tree.symbol
+        val sym = tree.symbol
         val companion = patchedCompanionSymbolOf(sym, context)
 
         tree match {
           // TODO: should we also support annotations on modules expanding companion classes?
           case tree @ ClassDef(_, _, _, _) if isMaybeExpandee(sym) =>
             val wasExpanded = isExpanded(companion)
-            val m           = weakEnsureCompanionObject(tree)
+            val m = weakEnsureCompanionObject(tree)
             finishSymbolMaybeExpandeeCompanion(attachedSource(m), m, sym)
             if (wasExpanded) markExpanded(m) // why is this necessary? see files/run/macro-annotation-recursive-class
           // TODO: in general, this first call to FSMEC usually only brings grief
@@ -224,7 +224,7 @@ trait Namers { self: AnalyzerPlugins =>
       val sym = tree.symbol
       def savingLock[T](op: => T): T = {
         val wasLocked = sym.hasFlag(LOCKED)
-        val result    = op
+        val result = op
         if (wasLocked) sym.setFlag(LOCKED)
         result
       }
@@ -359,7 +359,7 @@ trait Namers { self: AnalyzerPlugins =>
     implicit class RichType(tpe: Type) {
       def completeOnlyExpansions(sym: Symbol) = tpe match {
         case mec: Namer#MaybeExpandeeCompleter => mec.complete(sym, onlyExpansions = true)
-        case c                                 => ()
+        case c => ()
       }
     }
 
@@ -378,7 +378,7 @@ trait Namers { self: AnalyzerPlugins =>
                           annottee: Tree,
                           maybeExpandee: Tree): Option[List[Tree]] = {
             val treeInfo.Applied(Select(New(tpt), nme.CONSTRUCTOR), _, _) = annotation
-            val mann                                                      = probeMacroAnnotation(context, tpt)
+            val mann = probeMacroAnnotation(context, tpt)
             if (mann.isMacroAnnotation && context.macrosEnabled) {
               // if we encounter an error, we just return None, so that other macro annotations can proceed
               // this is unlike macroExpand1 when any error in an expandee blocks expansions
@@ -466,9 +466,9 @@ trait Namers { self: AnalyzerPlugins =>
           // 2b is tricky, because it means that we need to fall back to the most recent non-FSMEC completer.
           // The hardest part here is that we can't just get to the completer that was preceding `this` as m.rawInfo
           // (otherwise we run into issue #9, for more details see history of this change). Instead we need to track m's type history.
-          val destroyedDuringExpansion           = m.rawInfo == NoType
+          val destroyedDuringExpansion = m.rawInfo == NoType
           val failedToMaterializeDuringExpansion = isWeak(m)
-          val aliveAndKicking                    = !destroyedDuringExpansion && !failedToMaterializeDuringExpansion
+          val aliveAndKicking = !destroyedDuringExpansion && !failedToMaterializeDuringExpansion
           if (aliveAndKicking && isNotExpandable(c)) {
             if (worthBackingUp) restoreCompleter(m)
             val maybeExpandee = m.rawInfo.isInstanceOf[Namer#MaybeExpandeeCompleter]
@@ -491,16 +491,16 @@ trait Namers { self: AnalyzerPlugins =>
 
       // UNSAFE HELPERS (need to guard against unnecessary completions)
       def canDefineMann(sym: Symbol): Boolean = !currentRun.compiles(sym)
-      def exists(sym: Symbol)                 = if (canDefineMann(sym)) sym.exists else false
+      def exists(sym: Symbol) = if (canDefineMann(sym)) sym.exists else false
       def importedSymbol(imp: ImportInfo, name: Name): Symbol = { // TODO: be more precise in reproducing importSig and importedSymbol
         val impContext = context.enclosingContextChain.find(_.tree.symbol == imp.tree.symbol).get
         val sym =
           imp.tree.cached("importQualProbe", probeMacroAnnotation(impContext.outer, imp.tree.expr))
-        val pre            = if (reallyExists(sym) && isAccessible(impContext, sym)) sym.tpe else NoType
+        val pre = if (reallyExists(sym) && isAccessible(impContext, sym)) sym.tpe else NoType
         var result: Symbol = NoSymbol
-        var renamed        = false
-        var selectors      = imp.tree.selectors
-        def current        = selectors.head
+        var renamed = false
+        var selectors = imp.tree.selectors
+        def current = selectors.head
         while (selectors != Nil && result == NoSymbol) {
           if (current.rename == name.toTermName)
             result =
@@ -535,9 +535,9 @@ trait Namers { self: AnalyzerPlugins =>
           case Ident(name) =>
             def resolve(name: Name): Symbol = {
               // STEP 1: RESOLVE THE NAME IN SCOPE
-              var defSym: Symbol       = NoSymbol
+              var defSym: Symbol = NoSymbol
               var defEntry: ScopeEntry = null
-              var cx                   = context
+              var cx = context
               while (defSym == NoSymbol && cx != NoContext && (cx.scope ne null)) {
                 defEntry = cx.scope.lookupEntry(name)
                 if ((defEntry ne null) && qualifies(defEntry.sym)) defSym = defEntry.sym
@@ -561,7 +561,7 @@ trait Namers { self: AnalyzerPlugins =>
                     else 0 // TODO: fix this in toolboxes, not hack around here
                   } - defEntry.owner.nestingLevel)
               var impSym: Symbol = NoSymbol
-              var imports        = context.imports
+              var imports = context.imports
               while (!reallyExists(impSym) && !imports.isEmpty && imports.head.depth > symDepth) {
                 impSym = importedSymbol(imports.head, name)
                 if (!exists(impSym)) imports = imports.tail
@@ -572,7 +572,7 @@ trait Namers { self: AnalyzerPlugins =>
               // this is a crude workaround for the issue
               imports match {
                 case fst :: snd :: _ if exists(impSym) && fst == snd => imports = imports.tail
-                case _                                               => // do nothing
+                case _ => // do nothing
               }
 
               // STEP 3: TRY TO RESOLVE AMBIGUITIES
@@ -586,7 +586,7 @@ trait Namers { self: AnalyzerPlugins =>
               }
               if (!exists(defSym) && exists(impSym)) {
                 var impSym1: Symbol = NoSymbol
-                var imports1        = imports.tail
+                var imports1 = imports.tail
                 while (!imports1.isEmpty &&
                        (!imports.head.isExplicitImport(name) ||
                        imports1.head.depth == imports.head.depth)) {
@@ -620,7 +620,7 @@ trait Namers { self: AnalyzerPlugins =>
           case Select(qualtree, name) => // TODO: be more precise wrt typedSelect
             def resolve(name: Name): Symbol = {
               val qual = probeMacroAnnotation(context, qualtree)
-              val sym  = if (canDefineMann(qual)) member(qual.tpe, name) else NoSymbol
+              val sym = if (canDefineMann(qual)) member(qual.tpe, name) else NoSymbol
               if (reallyExists(sym) && isAccessible(context, sym)) sym else NoSymbol
             }
             resolve(name).orElse(resolve(name.toTermName))
@@ -651,7 +651,7 @@ trait Namers { self: AnalyzerPlugins =>
           def patchedLookup(name: Name, expectedOwner: Symbol) = new PatchedLookupResult {
             override def suchThat(criterion: Symbol => Boolean): Symbol = {
               var res: Symbol = NoSymbol
-              var ctx         = PatchedContext.this.ctx
+              var ctx = PatchedContext.this.ctx
               while (res == NoSymbol && ctx.outer != ctx) {
                 // NOTE: original implementation says `val s = ctx.scope lookup name`
                 // but we can't use it, because Scope.lookup returns wrong results when the lookup is ambiguous
@@ -659,7 +659,7 @@ trait Namers { self: AnalyzerPlugins =>
                 val s = {
                   val lookupResult = ctx.scope.lookupAll(name).filter(criterion).toList
                   lookupResult match {
-                    case Nil          => NoSymbol
+                    case Nil => NoSymbol
                     case List(unique) => unique
                     case _ =>
                       abort(

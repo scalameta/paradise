@@ -16,8 +16,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
   import definitions._
   import paradiseDefinitions._
 
-  val runsAfter        = List[String]()
-  val runsRightAfter   = None
+  val runsAfter = List[String]()
+  val runsRightAfter = None
   override val initial = true
 
   private def initialUnitBody(unit: CompilationUnit): Tree = {
@@ -38,7 +38,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
     private def skippingModifiers[T](op: => T): T =
       lookingAhead(if (isModifier) lookingAhead(skippingModifiers(op)) else op)
     override def isExprIntroToken(token: Token) = !isInline && super.isExprIntroToken(token)
-    override def isDclIntro: Boolean            = isInline || super.isDclIntro
+    override def isDclIntro: Boolean = isInline || super.isDclIntro
 
     private def markInline(offset: Offset, mods: Modifiers): Modifiers = {
       if (MetaInlineClass != NoSymbol && MetaStatClass != NoSymbol)
@@ -164,7 +164,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                         object transformer extends Transformer {
                           override def transform(tree: Tree): Tree = tree match {
                             case This(tpnme.EMPTY) => Ident(InlinePrefixParameterName)
-                            case tree              => super.transform(tree)
+                            case tree => super.transform(tree)
                           }
                         }
                         transformer.transform(arg)
@@ -185,8 +185,8 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
                     if (tparams.nonEmpty) List(tparams.map(mkImplVtparam)) else Nil
                   }
                   val implVparamss = implVprefixss ++ implVtparamss ++ mmap(vparamss)(mkImplVparam)
-                  val implTpt      = mkImplTpt(tpt)
-                  val implBody     = mkImplBody(rhs)
+                  val implTpt = mkImplTpt(tpt)
+                  val implBody = mkImplBody(rhs)
                   DefDef(NoMods, name.inlineImplName, Nil, implVparamss, implTpt, implBody)
                 })
                 (signatureMethod, implMethod)
@@ -233,7 +233,7 @@ abstract class SyntaxAnalyzer extends NscSyntaxAnalyzer with ReflectToolkit {
   }
 
   override def newPhase(prev: Phase): StdPhase = new StdPhase(prev) {
-    override val checkable       = false
+    override val checkable = false
     override val keepsTypeParams = false
 
     def apply(unit: CompilationUnit) {

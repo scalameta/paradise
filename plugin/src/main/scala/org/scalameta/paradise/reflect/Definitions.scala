@@ -11,9 +11,9 @@ trait Definitions { self: ReflectToolkit =>
   import definitions._
 
   object paradiseDefinitions {
-    lazy val InheritedAttr   = requiredClass[java.lang.annotation.Inherited]
+    lazy val InheritedAttr = requiredClass[java.lang.annotation.Inherited]
     lazy val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
-    lazy val MetaStatClass   = rootMirror.getClassIfDefined("scala.meta.Stat")
-    lazy val MetaTypeClass   = rootMirror.getClassIfDefined("scala.meta.Type")
+    lazy val MetaStatClass = rootMirror.getClassIfDefined("scala.meta.Stat")
+    lazy val MetaTypeClass = rootMirror.getClassIfDefined("scala.meta.Type")
   }
 }

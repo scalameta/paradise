@@ -68,7 +68,7 @@ trait StdAttachments { self: ReflectToolkit =>
   private def checkExpansionStatus(sym: Symbol, p: SymbolExpansionStatus => Boolean) =
     sym.attachments.get[SymbolExpansionStatus].map(p).getOrElse(false)
   def isMaybeExpandee(sym: Symbol): Boolean = checkExpansionStatus(sym, _.isUnknown)
-  def isExpanded(sym: Symbol): Boolean      = checkExpansionStatus(sym, _.isExpanded)
+  def isExpanded(sym: Symbol): Boolean = checkExpansionStatus(sym, _.isExpanded)
   def isNotExpandable(sym: Symbol): Boolean = checkExpansionStatus(sym, _.isNotExpandable)
   def markMaybeExpandee(sym: Symbol): Symbol =
     if (sym != null && sym != NoSymbol) sym.updateAttachment(Unknown) else sym
@@ -92,12 +92,12 @@ trait StdAttachments { self: ReflectToolkit =>
 }
 
 class SymbolExpansionStatus private (val value: Int) extends AnyVal {
-  def isUnknown       = this == SymbolExpansionStatus.Unknown
-  def isExpanded      = this == SymbolExpansionStatus.Expanded
+  def isUnknown = this == SymbolExpansionStatus.Unknown
+  def isExpanded = this == SymbolExpansionStatus.Expanded
   def isNotExpandable = this == SymbolExpansionStatus.NotExpandable
 }
 object SymbolExpansionStatus {
-  val Unknown       = new SymbolExpansionStatus(0)
-  val Expanded      = new SymbolExpansionStatus(1)
+  val Unknown = new SymbolExpansionStatus(0)
+  val Expanded = new SymbolExpansionStatus(1)
   val NotExpandable = new SymbolExpansionStatus(2)
 }

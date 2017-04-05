@@ -16,7 +16,7 @@ trait HijackAnalyzer { self: NscPlugin =>
 
   def hijackAnalyzer(): global.analyzer.type = {
     // NOTE: need to hijack the right `analyzer` field - it's different for batch compilers and repl compilers
-    val isRepl        = global.isInstanceOf[NscReplGlobal]
+    val isRepl = global.isInstanceOf[NscReplGlobal]
     val isInteractive = global.isInstanceOf[NscInteractiveGlobal]
     val newAnalyzer = {
       if (isInteractive) {
@@ -53,7 +53,7 @@ trait HijackAnalyzer { self: NscPlugin =>
     analyzerField.set(global, newAnalyzer)
 
     val phasesSetMapGetter = classOf[NscGlobal].getDeclaredMethod("phasesSet")
-    val phasesSet          = phasesSetMapGetter.invoke(global).require[mutable.Set[SubComponent]]
+    val phasesSet = phasesSetMapGetter.invoke(global).require[mutable.Set[SubComponent]]
     if (phasesSet.exists(_.phaseName == "typer")) { // `scalac -help` doesn't instantiate standard phases
       def subcomponentNamed(name: String) = phasesSet.find(_.phaseName == name).head
       val oldScs @ List(oldNamer, oldPackageobjects, oldTyper) = List(
