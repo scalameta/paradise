@@ -22,15 +22,6 @@ lazy val paradiseRoot = project
     commands += Command.command("ci") { state =>
       "very paradiseRoot/test" ::
         state
-    },
-    aggregate in publish := false,
-    publish := {
-      val publishPlugin = (publish in paradise in Compile).value
-    },
-    aggregate in test := false,
-    test := {
-      val runMetaTests = (test in testsMeta in Test).value
-      val runReflectTests = (test in testsReflect in Test).value
     }
   )
   .aggregate(
