@@ -33,6 +33,12 @@ lazy val paradiseRoot = project
       val runReflectTests = (test in testsReflect in Test).value
     }
   )
+  .aggregate(
+    paradise,
+    testsCommon,
+    testsReflect,
+    testsMeta
+  )
 
 lazy val paradise = project
   .in(file("plugin"))
@@ -76,6 +82,7 @@ lazy val testsReflect = project
   .settings(
     sharedSettings,
     usePluginSettings,
+    nonPublishableSettings,
     exposePaths("testsReflect", Test)
   )
   .dependsOn(testsCommon)
@@ -88,7 +95,8 @@ lazy val testsMeta = project
     usePluginSettings,
     nonPublishableSettings,
     exposePaths("testsMeta", Test)
-  ).dependsOn(testsCommon)
+  )
+  .dependsOn(testsCommon)
 
 // ==========================================
 // Settings
@@ -155,8 +163,7 @@ lazy val publishableSettings = Def.settings(
   sharedSettings,
   bintrayOrganization := Some("scalameta"),
   publishArtifact.in(Compile) := true,
-  publishArtifact.in(Test) := false,
-  {
+  publishArtifact.in(Test) := false, {
     val publishingEnabled: Boolean = {
       if (!new File(sys.props("user.home") + "/.bintray/.credentials").exists) false
       else if (sys.props("sbt.prohibit.publish") != null) false
@@ -246,7 +253,7 @@ def exposePaths(projectName: String, config: Configuration) = {
     },
     fullClasspath in config := {
       val defaultValue = (fullClasspath in config).value
-      val classpath    = defaultValue.files.map(_.getAbsolutePath)
+      val classpath = defaultValue.files.map(_.getAbsolutePath)
       val scalaLibrary = classpath.map(_.toString).find(_.contains("scala-library")).get
       System.setProperty("sbt.paths.scalalibrary.classes", scalaLibrary)
       System.setProperty(prefix + "classes", classpath.mkString(java.io.File.pathSeparator))
