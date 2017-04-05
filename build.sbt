@@ -41,7 +41,7 @@ lazy val paradise = project
     description := "Empowers production Scala compiler with latest macro developments",
     mergeSettings,
     isFullCrossVersion,
-    libraryDependencies += "org.scalameta" % "scalahost-core" % MetaVersion cross CrossVersion.full,
+    libraryDependencies += "org.scalameta" % "scalahost" % MetaVersion cross CrossVersion.full,
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     pomPostProcess := { node =>
