@@ -4,172 +4,135 @@ import scala.util.Try
 import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
-import PgpKeys._
 
-lazy val ScalaVersion   = "2.11.8"
-lazy val ScalaVersions  = Seq("2.11.8", "2.12.1")
-lazy val MetaVersion    = "1.7.0-487-13087aaf"
-lazy val LibrarySeries  = "3.0.0"
-lazy val LibraryVersion = computePreReleaseVersion(LibrarySeries)
+lazy val LanguageVersions = Seq("2.11.9", "2.12.1")
+lazy val MetaVersion = "1.7.0-496-5f890293"
+lazy val LanguageVersion = LanguageVersions.head
+lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
 
 // ==========================================
 // Projects
 // ==========================================
 
-lazy val paradiseRoot = Project(
-  id = "paradiseRoot",
-  base = file(".")
-) settings (
-  sharedSettings,
-  commands += Command.command("ci") { state =>
-    "very paradiseRoot/test" ::
-      state
-  },
-  packagedArtifacts := Map.empty,
-  aggregate in publish := false,
-  publish := {
-    val publishPlugin = (publish in plugin in Compile).value
-  },
-  aggregate in publishSigned := false,
-  publishSigned := {
-    val publishPlugin = (publishSigned in plugin in Compile).value
-  },
-  aggregate in test := false,
-  test := {
-    val runMetaTests    = (test in testsMeta in Test).value
-    val runReflectTests = (test in testsReflect in Test).value
-  }
-) aggregate (
-  plugin,
-  testsCommon,
-  testsMeta,
-  testsReflect
-)
+lazy val paradiseRoot = project
+  .in(file("."))
+  .settings(
+    sharedSettings,
+    nonPublishableSettings,
+    commands += Command.command("ci") { state =>
+      "very paradiseRoot/test" ::
+        state
+    },
+    aggregate in publish := false,
+    publish := {
+      val publishPlugin = (publish in paradise in Compile).value
+    },
+    aggregate in test := false,
+    test := {
+      val runMetaTests = (test in testsMeta in Test).value
+      val runReflectTests = (test in testsReflect in Test).value
+    }
+  )
 
-// main scala.meta paradise plugin
-lazy val plugin = Project(
-  id = "paradise",
-  base = file("plugin")
-) settings (
-  publishableSettings,
-  mergeSettings,
-  libraryDependencies += "org.scalameta"  % "scalahost"      % MetaVersion cross CrossVersion.full,
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-  addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-  pomPostProcess := { node =>
-    new RuleTransformer(new RewriteRule {
-      private def isScalametaDependency(node: XmlNode): Boolean = {
-        def isArtifactId(node: XmlNode, fn: String => Boolean) =
-          node.label == "artifactId" && fn(node.text)
-        node.label == "dependency" && node.child.exists(child =>
-          isArtifactId(child, _.startsWith("scalahost_")))
-      }
-      override def transform(node: XmlNode): XmlNodeSeq = node match {
-        case e: Elem if isScalametaDependency(node) =>
-          Comment("scalahost dependency has been merged into paradise via sbt-assembly")
-        case _ => node
-      }
-    }).transform(node).head
-  },
-  publishArtifact in (Compile, packageSrc) := {
-    // TODO: addCompilerPlugin for ivy repos is kinda broken.
-    // If sbt finds a sources jar for a compiler plugin, it tries to add it to -Xplugin,
-    // leading to nonsensical scalac invocations like `-Xplugin:...-sources.jar -Xplugin:...jar`.
-    // Until this bug is fixed, we work around.
-    if (shouldPublishToBintray) false
-    else if (shouldPublishToSonatype) true
-    else (publishArtifact in (Compile, packageSrc)).value
-  }
-)
+lazy val paradise = project
+  .in(file("plugin"))
+  .settings(
+    publishableSettings,
+    description := "Empowers production Scala compiler with latest macro developments",
+    mergeSettings,
+    isFullCrossVersion,
+    libraryDependencies += "org.scalameta" % "scalahost" % MetaVersion cross CrossVersion.full,
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    pomPostProcess := { node =>
+      new RuleTransformer(new RewriteRule {
+        private def isScalametaDependency(node: XmlNode): Boolean = {
+          def isArtifactId(node: XmlNode, fn: String => Boolean) =
+            node.label == "artifactId" && fn(node.text)
+          node.label == "dependency" && node.child.exists(child =>
+            isArtifactId(child, _.startsWith("scalahost_")))
+        }
+        override def transform(node: XmlNode): XmlNodeSeq = node match {
+          case e: Elem if isScalametaDependency(node) =>
+            Comment("scalahost dependency has been merged into paradise via sbt-assembly")
+          case _ => node
+        }
+      }).transform(node).head
+    }
+  )
 
-lazy val testsCommon = Project(
-  id = "testsCommon",
-  base = file("tests/common")
-) settings (
-  sharedSettings,
-  publish := {},
-  publishSigned := {},
-  libraryDependencies += "org.scalatest"  %% "scalatest"     % "3.0.1",
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
-)
+lazy val testsCommon = project
+  .in(file("tests/common"))
+  .settings(
+    sharedSettings,
+    nonPublishableSettings,
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1",
+    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+  )
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
-lazy val testsReflect = Project(
-  id = "testsReflect",
-  base = file("tests/reflect")
-) settings (
-  sharedSettings,
-  usePluginSettings,
-  publish := {},
-  publishSigned := {},
-  exposePaths("testsReflect", Test)
-) dependsOn (testsCommon)
+lazy val testsReflect = project
+  .in(file("tests/reflect"))
+  .settings(
+    sharedSettings,
+    usePluginSettings,
+    exposePaths("testsReflect", Test)
+  )
+  .dependsOn(testsCommon)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
-lazy val testsMeta = Project(
-  id = "testsMeta",
-  base = file("tests/meta")
-) settings (
-  sharedSettings,
-  usePluginSettings,
-  publish := {},
-  publishSigned := {},
-  scalacOptions += "-Yrangepos",
-  exposePaths("testsMeta", Test)
-) dependsOn (testsCommon)
+lazy val testsMeta = project
+  .in(file("tests/meta"))
+  .settings(
+    sharedSettings,
+    usePluginSettings,
+    nonPublishableSettings,
+    exposePaths("testsMeta", Test)
+  ).dependsOn(testsCommon)
 
 // ==========================================
 // Settings
 // ==========================================
 
 lazy val sharedSettings = Def.settings(
-  scalaVersion := ScalaVersion,
-  crossScalaVersions := ScalaVersions,
-  crossVersion := CrossVersion.full,
+  scalaVersion := LanguageVersion,
+  crossScalaVersions := LanguageVersions,
+  crossVersion := CrossVersion.binary,
   version := LibraryVersion,
   organization := "org.scalameta",
-  description := "Empowers production Scala compiler with latest macro developments",
+  resolvers += Resolver.sonatypeRepo("snapshots"),
+  resolvers += Resolver.bintrayRepo("scalameta", "maven"),
   resolvers += Resolver.sonatypeRepo("releases"),
-  resolvers += Resolver.url("scalameta", url("http://dl.bintray.com/scalameta/maven"))(
-    Resolver.ivyStylePatterns),
   libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
   scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked"),
   scalacOptions ++= Seq("-Xfatal-warnings"),
   logBuffered := false,
-  // NOTE: sbt 0.13.8 provides cross-version support for Scala sources
-  // (http://www.scala-sbt.org/0.13/docs/sbt-0.13-Tech-Previews.html#Cross-version+support+for+Scala+sources).
-  // Unfortunately, it only includes directories like "scala_2.11" or "scala_2.12",
-  // not "scala_2.11.8" or "scala_2.12.1" that we need.
-  // That's why we have to work around here.
-  unmanagedSourceDirectories in Compile += {
-    val base = (sourceDirectory in Compile).value
-    base / ("scala-" + scalaVersion.value)
-  },
-  unmanagedSourceDirectories in Test += {
-    val base = (sourceDirectory in Test).value
-    base / ("scala-" + scalaVersion.value)
-  },
-  triggeredMessage in ThisBuild := Watched.clearWhenTriggered
+  updateOptions := updateOptions.value.withCachedResolution(true),
+  triggeredMessage.in(ThisBuild) := Watched.clearWhenTriggered
 )
 
 lazy val mergeSettings = Def.settings(
-  test in assembly := {},
-  logLevel in assembly := Level.Error,
-  assemblyJarName in assembly := name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
-  assemblyOption in assembly ~= { _.copy(includeScala = false) },
-  Keys.`package` in Compile := {
-    val slimJar = (Keys.`package` in Compile).value
-    val fatJar  = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
-    val _       = assembly.value
+  sharedSettings,
+  test.in(assembly) := {},
+  logLevel.in(assembly) := Level.Error,
+  assemblyJarName.in(assembly) :=
+    name.value + "_" + scalaVersion.value + "-" + version.value + "-assembly.jar",
+  assemblyOption.in(assembly) ~= { _.copy(includeScala = false) },
+  Keys.`package`.in(Compile) := {
+    val slimJar = Keys.`package`.in(Compile).value
+    val fatJar =
+      new File(crossTarget.value + "/" + assemblyJarName.in(assembly).value)
+    val _ = assembly.value
     IO.copy(List(fatJar -> slimJar), overwrite = true)
     slimJar
   },
-  packagedArtifact in Compile in packageBin := {
-    val temp           = (packagedArtifact in Compile in packageBin).value
+  packagedArtifact.in(Compile).in(packageBin) := {
+    val temp = packagedArtifact.in(Compile).in(packageBin).value
     val (art, slimJar) = temp
-    val fatJar         = new File(crossTarget.value + "/" + (assemblyJarName in assembly).value)
-    val _              = assembly.value
+    val fatJar =
+      new File(crossTarget.value + "/" + assemblyJarName.in(assembly).value)
+    val _ = assembly.value
     IO.copy(List(fatJar -> slimJar), overwrite = true)
     (art, slimJar)
   }
@@ -177,7 +140,7 @@ lazy val mergeSettings = Def.settings(
 
 lazy val usePluginSettings = Seq(
   scalacOptions ++= {
-    val jar = (Keys.`package` in plugin in Compile).value
+    val jar = Keys.`package`.in(paradise).in(Compile).value
     System.setProperty("sbt.paths.plugin.jar", jar.getAbsolutePath)
     val addPlugin = "-Xplugin:" + jar.getAbsolutePath
     // Thanks Jason for this cool idea (taken from https://github.com/retronym/boxer)
@@ -188,103 +151,36 @@ lazy val usePluginSettings = Seq(
   }
 )
 
-def computePreReleaseVersion(LibrarySeries: String): String = {
-  val preReleaseSuffix = {
-    import sys.process._
-    val stableSha = Try(os.git.stableSha()).toOption
-    val commitSubjects =
-      Try(augmentString(os.shell.check_output("git log -10 --pretty=%s", cwd = ".")).lines.toList)
-        .getOrElse(Nil)
-    val prNumbers = commitSubjects.map(commitSubject => {
-      val Merge  = "Merge pull request #(\\d+).*".r
-      val Squash = ".*\\(#(\\d+)\\)".r
-      commitSubject match {
-        case Merge(prNumber)  => Some(prNumber)
-        case Squash(prNumber) => Some(prNumber)
-        case _                => None
-      }
-    })
-    val mostRecentPrNumber = prNumbers.flatMap(_.toList).headOption
-    (stableSha, prNumbers, mostRecentPrNumber) match {
-      case (Some(_), Some(prNumber) +: _, _) => prNumber
-      case (_, _, Some(prNumber))            => prNumber + "." + System.currentTimeMillis()
-      case _                                 => "unknown" + "." + System.currentTimeMillis()
-    }
-  }
-  LibrarySeries + "-" + preReleaseSuffix
-}
-
-// Pre-release versions go to bintray and should be published via `publish`.
-// This is the default behavior that you get without modifying the build.
-// The only exception is that we take extra care to not publish on pull request validation jobs in Drone.
-def shouldPublishToBintray: Boolean = {
-  if (!new File(sys.props("user.home") + "/.bintray/.credentials").exists) return false
-  if (sys.props("sbt.prohibit.publish") != null) return false
-  if (sys.env.contains("CI_PULL_REQUEST")) return false
-  LibraryVersion.contains("-")
-}
-
-// Release versions go to sonatype and then get synced to maven central.
-// They should be published via `publish-signed` and signed by someone from <developers>.
-// In order to publish a release version, change LibraryVersion to be equal to LibrarySeries.
-def shouldPublishToSonatype: Boolean = {
-  if (!os.secret.obtain("sonatype").isDefined) return false
-  if (sys.props("sbt.prohibit.publish") != null) return false
-  !LibraryVersion.contains("-")
-}
-
 lazy val publishableSettings = Def.settings(
   sharedSettings,
   bintrayOrganization := Some("scalameta"),
-  publishArtifact in Compile := true,
-  publishArtifact in Test := false, {
-    val publishingStatus = {
-      if (shouldPublishToBintray) "publishing to Bintray"
-      else if (shouldPublishToSonatype) "publishing to Sonatype"
-      else "publishing disabled"
+  publishArtifact.in(Compile) := true,
+  publishArtifact.in(Test) := false,
+  {
+    val publishingEnabled: Boolean = {
+      if (!new File(sys.props("user.home") + "/.bintray/.credentials").exists) false
+      else if (sys.props("sbt.prohibit.publish") != null) false
+      else if (sys.env.contains("CI_PULL_REQUEST")) false
+      else true
     }
-    println(s"[info] Welcome to paradise $LibraryVersion ($publishingStatus)")
-    publish in Compile := (Def.taskDyn {
-      if (shouldPublishToBintray)
-        Def.task { publish.value } else if (shouldPublishToSonatype) Def.task {
-        sys.error("Use publish-signed to publish release versions"); ()
-      } else Def.task { sys.error("Undefined publishing strategy"); () }
-    }).value
+    if (sys.props("disable.publish.status") == null) {
+      sys.props("disable.publish.status") = ""
+      val publishingStatus = if (publishingEnabled) "enabled" else "disabled"
+      println(s"[info] Welcome to paradise $LibraryVersion (publishing $publishingStatus)")
+    }
+    publish.in(Compile) := {
+      if (publishingEnabled) {
+        Def.task {
+          publish.value
+        }
+      } else {
+        Def.task {
+          sys.error("Undefined publishing strategy"); ()
+        }
+      }
+    }
   },
-  publishSigned in Compile := (Def.taskDyn {
-    if (shouldPublishToBintray) Def.task {
-      sys.error("Use publish to publish pre-release versions"); ()
-    } else if (shouldPublishToSonatype) Def.task { publishSigned.value } else
-      Def.task { sys.error("Undefined publishing strategy"); () }
-  }).value,
-  publishTo := {
-    if (shouldPublishToBintray) (publishTo in bintray).value
-    else if (shouldPublishToSonatype)
-      Some("releases" at "https://oss.sonatype.org/" + "service/local/staging/deploy/maven2")
-    else publishTo.value
-  },
-  credentials ++= {
-    if (shouldPublishToBintray) {
-      // NOTE: Bintray credentials are automatically loaded by the sbt-bintray plugin
-      Nil
-    } else if (shouldPublishToSonatype) {
-      os.secret
-        .obtain("sonatype")
-        .map({
-          case (username, password) =>
-            Credentials("Sonatype Nexus Repository Manager",
-                        "oss.sonatype.org",
-                        username,
-                        password)
-        })
-        .toList
-    } else Nil
-  },
-  publishMavenStyle := {
-    if (shouldPublishToBintray) false
-    else if (shouldPublishToSonatype) true
-    else publishMavenStyle.value
-  },
+  publishMavenStyle := true,
   pomIncludeRepository := { x =>
     false
   },
@@ -308,6 +204,28 @@ lazy val publishableSettings = Def.settings(
       </developer>
     </developers>
   )
+)
+
+lazy val nonPublishableSettings = Seq(
+  publishArtifact := false,
+  publish := {}
+)
+
+lazy val isFullCrossVersion = Seq(
+  crossVersion := CrossVersion.full,
+  // NOTE: sbt 0.13.8 provides cross-version support for Scala sources
+  // (http://www.scala-sbt.org/0.13/docs/sbt-0.13-Tech-Previews.html#Cross-version+support+for+Scala+sources).
+  // Unfortunately, it only includes directories like "scala_2.11" or "scala_2.12",
+  // not "scala_2.11.8" or "scala_2.12.1" that we need.
+  // That's why we have to work around here.
+  unmanagedSourceDirectories in Compile += {
+    val base = (sourceDirectory in Compile).value
+    base / ("scala-" + scalaVersion.value)
+  },
+  unmanagedSourceDirectories in Test += {
+    val base = (sourceDirectory in Test).value
+    base / ("scala-" + scalaVersion.value)
+  }
 )
 
 def exposePaths(projectName: String, config: Configuration) = {
