@@ -5,12 +5,18 @@ import java.io._
 import scala.sys.process._
 import scala.compat.Platform.EOL
 
+object time {
+  // cached here to use consistent time stamp across sbt reloads, which happen
+  // for every ++SCALA_VERSION switch in sbt "very publish"
+  val stamp = System.currentTimeMillis().toString
+}
+
 object shell {
   def exec(command: String, cwd: String = "."): (Int, String, String) = {
     def slurp(stream: InputStream): String = {
-      val reader  = new BufferedReader(new InputStreamReader(stream))
+      val reader = new BufferedReader(new InputStreamReader(stream))
       val builder = new StringBuilder()
-      var done    = false
+      var done = false
       while (!done) {
         val line = reader.readLine()
         if (line != null) builder.append(line + EOL)
@@ -18,10 +24,10 @@ object shell {
       }
       builder.toString
     }
-    val p        = Runtime.getRuntime.exec(command, null, new File(cwd))
+    val p = Runtime.getRuntime.exec(command, null, new File(cwd))
     val exitcode = p.waitFor()
-    val stdout   = slurp(p.getInputStream) // lol at the naming
-    val stderr   = slurp(p.getErrorStream)
+    val stdout = slurp(p.getInputStream) // lol at the naming
+    val stderr = slurp(p.getErrorStream)
     (exitcode, stdout, stderr)
   }
 
@@ -48,8 +54,7 @@ object secret {
       try {
         import scala.xml._
         val settings = XML.loadFile(credentialsFile)
-        def readServerConfig(key: String) =
-          (settings \\ "settings" \\ "servers" \\ "server" \\ key).head.text
+        def readServerConfig(key: String) = (settings \\ "settings" \\ "servers" \\ "server" \\ key).head.text
         Some((readServerConfig("username"), readServerConfig("password")))
       } catch {
         case ex: Exception => None
@@ -68,10 +73,8 @@ object secret {
 object temp {
   def mkdir(): File = {
     val temp = File.createTempFile("temp", System.nanoTime.toString)
-    if (!temp.delete)
-      sys.error("failed to create a temporary directory: can't delete " + temp.getAbsolutePath)
-    if (!temp.mkdir)
-      sys.error("failed to create a temporary directory: can't mkdir " + temp.getAbsolutePath)
+    if (!temp.delete) sys.error("failed to create a temporary directory: can't delete " + temp.getAbsolutePath)
+    if (!temp.mkdir) sys.error("failed to create a temporary directory: can't mkdir " + temp.getAbsolutePath)
     temp
   }
 }
@@ -94,7 +97,7 @@ object shutil {
       try {
         val out = new FileOutputStream(dest)
         try {
-          val buf  = new Array[Byte](1024)
+          val buf = new Array[Byte](1024)
           var done = false
           while (!done) {
             val len = in.read(buf)
@@ -112,21 +115,71 @@ object shutil {
 }
 
 object git {
-  def stableSha() = {
-    val currentSha = shell.check_output("git rev-parse HEAD", cwd = ".")
-    val changed    = shell.check_output("git diff --name-status", cwd = ".")
-    if (changed.trim.nonEmpty)
-      sys.error("repository " + new File(".").getAbsolutePath + " is dirty (has modified files)")
-    val staged = shell.check_output("git diff --staged --name-status", cwd = ".")
-    if (staged.trim.nonEmpty)
-      sys.error("repository " + new File(".").getAbsolutePath + " is dirty (has staged files)")
-    val untracked = shell.check_output("git ls-files --others --exclude-standard", cwd = ".")
-    if (untracked.trim.nonEmpty)
-      sys.error("repository " + new File(".").getAbsolutePath + " is dirty (has untracked files)")
-    val (exitcode, stdout, stderr) = shell.exec(s"git branch -r --contains $currentSha")
-    if (exitcode != 0 || stdout.isEmpty)
-      sys.error(
-        "repository " + new File(".").getAbsolutePath + " doesn't contain commit " + currentSha)
-    currentSha.trim
+  def isStable(): Boolean = {
+    def noUntrackedFiles = {
+      val untracked = shell.check_output("git ls-files --others --exclude-standard", cwd = ".")
+      untracked.trim.isEmpty
+    }
+    def noModifiedFiles = {
+      val changed = shell.check_output("git diff --name-status", cwd = ".")
+      changed.trim.isEmpty
+    }
+    def noStagedFiles = {
+      val staged = shell.check_output("git diff --staged --name-status", cwd = ".")
+      staged.trim.isEmpty
+    }
+    noUntrackedFiles && noModifiedFiles && noStagedFiles
+  }
+
+  def distance(from: String, to: String): Int = {
+    def ncommits(ref: String) = shell.check_output(s"git rev-list $ref --count", cwd = ".").trim.toInt
+    ncommits(to) - ncommits(from)
+  }
+
+  def currentSha(): String = {
+    shell.check_output("git rev-parse HEAD", cwd = ".").trim
   }
 }
+
+object version {
+  def stable(): String = {
+    // TODO: uncomment this once we release 3.0.0
+    // val stdout = shell.check_output(s"git tag -l v*")
+    // val latestTag = stdout.split(EOL).last
+    // val status = """^v(\d+)\.(\d+)\.(\d+)$""".r.unapplySeq(latestTag)
+    // if (status.isEmpty) sys.error(s"unexpected shape of tag $latestTag in$EOL$stdout")
+    // latestTag.stripPrefix("v")
+    ???
+  }
+
+  def preRelease(): String = {
+    val nextStableVersion = {
+      // TODO: uncomment this once we release 3.0.0
+      // val currStableVersion = stable()
+      // val kindaSemVer = """^(\d+)\.(\d+)\.(\d+)$""".r
+      // currStableVersion match {
+      //   case kindaSemVer(s_currEpoch, s_currMajor, _) =>
+      //     val currMajor = {
+      //       try s_currMajor.toInt
+      //       catch { case ex: Exception => sys.error(s"unexpected shape of version.stable() in $currStableVersion") }
+      //     }
+      //     val nextMajor = currMajor + 1
+      //     s"$s_currEpoch.$nextMajor.0"
+      // }
+      "3.0.0"
+    }
+    val preReleaseSuffix = {
+      val gitDescribeSuffix = {
+        // TODO: uncomment this once we release 3.0.0
+        // val distance = os.git.distance("v3.0.0", "HEAD")
+        val distance = os.git.distance("v3.0.0-M1_2.11.8", "HEAD")
+        val currentSha = os.git.currentSha().substring(0, 8)
+        s"$distance-$currentSha"
+      }
+      if (os.git.isStable()) gitDescribeSuffix
+      else gitDescribeSuffix + "." + os.time.stamp
+    }
+    nextStableVersion + "-" + preReleaseSuffix
+  }
+}
+
