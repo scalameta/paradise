@@ -182,3 +182,4 @@ object version {
     nextStableVersion + "-" + preReleaseSuffix
   }
 }
+

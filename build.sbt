@@ -14,22 +14,25 @@ lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.versi
 // Projects
 // ==========================================
 
-name := "paradiseRoot"
-sharedSettings
-nonPublishableSettings
-commands += Command.command("ci") { state =>
-  "very paradiseRoot/test" ::
-    state
-}
-aggregate in publish := false
-publish := {
-  val publishPlugin = (publish in paradise in Compile).value
-}
-aggregate in test := false
-test := {
-  val runMetaTests = (test in testsMeta in Test).value
-  val runReflectTests = (test in testsReflect in Test).value
-}
+lazy val paradiseRoot = project
+  .in(file("."))
+  .settings(
+    sharedSettings,
+    nonPublishableSettings,
+    commands += Command.command("ci") { state =>
+      "very paradiseRoot/test" ::
+        state
+    },
+    aggregate in publish := false,
+    publish := {
+      val publishPlugin = (publish in paradise in Compile).value
+    },
+    aggregate in test := false,
+    test := {
+      val runMetaTests = (test in testsMeta in Test).value
+      val runReflectTests = (test in testsReflect in Test).value
+    }
+  )
 
 lazy val paradise = project
   .in(file("plugin"))
