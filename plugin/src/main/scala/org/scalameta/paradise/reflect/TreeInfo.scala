@@ -16,18 +16,18 @@ trait TreeInfo { self: ReflectToolkit =>
 
     def anyConstructorHasDefault(tree: ClassDef): Boolean = tree.impl.body exists {
       case DefDef(_, nme.CONSTRUCTOR, _, paramss, _, _) => mexists(paramss)(_.mods.hasDefault)
-      case _                                            => false
+      case _ => false
     }
 
     def isOldMacroAnnotation(tree: ClassDef): Boolean = {
-      val clazz                   = tree.symbol
-      def isAnnotation            = clazz isNonBottomSubClass AnnotationClass
+      val clazz = tree.symbol
+      def isAnnotation = clazz isNonBottomSubClass AnnotationClass
       def hasMacroTransformMethod = clazz.info.member(nme.macroTransform) != NoSymbol
       clazz != null && isAnnotation && hasMacroTransformMethod
     }
 
     def isNewMacroAnnotation(tree: ClassDef): Boolean = {
-      val clazz        = tree.symbol
+      val clazz = tree.symbol
       def isAnnotation = clazz isNonBottomSubClass AnnotationClass
       def hasInlineApplyMethod = {
         val apply = clazz.info.member(nme.apply)
@@ -67,7 +67,7 @@ trait TreeInfo { self: ReflectToolkit =>
           if (!deep) czippers
           else {
             val tzippers = for {
-              tparam                                     <- tparams
+              tparam <- tparams
               AnnotationZipper(ann, tparam1: TypeDef, _) <- loop(tparam, deep = false)
               tparams1 = tparams.updated(tparams.indexOf(tparam), tparam1)
             } yield
@@ -84,10 +84,10 @@ trait TreeInfo { self: ReflectToolkit =>
                                                           selfdef,
                                                           body)))
             val vzippers = for {
-              vparams                                   <- vparamss
-              vparam                                    <- vparams
+              vparams <- vparamss
+              vparam <- vparams
               AnnotationZipper(ann, vparam1: ValDef, _) <- loop(vparam, deep = false)
-              vparams1  = vparams.updated(vparams.indexOf(vparam), vparam1)
+              vparams1 = vparams.updated(vparams.indexOf(vparam), vparam1)
               vparamss1 = vparamss.updated(vparamss.indexOf(vparams), vparams1)
             } yield
               AnnotationZipper(ann,
@@ -113,7 +113,7 @@ trait TreeInfo { self: ReflectToolkit =>
           if (!deep) czippers
           else {
             val tzippers = for {
-              tparam                                     <- tparams
+              tparam <- tparams
               AnnotationZipper(ann, tparam1: TypeDef, _) <- loop(tparam, deep = false)
               tparams1 = tparams.updated(tparams.indexOf(tparam), tparam1)
             } yield AnnotationZipper(ann, tparam1, atPos(tree.pos)(tdef.copy(tparams = tparams1)))
@@ -132,15 +132,15 @@ trait TreeInfo { self: ReflectToolkit =>
           if (!deep) dzippers
           else {
             val tzippers = for {
-              tparam                                     <- tparams
+              tparam <- tparams
               AnnotationZipper(ann, tparam1: TypeDef, _) <- loop(tparam, deep = false)
               tparams1 = tparams.updated(tparams.indexOf(tparam), tparam1)
             } yield AnnotationZipper(ann, tparam1, atPos(tree.pos)(ddef.copy(tparams = tparams1)))
             val vzippers = for {
-              vparams                                   <- vparamss
-              vparam                                    <- vparams
+              vparams <- vparamss
+              vparam <- vparams
               AnnotationZipper(ann, vparam1: ValDef, _) <- loop(vparam, deep = false)
-              vparams1  = vparams.updated(vparams.indexOf(vparam), vparam1)
+              vparams1 = vparams.updated(vparams.indexOf(vparam), vparam1)
               vparamss1 = vparamss.updated(vparamss.indexOf(vparams), vparams1)
             } yield
               AnnotationZipper(ann, vparam1, atPos(tree.pos)(ddef.copy(vparamss = vparamss1)))
@@ -159,7 +159,7 @@ trait TreeInfo { self: ReflectToolkit =>
           if (!deep) tzippers
           else {
             val ttzippers = for {
-              tparam                                     <- tparams
+              tparam <- tparams
               AnnotationZipper(ann, tparam1: TypeDef, _) <- loop(tparam, deep = false)
               tparams1 = tparams.updated(tparams.indexOf(tparam), tparam1)
             } yield AnnotationZipper(ann, tparam1, atPos(tree.pos)(tdef.copy(tparams = tparams1)))

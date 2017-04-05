@@ -60,24 +60,24 @@ trait Metadata { self: ReflectToolkit =>
     def transform(f: Map[String, Any] => Map[String, Any]): Unit =
       carrier.updateAttachment(new java.util.HashMap[String, Any](f(toMap).asJava))
     def contains(key: String): Boolean = toMap.contains(key)
-    def apply(key: String): Any        = toMap(key)
-    def get(key: String): Option[Any]  = toMap.get(key)
+    def apply(key: String): Any = toMap(key)
+    def get(key: String): Option[Any] = toMap.get(key)
     def getOrElse[T: ClassTag](key: String, value: => T): T =
       toMap.get(key).map(_.require[T]).getOrElse(value)
     def getOrElseUpdate[T: ClassTag](key: String, default: => T): T = {
       val valueopt = toMap.get(key).map(_.require[T])
-      val value    = valueopt.getOrElse(default)
+      val value = valueopt.getOrElse(default)
       if (valueopt.isEmpty) update(key, value)
       value
     }
     def update(key: String, value: Any): Unit = transform(_ + (key -> value))
-    def remove(key: String): Unit             = transform(_ - key)
-    def +=(kvp: (String, Any)): Unit          = update(kvp._1, kvp._2)
-    def ++=(other: Map[String, Any]): Unit    = transform(_ ++ other)
-    def ++=(other: Metadata[T]): Unit         = transform(_ ++ other.toMap)
-    def -=(key: String): Unit                 = remove(key)
-    def --=(other: List[String]): Unit        = transform(_ -- other)
-    def --=(other: Metadata[T]): Unit         = transform(_ -- other.toMap.keys)
-    override def toString                     = toMap.toString
+    def remove(key: String): Unit = transform(_ - key)
+    def +=(kvp: (String, Any)): Unit = update(kvp._1, kvp._2)
+    def ++=(other: Map[String, Any]): Unit = transform(_ ++ other)
+    def ++=(other: Metadata[T]): Unit = transform(_ ++ other.toMap)
+    def -=(key: String): Unit = remove(key)
+    def --=(other: List[String]): Unit = transform(_ -- other)
+    def --=(other: Metadata[T]): Unit = transform(_ -- other.toMap.keys)
+    override def toString = toMap.toString
   }
 }

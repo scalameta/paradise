@@ -5,15 +5,15 @@ import java.security.Permission
 
 class ToolSuite(project: String) extends FunSuite {
   private def virtualizedPopen(input: String, body: => Unit): (Int, String) = {
-    val inputStream   = new ByteArrayInputStream(input.getBytes(Charset.forName("UTF-8")))
+    val inputStream = new ByteArrayInputStream(input.getBytes(Charset.forName("UTF-8")))
     val outputStorage = new ByteArrayOutputStream()
-    val outputStream  = new PrintStream(outputStorage)
+    val outputStream = new PrintStream(outputStorage)
     case class SystemExitException(exitCode: Int) extends SecurityException
     val manager = System.getSecurityManager()
     System.setSecurityManager(new SecurityManager {
-      override def checkPermission(permission: Permission): Unit                  = ()
+      override def checkPermission(permission: Permission): Unit = ()
       override def checkPermission(permission: Permission, context: AnyRef): Unit = ()
-      override def checkExit(exitCode: Int): Unit                                 = throw new SystemExitException(exitCode)
+      override def checkExit(exitCode: Int): Unit = throw new SystemExitException(exitCode)
     })
     try {
       scala.Console.withIn(inputStream)(

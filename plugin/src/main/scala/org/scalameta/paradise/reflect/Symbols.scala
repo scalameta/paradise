@@ -17,7 +17,7 @@ trait Symbols { self: ReflectToolkit =>
     def isNewMacroAnnotation = {
       sym.isClass && {
         val MetaInlineClass = rootMirror.getClassIfDefined("scala.meta.internal.inline.inline")
-        val annMethod       = sym.info.decl(InlineAnnotationMethodName)
+        val annMethod = sym.info.decl(InlineAnnotationMethodName)
         val annImplMethod = sym.owner.info
           .decl(sym.name.inlineModuleName)
           .info

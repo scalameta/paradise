@@ -22,7 +22,7 @@ trait Errors { self: AnalyzerPlugins =>
             def showTparam(tparam: Symbol) =
               tparam.typeSignature match {
                 case tpe @ TypeBounds(_, _) => s"${tparam.name}$tpe"
-                case _                      => tparam.name
+                case _ => tparam.name
               }
             def showTparams(tparams: List[Symbol]) =
               "[" + (tparams map showTparam mkString ", ") + "]"
@@ -105,19 +105,19 @@ trait Errors { self: AnalyzerPlugins =>
 
   trait OldErrorGen extends CommonErrorGen {
     def OldMacroAnnotationShapeError(clazz: Symbol) = {
-      val meth     = clazz.info.member(nme.macroTransform)
+      val meth = clazz.info.member(nme.macroTransform)
       val expected = "def macroTransform(annottees: Any*): Any = macro ..."
-      val actual   = meth.actualSignature
+      val actual = meth.actualSignature
       MacroAnnotationShapeError(clazz, expected, actual)
     }
   }
 
   trait NewErrorGen extends CommonErrorGen {
     def NewMacroAnnotationShapeError(clazz: Symbol) = {
-      val meth     = clazz.info.member(nme.apply)
-      val param    = meth.paramss match { case List(List(p)) => p.name.toString; case _ => "defn" }
+      val meth = clazz.info.member(nme.apply)
+      val param = meth.paramss match { case List(List(p)) => p.name.toString; case _ => "defn" }
       val expected = s"inline def apply($param: Any): Any = meta { ... }"
-      val actual   = meth.actualSignature.replace(": Nothing", "")
+      val actual = meth.actualSignature.replace(": Nothing", "")
       MacroAnnotationShapeError(clazz, expected, actual)
     }
   }

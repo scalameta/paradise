@@ -26,7 +26,7 @@ trait HijackSyntaxAnalyzer { self: NscPlugin =>
     val phasesDescMap =
       phasesDescMapGetter.invoke(global).asInstanceOf[mutable.Map[SubComponent, String]]
     val phasesSetMapGetter = classOf[NscGlobal].getDeclaredMethod("phasesSet")
-    val phasesSet          = phasesSetMapGetter.invoke(global).asInstanceOf[mutable.Set[SubComponent]]
+    val phasesSet = phasesSetMapGetter.invoke(global).asInstanceOf[mutable.Set[SubComponent]]
     if (phasesSet.exists(_.phaseName == "parser")) { // `scalac -help` doesn't instantiate standard phases
       phasesSet -= phasesSet.find(_.phaseName == "parser").head
       phasesSet += newSyntaxAnalyzer
@@ -41,11 +41,11 @@ trait HijackSyntaxAnalyzer { self: NscPlugin =>
         val result = cls.getDeclaredMethods().filter(_.getName == name).head;
         result.setAccessible(true); result
       }
-      val f_intp        = obtainField(classOf[ReplReporter], "intp")
-      val f_compiler    = obtainField(classOf[IMain], "_compiler")
+      val f_intp = obtainField(classOf[ReplReporter], "intp")
+      val f_compiler = obtainField(classOf[IMain], "_compiler")
       val m_initSources = obtainMethod(classOf[IMain], "_initSources")
 
-      val intp     = f_intp.get(global.reporter).asInstanceOf[IMain]
+      val intp = f_intp.get(global.reporter).asInstanceOf[IMain]
       val settings = new NscSettings()
       intp.settings.copyInto(settings)
       settings.outputDirs setSingleOutput intp.replOutput.dir

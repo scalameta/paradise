@@ -59,7 +59,7 @@ class ReplSuite(project: String) extends ToolSuite(project) with DisableScalaCol
       // scala> :quit
       // ===================
       val unwrapped = output.split(EOL).drop(3).dropRight(2).mkString(EOL)
-      var i         = 0
+      var i = 0
       """(scala> |     \| )""".r.replaceAllIn(unwrapped, m => {
         var prefix = unwrapped.substring(m.start, m.end)
         if (prefix == "     | ") prefix = ""
@@ -73,7 +73,7 @@ class ReplSuite(project: String) extends ToolSuite(project) with DisableScalaCol
   }
 
   // TODO: change this to something less ugly
-  private var _repl: String => String            = null
+  private var _repl: String => String = null
   final protected def repl(code: String): String = _repl(code)
 
   override protected def test(testName: String, testTags: Tag*)(testFun: => Any)(

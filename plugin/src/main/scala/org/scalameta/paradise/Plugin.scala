@@ -14,9 +14,9 @@ class Plugin(val global: Global)
     with HijackSyntaxAnalyzer
     with HijackAnalyzer
     with AnalyzerPlugins {
-  val name        = "macroparadise"
+  val name = "macroparadise"
   val description = "Empowers production Scala compiler with latest macro developments"
-  val components  = Nil
+  val components = Nil
 
   hijackSyntaxAnalyzer()
   val newAnalyzer = hijackAnalyzer()

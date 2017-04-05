@@ -76,7 +76,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
           override def onSuccess(expanded: Tree) = expanded
         })(expandee) match {
           case tree if tree.isErroneous => None
-          case tree                     => Some(tree)
+          case tree => Some(tree)
         }
       }
       extractAndValidateExpansions(original,
@@ -94,10 +94,10 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
             val prefixArg = annotationTree.toMtree[m.Term.New]
             val targsArgs = {
               val Apply(Select(New(tpt), nme.CONSTRUCTOR), _) = annotationTree
-              val expectedTargs                               = annotationSym.typeParams
+              val expectedTargs = annotationSym.typeParams
               val actualTargs = tpt match {
                 case AppliedTypeTree(_, targs) => targs
-                case _                         => Nil
+                case _ => Nil
               }
               if (expectedTargs.length != actualTargs.length) {
                 val message =
@@ -116,7 +116,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
               case Nil =>
                 abort(
                   "Something unexpected happened. Please report to https://github.com/scalameta/paradise/issues.")
-              case tree :: Nil      => tree
+              case tree :: Nil => tree
               case list @ _ :: tail => m.Term.Block(list.asInstanceOf[Seq[m.Stat]])
             }
             List(prefixArg) ++ targsArgs ++ vargssArgs ++ List(expandeesArg)
@@ -167,7 +167,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
                   val realex = ReflectionUtils.unwrapThrowable(ex)
                   realex match {
                     case ex: ControlThrowable => throw ex
-                    case _                    => MacroGeneratedException(annotationTree, realex)
+                    case _ => MacroGeneratedException(annotationTree, realex)
                   }
               }
             })
@@ -175,7 +175,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
 
           val stringExpansion = metaExpansion match {
             case b: Term.Block => Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
-            case a             => Paradise211(a).syntax
+            case a => Paradise211(a).syntax
           }
 
           val compiler = new { val global: Expanders.this.global.type = Expanders.this.global }
@@ -204,11 +204,11 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
       val sym = original.symbol
       val companion =
         if (original.isInstanceOf[ClassDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
-      val wasWeak      = isWeak(companion)
+      val wasWeak = isWeak(companion)
       val wasTransient = companion == NoSymbol || companion.isSynthetic
       def extract(expanded: Tree): List[Tree] = expanded match {
         case Block(stats, Literal(Constant(()))) => stats // ugh
-        case tree                                => List(tree)
+        case tree => List(tree)
       }
       def validate(expanded: List[Tree]): Option[List[Tree]] = {
         if (sym.owner.isPackageClass) {
@@ -268,7 +268,7 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
       }
       for {
         lowlevelExpansion <- computeExpansion()
-        expansion         <- Some(extract(lowlevelExpansion))
+        expansion <- Some(extract(lowlevelExpansion))
         duplicated = expansion.map(duplicateAndKeepPositions)
         validatedExpansion <- validate(duplicated)
       } yield validatedExpansion
@@ -276,16 +276,16 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
 
     def expandMacroAnnotations(stats: List[Tree]): List[Tree] = {
       def mightNeedTransform(stat: Tree): Boolean = stat match {
-        case stat: DocDef    => mightNeedTransform(stat.definition)
+        case stat: DocDef => mightNeedTransform(stat.definition)
         case stat: MemberDef => isMaybeExpandee(stat.symbol) || hasAttachedExpansion(stat.symbol)
-        case _               => false
+        case _ => false
       }
       def rewrapAfterTransform(stat: Tree, transformed: List[Tree]): List[Tree] =
         (stat, transformed) match {
           case (stat @ DocDef(comment, _), List(transformed: MemberDef)) =>
             List(treeCopy.DocDef(stat, comment, transformed))
           case (stat @ DocDef(comment, _), List(transformed: DocDef)) => List(transformed)
-          case (_, Nil | List(_: MemberDef))                          => transformed
+          case (_, Nil | List(_: MemberDef)) => transformed
           case (_, unexpected) =>
             unexpected // NOTE: who knows how people are already using macro annotations, so it's scary to fail here
         }
