@@ -5,8 +5,8 @@ import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 
-lazy val LanguageVersions = Seq("2.11.9", "2.12.1")
-lazy val MetaVersion = "1.7.0-496-5f890293"
+lazy val LanguageVersions = Seq("2.11.10", "2.12.1")
+lazy val MetaVersion = "1.7.0-498-79614f5c"
 lazy val LanguageVersion = LanguageVersions.head
 lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
 
