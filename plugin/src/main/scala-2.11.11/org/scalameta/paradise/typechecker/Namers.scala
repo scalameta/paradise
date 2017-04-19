@@ -287,7 +287,8 @@ trait Namers { self: AnalyzerPlugins =>
           val completer =
             if (sym hasFlag SYNTHETIC) {
               if (name == nme.copy) copyMethodCompleter(tree)
-              else if (sym hasFlag CASE) applyUnapplyMethodCompleter(tree, context)
+              else if (settings.isScala212 && (sym hasFlag CASE))
+                applyUnapplyMethodCompleter(tree, context)
               else completerOf(tree)
             } else completerOf(tree)
           sym setInfo completer
