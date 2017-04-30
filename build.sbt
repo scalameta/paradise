@@ -6,7 +6,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 
 lazy val LanguageVersions = Seq("2.11.11", "2.12.2")
-lazy val MetaVersion = "1.7.0"
+lazy val MetaVersion = "1.8.0-585-e8245aa7"
 lazy val LanguageVersion = LanguageVersions.head
 lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
 
@@ -27,6 +27,7 @@ lazy val paradiseRoot = project
   .aggregate(
     paradise,
     testsCommon,
+    testsConverters,
     testsReflect,
     testsMeta
   )
@@ -38,7 +39,7 @@ lazy val paradise = project
     description := "Empowers production Scala compiler with latest macro developments",
     mergeSettings,
     isFullCrossVersion,
-    libraryDependencies += "org.scalameta" % "scalahost" % MetaVersion cross CrossVersion.full,
+    libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     pomPostProcess := { node =>
@@ -47,11 +48,11 @@ lazy val paradise = project
           def isArtifactId(node: XmlNode, fn: String => Boolean) =
             node.label == "artifactId" && fn(node.text)
           node.label == "dependency" && node.child.exists(child =>
-            isArtifactId(child, _.startsWith("scalahost_")))
+            isArtifactId(child, _.startsWith("scalameta_")))
         }
         override def transform(node: XmlNode): XmlNodeSeq = node match {
           case e: Elem if isScalametaDependency(node) =>
-            Comment("scalahost dependency has been merged into paradise via sbt-assembly")
+            Comment("scalameta dependency has been merged into paradise via sbt-assembly")
           case _ => node
         }
       }).transform(node).head
@@ -66,6 +67,16 @@ lazy val testsCommon = project
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
   )
+
+lazy val testsConverters = project
+  .in(file("tests/converters"))
+  .settings(
+    sharedSettings,
+    nonPublishableSettings,
+    exposePaths("testsConverters", Test),
+    libraryDependencies += "org.scalameta" %% "testkit" % MetaVersion
+  )
+  .dependsOn(paradise)
 
 // macro annotation tests, requires a clean on every compile to outsmart incremental compiler.
 lazy val testsReflect = project
