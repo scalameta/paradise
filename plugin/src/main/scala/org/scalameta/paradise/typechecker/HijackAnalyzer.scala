@@ -46,7 +46,7 @@ trait HijackAnalyzer { self: NscPlugin =>
     }
     val globalClass: Class[_] =
       if (isRepl) global.getClass
-      else if (isInteractive) classOf[NscInteractiveGlobal]
+      else if (isInteractive) global.getClass
       else classOf[NscGlobal]
     val analyzerField = globalClass.getDeclaredField("analyzer")
     analyzerField.setAccessible(true)
