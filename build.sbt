@@ -6,7 +6,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 
 lazy val LanguageVersions = Seq("2.11.11", "2.12.2")
-lazy val MetaVersion = "1.8.0-600-ae298f26"
+lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.head
 lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
 
@@ -163,6 +163,12 @@ lazy val usePluginSettings = Seq(
 
 lazy val publishableSettings = Def.settings(
   sharedSettings,
+  publishTo := {
+    if (sys.props("scalameta.publish") == "sonatype")
+      Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+    else
+      publishTo.in(bintray).value
+  },
   bintrayOrganization := Some("scalameta"),
   publishArtifact.in(Compile) := true,
   publishArtifact.in(Test) := false, {
