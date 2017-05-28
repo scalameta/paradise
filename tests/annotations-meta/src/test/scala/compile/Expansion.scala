@@ -228,4 +228,11 @@ class Expansion extends FunSuite {
     @tparam[Int]
     class Foo
   }
+
+  test("Expansion of type def with companion") {
+    object SomeObject {
+      @identity type A = Int
+      object A
+    }
+  }
 }

@@ -366,7 +366,7 @@ trait Namers { self: AnalyzerPlugins =>
           s"maybeExpandeeCompleter for ${sym.accurateKindString} ${sym.rawname}#${sym.id}"
         override def maybeExpand(): Unit = {
           val companion =
-            if (tree.isInstanceOf[ClassDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
+            if (tree.isInstanceOf[ClassDef] || tree.isInstanceOf[TypeDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
 
           def maybeExpand(annotation: Tree,
                           annottee: Tree,
