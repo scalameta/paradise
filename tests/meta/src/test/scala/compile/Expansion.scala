@@ -234,6 +234,26 @@ class Expansion extends FunSuite {
     @genLargeNumberOfStats
     class foo
   }
+
+  test("Expansion of type def with companion") {
+    object SomeObject {
+      @identity type A = Int
+      object A
+    }
+  }
+
+  test("Ensure companion is passed into macro with typedef") {
+    object AnotherObject {
+      @typeWithCompanion type A = Int
+      object A
+    }
+  }
+
+  test("Ensure typedefs without companions are not in a block") {
+    object AThirdObject {
+      @typeWithoutCompanion type A = Int
+    }
+  }
 }
 
 // Note: We cannot actually wrap this in test()

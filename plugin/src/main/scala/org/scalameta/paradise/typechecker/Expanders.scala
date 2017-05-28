@@ -203,7 +203,11 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
         computeExpansion: () => Option[Tree]): Option[List[Tree]] = {
       val sym = original.symbol
       val companion =
-        if (original.isInstanceOf[ClassDef]) patchedCompanionSymbolOf(sym, context) else NoSymbol
+        if (original.isInstanceOf[ClassDef] || original.isInstanceOf[TypeDef]) {
+          patchedCompanionSymbolOf(sym, context)
+        } else {
+          NoSymbol
+        }
       val wasWeak = isWeak(companion)
       val wasTransient = companion == NoSymbol || companion.isSynthetic
       def extract(expanded: Tree): List[Tree] = expanded match {
