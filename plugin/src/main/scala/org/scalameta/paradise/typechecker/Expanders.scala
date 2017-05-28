@@ -174,7 +174,13 @@ trait Expanders extends Converter { self: AnalyzerPlugins =>
           }
 
           val stringExpansion = metaExpansion match {
-            case b: Term.Block => Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
+            case b @ Term.Block(m.Defn.Class(_, _, _, _, _) :: m.Defn.Object(_, _, _) :: Nil) =>
+              Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
+            case b: Term.Block =>
+              currentRun.reporting.deprecationWarning(annotationTree.pos,
+                "Expansions returning Term.Block are now deprecated (excluding companion object expansions), " +
+                  "please ensure all expansions input and output the same type")
+              Paradise211(b).syntax.stripPrefix("{").stripSuffix("}")
             case a => Paradise211(a).syntax
           }
 

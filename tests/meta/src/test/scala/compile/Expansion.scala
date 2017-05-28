@@ -234,6 +234,14 @@ class Expansion extends FunSuite {
     @genLargeNumberOfStats
     class foo
   }
+
+
+  test("deprecation block expansion") {
+    object Foo{
+      @deprecationWarning
+      def bar = 2
+    }
+  }
 }
 
 // Note: We cannot actually wrap this in test()
