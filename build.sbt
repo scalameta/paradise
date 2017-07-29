@@ -84,6 +84,13 @@ lazy val testsReflect = project
   .settings(
     sharedSettings,
     usePluginSettings,
+    libraryDependencies += "org.ensime" %% "pcplod" % "1.2.0" % "test",
+    // WORKAROUND https://github.com/ensime/pcplod/issues/12
+    fork in Test := true,
+    javaOptions in Test ++= Seq(
+      s"""-Dpcplod.settings=${(scalacOptions in Test).value.mkString(",")}""",
+      s"""-Dpcplod.classpath=${(fullClasspath in Test).value.map(_.data).mkString(",")}"""
+    ),
     nonPublishableSettings,
     exposePaths("testsReflect", Test)
   )
