@@ -335,9 +335,9 @@ trait Namers { self: AnalyzerPlugins =>
       }
 
       def complete(sym: Symbol, onlyExpansions: Boolean) = {
-        _lockedCount += 1
+        lockedCount += 1
         try completeImpl(sym, onlyExpansions)
-        finally _lockedCount -= 1
+        finally lockedCount -= 1
       }
 
       override def completeImpl(sym: Symbol): Unit = {
