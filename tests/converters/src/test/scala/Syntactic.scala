@@ -65,6 +65,7 @@ class Syntactic extends ConverterSuite {
   syntactic("a.foreach(_ => bar())")
   syntactic("a.foreach(_ + _)")
   syntactic("function _")
+  syntactic("() => {}")
   syntactic("throw new A(4)")
   syntactic("try { throw new A(4) } catch { case _: Throwable => 4 } finally { println(6) }")
   syntactic("try f(4) catch { case _: Throwable => 4 } finally println(6)")

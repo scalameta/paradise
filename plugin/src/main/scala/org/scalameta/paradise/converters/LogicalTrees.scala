@@ -123,7 +123,7 @@ class LogicalTrees[G <: Global](val global: G, root: G#Tree) extends ReflectTool
         // before: function((x$1, x$2) => x$1 + x$2)
         // after:  function(_ + _)
         case g.Function(vparams, body)
-            if vparams.forall(x =>
+            if vparams.nonEmpty && vparams.forall(x =>
               x.mods.hasFlag(Gflags.SYNTHETIC) &&
                 x.name.startsWith(nme.FRESH_TERM_NAME_PREFIX)) =>
           Some(body)
