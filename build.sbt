@@ -5,12 +5,13 @@ import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 
-lazy val LanguageVersions = Seq("2.11.12", "2.12.4")
+lazy val Scala211 = "2.11.12"
+lazy val Scala212 = "2.12.4"
+lazy val LanguageVersions = Seq(Scala211, Scala212)
 lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.last
 version.in(ThisBuild) ~= (_.replace('+', '-'))
 onLoadMessage := s"Welcome to scalameta/paradise ${version.value}"
-
 
 // ==========================================
 // Projects
@@ -27,7 +28,8 @@ lazy val paradiseRoot = project
         state
     },
     commands += Command.command("ci-test") { state =>
-      "very paradiseRoot/test" ::
+      s"plz $Scala212 paradiseRoot/test" ::
+        s"plz $Scala211 paradiseRoot/test" ::
         state
     }
   )

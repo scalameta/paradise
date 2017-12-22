@@ -144,4 +144,3 @@ object git {
     shell.check_output("git rev-parse HEAD", cwd = ".").trim
   }
 }
-
