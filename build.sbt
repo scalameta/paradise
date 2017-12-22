@@ -19,7 +19,12 @@ lazy val paradiseRoot = project
   .settings(
     sharedSettings,
     nonPublishableSettings,
-    commands += Command.command("ci") { state =>
+    commands += Command.command("ci-release") { state =>
+      "very publishSigned" ::
+        "sonatypeReleaseAll" ::
+        state
+    },
+    commands += Command.command("ci-test") { state =>
       "very paradiseRoot/test" ::
         state
     }
@@ -269,3 +274,14 @@ def exposePaths(projectName: String, config: Configuration) = {
     }
   )
 }
+
+inScope(Global)(
+  Seq(
+    credentials ++= (for {
+      username <- sys.env.get("SONATYPE_USERNAME")
+      password <- sys.env.get("SONATYPE_PASSWORD")
+    } yield
+      Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
+    PgpKeys.pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray())
+  )
+)
