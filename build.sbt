@@ -5,10 +5,13 @@ import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
 
-lazy val LanguageVersions = Seq("2.11.12", "2.12.4")
+lazy val Scala211 = "2.11.12"
+lazy val Scala212 = "2.12.4"
+lazy val LanguageVersions = Seq(Scala211, Scala212)
 lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.last
-lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
+version.in(ThisBuild) ~= (_.replace('+', '-'))
+onLoadMessage := s"Welcome to scalameta/paradise ${version.value}"
 
 // ==========================================
 // Projects
@@ -19,8 +22,14 @@ lazy val paradiseRoot = project
   .settings(
     sharedSettings,
     nonPublishableSettings,
-    commands += Command.command("ci") { state =>
-      "very paradiseRoot/test" ::
+    commands += Command.command("ci-release") { state =>
+      "very publishSigned" ::
+        "sonatypeReleaseAll" ::
+        state
+    },
+    commands += Command.command("ci-test") { state =>
+      s"plz $Scala212 paradiseRoot/test" ::
+        s"plz $Scala211 paradiseRoot/test" ::
         state
     }
   )
@@ -108,7 +117,6 @@ lazy val sharedSettings = Def.settings(
   scalaVersion := LanguageVersion,
   crossScalaVersions := LanguageVersions,
   crossVersion := CrossVersion.binary,
-  version := LibraryVersion,
   organization := "org.scalameta",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   resolvers += Resolver.bintrayRepo("scalameta", "maven"),
@@ -181,7 +189,6 @@ lazy val publishableSettings = Def.settings(
     if (sys.props("disable.publish.status") == null) {
       sys.props("disable.publish.status") = ""
       val publishingStatus = if (publishingEnabled) "enabled" else "disabled"
-      println(s"[info] Welcome to paradise $LibraryVersion (publishing $publishingStatus)")
     }
     publish.in(Compile) := {
       if (publishingEnabled) {
@@ -269,3 +276,14 @@ def exposePaths(projectName: String, config: Configuration) = {
     }
   )
 }
+
+inScope(Global)(
+  Seq(
+    credentials ++= (for {
+      username <- sys.env.get("SONATYPE_USERNAME")
+      password <- sys.env.get("SONATYPE_PASSWORD")
+    } yield
+      Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
+    PgpKeys.pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray())
+  )
+)
