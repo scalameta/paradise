@@ -14,9 +14,12 @@ jobs:
       script: ./bin/scalafmt --test
     - env: TEST="sbt ci-test"
       script:
+        - git fetch --tags
         - sbt ci-test
     - stage: release
-      script: ./bin/ci-release.sh
+      script:
+        - git fetch --tags
+        - ./bin/ci-release.sh
 
 cache:
   directories:

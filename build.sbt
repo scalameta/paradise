@@ -8,7 +8,9 @@ import org.scalameta.os
 lazy val LanguageVersions = Seq("2.11.12", "2.12.4")
 lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.last
-lazy val LibraryVersion = sys.props.getOrElseUpdate("paradise.version", os.version.preRelease())
+version.in(ThisBuild) ~= (_.replace('+', '-'))
+onLoadMessage := s"Welcome to scalameta/paradise ${version.value}"
+
 
 // ==========================================
 // Projects
@@ -113,7 +115,6 @@ lazy val sharedSettings = Def.settings(
   scalaVersion := LanguageVersion,
   crossScalaVersions := LanguageVersions,
   crossVersion := CrossVersion.binary,
-  version := LibraryVersion,
   organization := "org.scalameta",
   resolvers += Resolver.sonatypeRepo("snapshots"),
   resolvers += Resolver.bintrayRepo("scalameta", "maven"),
@@ -186,7 +187,6 @@ lazy val publishableSettings = Def.settings(
     if (sys.props("disable.publish.status") == null) {
       sys.props("disable.publish.status") = ""
       val publishingStatus = if (publishingEnabled) "enabled" else "disabled"
-      println(s"[info] Welcome to paradise $LibraryVersion (publishing $publishingStatus)")
     }
     publish.in(Compile) := {
       if (publishingEnabled) {
